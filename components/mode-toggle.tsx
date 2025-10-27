@@ -23,7 +23,7 @@ export function ModeToggle() {
 					{theme === "light" ? (
 						<Sun className="h-[1.2rem] w-[1.2rem]" />
 					) : theme === "dark" ? (
-						<Moon className="h-[1.2rem] w-[1.2rem]  " />
+						<Moon className="h-[1.2rem] w-[1.2rem]" />
 					) : (
 						<SunMoon className="h-[1.2rem] w-[1.2rem]" />
 					)}
