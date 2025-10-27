@@ -1,103 +1,254 @@
+"use client";
+import { FAQSection } from "@/components/home/faq";
+import Features from "@/components/home/features";
+import Hero from "@/components/home/hero";
+import { StickyFooter } from "@/components/stickyfooter";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import UseAnimations from "react-useanimations";
+import menu4 from "react-useanimations/lib/menu4";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+	const [isScrolled, setIsScrolled] = useState(false);
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+	useEffect(() => {
+		const handleScroll = () => {
+			setIsScrolled(window.scrollY > 100);
+		};
+
+		window.addEventListener("scroll", handleScroll);
+		return () => window.removeEventListener("scroll", handleScroll);
+	}, []);
+
+	const handleMobileNavClick = (elementId: string) => {
+		setIsMobileMenuOpen(false);
+		setTimeout(() => {
+			const element = document.getElementById(elementId);
+			if (element) {
+				const headerOffset = 120; // Account for sticky header height + margin
+				const elementPosition =
+					element.getBoundingClientRect().top + window.pageYOffset;
+				const offsetPosition = elementPosition - headerOffset;
+
+				window.scrollTo({
+					top: offsetPosition,
+					behavior: "smooth",
+				});
+			}
+		}, 100);
+	};
+
+	return (
+		<div className="min-h-screen w-full relative">
+			{/* Desktop Header */}
+			<header
+				className={`sticky top-4 z-[9999] mx-auto hidden w-full flex-row items-center justify-between self-start rounded-full bg-background/80 md:flex backdrop-blur-sm border border-border/50 shadow-lg transition-all duration-300 ${
+					isScrolled ? "max-w-3xl px-2" : "max-w-5xl px-4"
+				} py-2`}
+				style={{
+					willChange: "transform",
+					transform: "translateZ(0)",
+					backfaceVisibility: "hidden",
+					perspective: "1000px",
+				}}
+			>
+				<a
+					className={`z-50 flex items-center justify-center gap-2 transition-all duration-300 ${
+						isScrolled ? "ml-4" : ""
+					}`}
+					href="https://github.com/heshangoonawardena/"
+					target="_blank"
+					rel="noopener noreferrer"
+				>
+					<Image
+						className="rounded-full"
+						src="https://placehold.co/32x32/black/white"
+						alt="Logo"
+						width={32}
+						height={32}
+					/>
+				</a>
+
+				<div className="absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 text-sm font-medium text-muted-foreground transition duration-200 hover:text-foreground md:flex md:space-x-2">
+					<Button
+						variant={"ghost"}
+						onClick={(e) => {
+							e.preventDefault();
+							const element = document.getElementById("features");
+							if (element) {
+								const headerOffset = 120; // Account for sticky header height + margin
+								const elementPosition =
+									element.getBoundingClientRect().top + window.pageYOffset;
+								const offsetPosition = elementPosition - headerOffset;
+
+								window.scrollTo({
+									top: offsetPosition,
+									behavior: "smooth",
+								});
+							}
+						}}
+					>
+						<span className="relative z-20">Features</span>
+					</Button>
+					<Button
+						variant={"ghost"}
+						onClick={(e) => {
+							e.preventDefault();
+							const element = document.getElementById("features");
+							if (element) {
+								const headerOffset = 120; // Account for sticky header height + margin
+								const elementPosition =
+									element.getBoundingClientRect().top + window.pageYOffset;
+								const offsetPosition = elementPosition - headerOffset;
+
+								window.scrollTo({
+									top: offsetPosition,
+									behavior: "smooth",
+								});
+							}
+						}}
+					>
+						<span className="relative z-20">features*</span>
+					</Button>
+					<Button
+						variant={"ghost"}
+						onClick={(e) => {
+							e.preventDefault();
+							const element = document.getElementById("faq");
+							if (element) {
+								const headerOffset = 120; // Account for sticky header height + margin
+								const elementPosition =
+									element.getBoundingClientRect().top + window.pageYOffset;
+								const offsetPosition = elementPosition - headerOffset;
+
+								window.scrollTo({
+									top: offsetPosition,
+									behavior: "smooth",
+								});
+							}
+						}}
+					>
+						<span className="relative z-20">faq*</span>
+					</Button>
+					<Button
+						variant={"ghost"}
+						onClick={(e) => {
+							e.preventDefault();
+							const element = document.getElementById("faq");
+							if (element) {
+								const headerOffset = 120; // Account for sticky header height + margin
+								const elementPosition =
+									element.getBoundingClientRect().top + window.pageYOffset;
+								const offsetPosition = elementPosition - headerOffset;
+
+								window.scrollTo({
+									top: offsetPosition,
+									behavior: "smooth",
+								});
+							}
+						}}
+					>
+						<span className="relative z-20">FAQ</span>
+					</Button>
+				</div>
+
+				<div className="flex items-center gap-4">
+					<Button variant={"outline"}>Log In</Button>
+
+					<Button>Sign Up</Button>
+				</div>
+			</header>
+
+			{/* Mobile Header */}
+			<header className="sticky top-4 z-[9999] mx-4 flex w-auto flex-row items-center justify-between bg-background/80 backdrop-blur-sm border border-border/50 shadow-lg md:hidden px-4 py-3">
+				<a
+					className="flex items-center justify-center gap-2 rounded-full"
+					href="https://v0.app"
+					target="_blank"
+					rel="noopener noreferrer"
+				>
+					<Image
+						className="rounded-full"
+						src="https://placehold.co/32x32/black/white"
+						alt="Logo"
+						width={28}
+						height={28}
+					/>
+
+				</a>
+				<Button variant={"outline"} size={"icon-lg"}>
+					<UseAnimations
+						speed={1.5}
+						animation={menu4}
+						strokeColor="currentColor"
+						size={36}
+						onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+						aria-label="Toggle menu"
+					/>
+				</Button>
+			</header>
+
+			{/* Mobile Menu Overlay */}
+			{isMobileMenuOpen && (
+				<div className="fixed inset-0 z-[9998] bg-black/20 backdrop-blur-sm md:hidden">
+					<div className="absolute top-25 left-4 right-4 bg-background/95 backdrop-blur-md border border-border/50 rounded-2xl shadow-2xl p-6">
+						<nav className="flex flex-col space-y-4">
+							<Button
+								variant={"ghost"}
+								size={"lg"}
+								onClick={() => handleMobileNavClick("features")}
+							>
+								Features
+							</Button>
+							<Button
+								variant={"ghost"}
+								size={"lg"}
+								onClick={() => handleMobileNavClick("features")}
+							>
+								features*
+							</Button>
+							<Button
+								variant={"ghost"}
+								size={"lg"}
+								onClick={() => handleMobileNavClick("faq")}
+							>
+								faq*
+							</Button>
+							<Button
+								variant={"ghost"}
+								size={"lg"}
+								onClick={() => handleMobileNavClick("faq")}
+							>
+								FAQ
+							</Button>
+
+							<Separator />
+
+							<div className="flex flex-col space-y-3">
+								<Button variant={"outline"} size={"lg"}>
+									Log In
+								</Button>
+								<Button size={"lg"}>Sign Up</Button>
+							</div>
+						</nav>
+					</div>
+				</div>
+			)}
+
+			{/* Hero Section */}
+			<Hero />
+
+			{/* Features Section */}
+			<Features />
+
+			{/* FAQSection  */}
+			<FAQSection />
+
+			{/* Sticky Footer */}
+			<StickyFooter />
+		</div>
+	);
 }
