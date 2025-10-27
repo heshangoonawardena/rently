@@ -2,6 +2,7 @@
 import { FAQSection } from "@/components/home/faq";
 import Features from "@/components/home/features";
 import Hero from "@/components/home/hero";
+import { ModeToggle } from "@/components/mode-toggle";
 import { StickyFooter } from "@/components/stickyfooter";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -45,7 +46,7 @@ export default function Home() {
 		<div className="min-h-screen w-full relative">
 			{/* Desktop Header */}
 			<header
-				className={`sticky top-4 z-[9999] mx-auto hidden w-full flex-row items-center justify-between self-start rounded-full bg-background/80 md:flex backdrop-blur-sm border border-border/50 shadow-lg transition-all duration-300 ${
+				className={`sticky top-4 z-[9999] mx-auto hidden w-full flex-row items-center justify-between self-start rounded-full bg-background/80 md:flex backdrop-blur-sm border  shadow-lg transition-all duration-300 ${
 					isScrolled ? "max-w-3xl px-2" : "max-w-5xl px-4"
 				} py-2`}
 				style={{
@@ -131,31 +132,12 @@ export default function Home() {
 							}
 						}}
 					>
-						<span className="relative z-20">faq*</span>
-					</Button>
-					<Button
-						variant={"ghost"}
-						onClick={(e) => {
-							e.preventDefault();
-							const element = document.getElementById("faq");
-							if (element) {
-								const headerOffset = 120; // Account for sticky header height + margin
-								const elementPosition =
-									element.getBoundingClientRect().top + window.pageYOffset;
-								const offsetPosition = elementPosition - headerOffset;
-
-								window.scrollTo({
-									top: offsetPosition,
-									behavior: "smooth",
-								});
-							}
-						}}
-					>
 						<span className="relative z-20">FAQ</span>
 					</Button>
 				</div>
 
 				<div className="flex items-center gap-4">
+					<ModeToggle />
 					<Button variant={"outline"}>Log In</Button>
 
 					<Button>Sign Up</Button>
@@ -177,18 +159,21 @@ export default function Home() {
 						width={28}
 						height={28}
 					/>
-
 				</a>
-				<Button variant={"outline"} size={"icon-lg"}>
-					<UseAnimations
-						speed={1.5}
-						animation={menu4}
-						strokeColor="currentColor"
-						size={36}
-						onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-						aria-label="Toggle menu"
-					/>
-				</Button>
+				<div className="flex space-x-4 items-center justify-center">
+					<ModeToggle />
+
+					<Button variant={"outline"} size={"icon-lg"}>
+						<UseAnimations
+							speed={1.5}
+							animation={menu4}
+							strokeColor="currentColor"
+							size={36}
+							onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+							aria-label="Toggle menu"
+						/>
+					</Button>
+				</div>
 			</header>
 
 			{/* Mobile Menu Overlay */}
@@ -209,13 +194,6 @@ export default function Home() {
 								onClick={() => handleMobileNavClick("features")}
 							>
 								features*
-							</Button>
-							<Button
-								variant={"ghost"}
-								size={"lg"}
-								onClick={() => handleMobileNavClick("faq")}
-							>
-								faq*
 							</Button>
 							<Button
 								variant={"ghost"}
