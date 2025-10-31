@@ -46,7 +46,7 @@ export default function Hero() {
 							transition={{ duration: 0.5 }}
 							className="mb-8"
 						>
-							<Badge variant="secondary">
+							<Badge variant="default">
 								<Sparkles />
 								Effortless
 							</Badge>
