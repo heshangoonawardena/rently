@@ -2,11 +2,13 @@
 import menu2 from "react-useanimations/lib/menu2";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
-import { Menu, X } from "lucide-react";
+import { ChevronRightCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React from "react";
 import { cn } from "@/lib/utils";
 import UseAnimations from "react-useanimations";
+import { SignInButton, SignUpButton, useUser } from "@clerk/nextjs";
+import { Spinner } from "./spinner";
 
 const menuItems = [
 	{ name: "Features", href: "#features" },
@@ -18,6 +20,7 @@ const menuItems = [
 export const HeroHeader = () => {
 	const [menuState, setMenuState] = React.useState(false);
 	const [isScrolled, setIsScrolled] = React.useState(false);
+	const { isSignedIn, isLoaded } = useUser();
 
 	React.useEffect(() => {
 		const handleScroll = () => {
@@ -102,37 +105,49 @@ export const HeroHeader = () => {
 								</ul>
 							</div>
 							<div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-								<Button
-									asChild
-									variant="outline"
-									size="sm"
-									className={cn(isScrolled && "lg:hidden")}
-								>
-									<Link href="#">
-										<span>Login</span>
-									</Link>
-								</Button>
-								<Button
-									asChild
-									size="sm"
-									className={cn(isScrolled && "lg:hidden")}
-								>
-									<Link href="#">
-										<span>Sign Up</span>
-									</Link>
-								</Button>
-								<Button
-									asChild
-									size="sm"
-									className={cn(
-										"hidden",
-										isScrolled ? "lg:inline-flex" : "hidden"
-									)}
-								>
-									<Link href="#">
-										<span>Get Started</span>
-									</Link>
-								</Button>
+								{!isLoaded ? (
+									<Spinner className="size-8" />
+								) : isSignedIn ? (
+									<Button size="sm">
+										<Link href="/dashboard" className="flex items-center gap-2">
+											<span>Dashboard</span>
+											<ChevronRightCircle />
+										</Link>
+									</Button>
+								) : (
+									<>
+										<SignInButton mode="modal">
+											<Button
+												variant="outline"
+												size="sm"
+												className={cn(isScrolled && "lg:hidden")}
+											>
+												Login
+											</Button>
+										</SignInButton>
+
+										<SignUpButton>
+											<Button
+												size="sm"
+												className={cn(isScrolled && "lg:hidden")}
+											>
+												Sign Up
+											</Button>
+										</SignUpButton>
+
+										<SignUpButton>
+											<Button
+												size="sm"
+												className={cn(
+													"hidden",
+													isScrolled ? "lg:inline-flex" : "hidden"
+												)}
+											>
+												Get Started
+											</Button>
+										</SignUpButton>
+									</>
+								)}
 							</div>
 						</div>
 					</div>
