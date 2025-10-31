@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Plus, Minus, Sparkle, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Badge } from "../ui/badge";
+import { Badge } from "../../../components/ui/badge";
 
 export function FAQSection() {
 	const [openItems, setOpenItems] = useState<number[]>([]);

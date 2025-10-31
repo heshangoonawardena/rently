@@ -1,7 +1,7 @@
 "use client";
-import { FAQSection } from "@/components/home/faq";
-import FeaturesSection from "@/components/home/features";
-import Hero from "@/components/home/hero";
+import { FAQSection } from "@/app/(marketing)/_components/faq";
+import FeaturesSection from "@/app/(marketing)/_components/features";
+import Hero from "@/app/(marketing)/_components/hero";
 import { StickyFooter } from "@/components/stickyfooter";
 import { HeroHeader } from "@/components/ui/HeroHeader";
 
@@ -15,8 +15,7 @@ export default function Home() {
 			<Hero />
 
 			{/* Features Section */}
-			{/* <Features /> */}
-			<FeaturesSection/>
+			<FeaturesSection />
 
 			{/* FAQSection  */}
 			<FAQSection />
