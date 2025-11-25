@@ -53,7 +53,7 @@ export function LoginForm({
 					return data.message;
 				},
 				error: (error) => {
-					return error;
+					return error.message;
 				},
 			});
 		});

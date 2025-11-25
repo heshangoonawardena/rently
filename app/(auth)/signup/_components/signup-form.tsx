@@ -56,7 +56,7 @@ export function SignupForm({
 					return data.message;
 				},
 				error: (error) => {
-					return error;
+					return error.message;
 				},
 			});
 		});

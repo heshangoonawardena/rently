@@ -5,6 +5,7 @@ import {
 	ForgotPasswordSchemaType,
 	resetPasswordSchema,
 	ResetPasswordSchemaType,
+	signInformSchema,
 	SignInFormSchemaType,
 	signupFormSchema,
 	SignupFormSchemaType,
@@ -14,7 +15,7 @@ import { headers } from "next/headers";
 
 export const signIn = async (values: SignInFormSchemaType) => {
 	// validate input using the Zod schema
-	const result = signupFormSchema.safeParse(values);
+	const result = signInformSchema.safeParse(values);
 	if (!result.success) {
 		return {
 			success: false,
@@ -38,7 +39,7 @@ export const signIn = async (values: SignInFormSchemaType) => {
 		};
 	} catch (error) {
 		const e = error as APIError;
-		throw new Error(e.message || "An unknown error occurred");
+		return new Error(e.message || "An unknown error occurred");
 	}
 };
 
@@ -75,7 +76,7 @@ export const signUp = async (values: SignupFormSchemaType) => {
 		};
 	} catch (error) {
 		const e = error as APIError;
-		throw new Error(e.message || "An unknown error occurred");
+		return new Error(e.message || "An unknown error occurred");
 	}
 };
 
@@ -149,7 +150,7 @@ export const requestPasswordReset = async (
 		};
 	} catch (error) {
 		const e = error as APIError;
-		throw new Error(e.message || "An unknown error occurred");
+		return new Error(e.message || "An unknown error occurred");
 	}
 };
 
@@ -182,7 +183,7 @@ export const resetPassword = async (values: ResetPasswordSchemaType) => {
 		};
 	} catch (error) {
 		const e = error as APIError;
-		throw new Error(e.message || "An unknown error occurred");
+		return new Error(e.message || "An unknown error occurred");
 	}
 };
 

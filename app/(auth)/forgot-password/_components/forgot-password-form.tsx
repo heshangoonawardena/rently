@@ -51,7 +51,7 @@ export function ForgotPasswordForm({
 					return data;
 				},
 				error: (error) => {
-					return error;
+					return error.message;
 				},
 			});
 		});
