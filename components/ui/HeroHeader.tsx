@@ -1,7 +1,7 @@
 "use client";
 import menu2 from "react-useanimations/lib/menu2";
 import Link from "next/link";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/app/(marketing)/_components/logo";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React from "react";
@@ -10,9 +10,10 @@ import UseAnimations from "react-useanimations";
 
 const menuItems = [
 	{ name: "Features", href: "#features" },
-	{ name: "Solution", href: "#" },
+	// { name: "Solution", href: "#" },
 	{ name: "FAQ", href: "#faq" },
-	{ name: "About", href: "/" },
+	// { name: "About", href: "#about" },
+	{ name: "Contact Us", href: "#contact-us" },
 ];
 
 export const HeroHeader = () => {
@@ -108,7 +109,7 @@ export const HeroHeader = () => {
 									size="sm"
 									className={cn(isScrolled && "lg:hidden")}
 								>
-									<Link href="#">
+									<Link href="/login">
 										<span>Login</span>
 									</Link>
 								</Button>
@@ -117,7 +118,7 @@ export const HeroHeader = () => {
 									size="sm"
 									className={cn(isScrolled && "lg:hidden")}
 								>
-									<Link href="#">
+									<Link href="/signup">
 										<span>Sign Up</span>
 									</Link>
 								</Button>
@@ -129,7 +130,7 @@ export const HeroHeader = () => {
 										isScrolled ? "lg:inline-flex" : "hidden"
 									)}
 								>
-									<Link href="#">
+									<Link href="/signup">
 										<span>Get Started</span>
 									</Link>
 								</Button>

@@ -2,7 +2,7 @@
 import { FAQSection } from "@/app/(marketing)/_components/faq";
 import FeaturesSection from "@/app/(marketing)/_components/features";
 import Hero from "@/app/(marketing)/_components/hero";
-import { StickyFooter } from "@/components/stickyfooter";
+import { StickyFooter } from "@/app/(marketing)/_components/stickyfooter";
 import { HeroHeader } from "@/components/ui/HeroHeader";
 
 export default function Home() {
