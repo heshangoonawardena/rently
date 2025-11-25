@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
+import BackgroundBlur from "./background-blur";
 import { CircleArrowRight, House, Sparkles } from "lucide-react";
 
 export default function Hero() {
@@ -20,22 +21,7 @@ export default function Hero() {
 		<>
 			<section className="relative overflow-hidden min-h-screen flex flex-col">
 				{/* Background blur effects */}
-				<motion.div
-					animate={{
-						scale: [1, 1.5, 1],
-						opacity: [0.4, 0.9, 0.4],
-						transition: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-					}}
-					className="bg-primary/60 absolute top-1/8 -right-20 z-[-1] h-72 w-72 rounded-full opacity-80 blur-3xl"
-				></motion.div>
-				<motion.div
-					animate={{
-						scale: [1, 1.5, 1],
-						opacity: [0.4, 0.9, 0.4],
-						transition: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-					}}
-					className="bg-primary/60 absolute top-1/2 -left-20 z-[-1] h-64 w-64 rounded-full opacity-80 blur-3xl"
-				></motion.div>
+				<BackgroundBlur />
 
 				<div className="container mx-auto px-4 py-24 sm:py-32 relative z-10 flex-1 flex flex-col">
 					<div className="mx-auto max-w-4xl text-center flex-1 flex flex-col justify-center">

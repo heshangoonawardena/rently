@@ -1,5 +1,6 @@
 "use client";
 
+import BackgroundBlur from "./background-blur";
 import { useState } from "react";
 import { Plus, Minus, Sparkle, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -45,22 +46,7 @@ export function FAQSection() {
 	return (
 		<section id="faq" className="relative overflow-hidden pb-120 pt-24">
 			{/* Background blur effects */}
-			<motion.div
-				animate={{
-					scale: [1, 1.5, 1],
-					opacity: [0.4, 0.9, 0.4],
-					transition: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-				}}
-				className="bg-primary/60 absolute top-1/8 -right-20 z-[-1] h-72 w-72 rounded-full opacity-80 blur-3xl"
-			></motion.div>
-			<motion.div
-				animate={{
-					scale: [1, 1.5, 1],
-					opacity: [0.4, 0.9, 0.4],
-					transition: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-				}}
-				className="bg-primary/60 absolute top-1/2 -left-20 z-[-1] h-64 w-64 rounded-full opacity-80 blur-3xl"
-			></motion.div>
+			<BackgroundBlur />
 
 			<div className="z-10 container mx-auto px-4">
 				<motion.div
