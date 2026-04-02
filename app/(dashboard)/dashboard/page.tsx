@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import { deleteUser, signOut } from "@/server/users";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 const dashboard = () => {
 	const router = useRouter();
@@ -28,17 +27,6 @@ const dashboard = () => {
 			>
 				Delete User
 			</Button>
-
-			{/* <Button
-				variant="outline"
-				onClick={() => {
-					toast.success(
-						`Account created successfully Please verify your email before signing in`
-					);
-				}}
-			>
-				Test sonner
-			</Button> */}
 		</div>
 	);
 };

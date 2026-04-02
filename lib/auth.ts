@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { organization } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db/db";
 import { schema } from "@/db/schema";
@@ -60,5 +61,5 @@ export const auth = betterAuth({
 			enabled: true,
 		},
 	},
-	plugins: [nextCookies()], // this must be the last in the array
+	plugins: [organization(), nextCookies()], // this must be the last in the array
 });
