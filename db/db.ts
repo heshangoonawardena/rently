@@ -6,6 +6,7 @@
 
 // // for pgAdmin
 // export const db = drizzle(process.env.DATABASE_URL!);
+// export type DB = typeof db;
 
 // for neon
 import { drizzle } from "drizzle-orm/neon-http";
