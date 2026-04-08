@@ -7,6 +7,8 @@ import {
 	date,
 	index,
 	uniqueIndex,
+	serial,
+	integer,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { unit } from "./unit";
@@ -16,11 +18,11 @@ import { leaseStatusEnum } from "./enums";
 export const lease = pgTable(
 	"lease",
 	{
-		id: text("id").primaryKey(),
-		unitId: text("unit_id")
+		id: serial("id").primaryKey(),
+		unitId: integer("unit_id")
 			.notNull()
 			.references(() => unit.id, { onDelete: "restrict" }),
-		tenantId: text("tenant_id")
+		tenantId: integer("tenant_id")
 			.notNull()
 			.references(() => tenant.id, { onDelete: "restrict" }),
 		startDate: date("start_date").notNull(),
@@ -56,8 +58,8 @@ export const lease = pgTable(
 export const leaseRent = pgTable(
 	"lease_rent",
 	{
-		id: text("id").primaryKey(),
-		leaseId: text("lease_id")
+		id: serial("id").primaryKey(),
+		leaseId: integer("lease_id")
 			.notNull()
 			.references(() => lease.id, { onDelete: "cascade" }),
 		rentAmount: numeric("rent_amount", { precision: 12, scale: 2 }).notNull(),

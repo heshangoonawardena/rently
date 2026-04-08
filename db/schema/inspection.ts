@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, date, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, date, index, serial, integer } from "drizzle-orm/pg-core";
 import { unit } from "./unit";
 import { user } from "./auth";
 import { inspectionStatusEnum } from "./enums";
@@ -7,8 +7,8 @@ import { inspectionStatusEnum } from "./enums";
 export const inspection = pgTable(
 	"inspection",
 	{
-		id: text("id").primaryKey(),
-		unitId: text("unit_id")
+		id: serial("id").primaryKey(),
+		unitId: integer("unit_id")
 			.notNull()
 			.references(() => unit.id, { onDelete: "restrict" }),
 		userId: text("user_id")

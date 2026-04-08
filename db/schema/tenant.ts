@@ -1,11 +1,11 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, index, serial, integer } from "drizzle-orm/pg-core";
 import { organization, user } from "./auth";
 
 export const tenant = pgTable(
 	"tenant",
 	{
-		id: text("id").primaryKey(),
+		id: serial("id").primaryKey(),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
@@ -36,8 +36,8 @@ export const tenant = pgTable(
 export const tenantOccupant = pgTable(
 	"tenant_occupant",
 	{
-		id: text("id").primaryKey(),
-		tenantId: text("tenant_id")
+		id: serial("id").primaryKey(),
+		tenantId: integer("tenant_id")
 			.notNull()
 			.references(() => tenant.id, { onDelete: "cascade" }),
 		fullName: text("full_name").notNull(),
