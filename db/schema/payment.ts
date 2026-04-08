@@ -6,6 +6,8 @@ import {
 	numeric,
 	date,
 	index,
+	integer,
+	serial,
 } from "drizzle-orm/pg-core";
 import { lease } from "./lease";
 import { paymentTypeEnum, paymentMethodEnum } from "./enums";
@@ -13,8 +15,8 @@ import { paymentTypeEnum, paymentMethodEnum } from "./enums";
 export const payment = pgTable(
 	"payment",
 	{
-		id: text("id").primaryKey(),
-		leaseId: text("lease_id")
+		id: serial("id").primaryKey(),
+		leaseId: integer("lease_id")
 			.notNull()
 			.references(() => lease.id, { onDelete: "restrict" }),
 		paymentType: paymentTypeEnum("payment_type").notNull(),
@@ -52,8 +54,8 @@ export const payment = pgTable(
 export const paymentReceipt = pgTable(
 	"payment_receipt",
 	{
-		id: text("id").primaryKey(),
-		paymentId: text("payment_id")
+		id: serial("id").primaryKey(),
+		paymentId: integer("payment_id")
 			.notNull()
 			.unique()
 			.references(() => payment.id, { onDelete: "restrict" }),

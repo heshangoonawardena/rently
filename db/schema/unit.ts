@@ -1,12 +1,12 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, index, serial } from "drizzle-orm/pg-core";
 import { organization } from "./auth";
 import { unitTypeEnum, unitStatusEnum, utilityBillingModeEnum } from "./enums";
 
 export const unit = pgTable(
 	"unit",
 	{
-		id: text("id").primaryKey(),
+		id: serial("id").primaryKey(),
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),

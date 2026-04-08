@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, index, serial, integer } from "drizzle-orm/pg-core";
 import { unit } from "./unit";
 import { user } from "./auth";
 import { repairTypeEnum, repairPriorityEnum, repairStatusEnum } from "./enums";
@@ -7,8 +7,8 @@ import { repairTypeEnum, repairPriorityEnum, repairStatusEnum } from "./enums";
 export const repairRequest = pgTable(
 	"repair_request",
 	{
-		id: text("id").primaryKey(),
-		unitId: text("unit_id")
+		id: serial("id").primaryKey(),
+		unitId: integer("unit_id")
 			.notNull()
 			.references(() => unit.id, { onDelete: "restrict" }),
 		// Any logged-in user can raise a repair — tenant, manager, or owner
@@ -38,8 +38,8 @@ export const repairRequest = pgTable(
 export const repairUpdate = pgTable(
 	"repair_update",
 	{
-		id: text("id").primaryKey(),
-		repairRequestId: text("repair_request_id")
+		id: serial("id").primaryKey(),
+		repairRequestId: integer("repair_request_id")
 			.notNull()
 			.references(() => repairRequest.id, { onDelete: "cascade" }),
 		// Who made this update (manager or owner)

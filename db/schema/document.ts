@@ -1,5 +1,13 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, date, index } from "drizzle-orm/pg-core";
+import {
+	pgTable,
+	text,
+	timestamp,
+	date,
+	index,
+	serial,
+	integer,
+} from "drizzle-orm/pg-core";
 import { unit } from "./unit";
 import { tenant, tenantOccupant } from "./tenant";
 import { lease } from "./lease";
@@ -11,8 +19,8 @@ import { documentStatusEnum } from "./enums";
 export const unitDocument = pgTable(
 	"unit_document",
 	{
-		id: text("id").primaryKey(),
-		unitId: text("unit_id")
+		id: serial("id").primaryKey(),
+		unitId: integer("unit_id")
 			.notNull()
 			.references(() => unit.id, { onDelete: "cascade" }),
 		documentType: text("document_type").notNull(),
@@ -38,11 +46,11 @@ export const unitDocument = pgTable(
 export const tenantDocument = pgTable(
 	"tenant_document",
 	{
-		id: text("id").primaryKey(),
-		tenantId: text("tenant_id")
+		id: serial("id").primaryKey(),
+		tenantId: integer("tenant_id")
 			.notNull()
 			.references(() => tenant.id, { onDelete: "cascade" }),
-		tenantOccupantId: text("tenant_occupant_id").references(
+		tenantOccupantId: integer("tenant_occupant_id").references(
 			() => tenantOccupant.id,
 			{ onDelete: "set null" },
 		),
@@ -68,8 +76,8 @@ export const tenantDocument = pgTable(
 export const leaseDocument = pgTable(
 	"lease_document",
 	{
-		id: text("id").primaryKey(),
-		leaseId: text("lease_id")
+		id: serial("id").primaryKey(),
+		leaseId: integer("lease_id")
 			.notNull()
 			.references(() => lease.id, { onDelete: "cascade" }),
 		documentType: text("document_type").notNull(),

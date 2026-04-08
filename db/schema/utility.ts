@@ -6,6 +6,8 @@ import {
 	numeric,
 	date,
 	index,
+	serial,
+	integer,
 } from "drizzle-orm/pg-core";
 import { unit } from "./unit";
 import {
@@ -20,8 +22,8 @@ import {
 export const utility = pgTable(
 	"utility",
 	{
-		id: text("id").primaryKey(),
-		unitId: text("unit_id")
+		id: serial("id").primaryKey(),
+		unitId: integer("unit_id")
 			.notNull()
 			.references(() => unit.id, { onDelete: "cascade" }),
 		utilityType: utilityTypeEnum("utility_type").notNull(),
@@ -45,8 +47,8 @@ export const utility = pgTable(
 export const utilityBill = pgTable(
 	"utility_bill",
 	{
-		id: text("id").primaryKey(),
-		utilityId: text("utility_id")
+		id: serial("id").primaryKey(),
+		utilityId: integer("utility_id")
 			.notNull()
 			.references(() => utility.id, { onDelete: "restrict" }),
 		billAmount: numeric("bill_amount", { precision: 12, scale: 2 }).notNull(),
