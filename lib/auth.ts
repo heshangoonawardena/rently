@@ -15,11 +15,6 @@ export const auth = betterAuth({
 		provider: "pg",
 		schema,
 	}),
-	// advanced: {
-	// 	database: {
-	// 		generateId: false,
-	// 	},
-	// },
 	emailAndPassword: {
 		enabled: true,
 		sendResetPassword: async ({ user, url }) => {
