@@ -7,15 +7,6 @@ export const units = async (db: DB) => {
 	await db.insert(unit).values([
 		{
 			organizationId: organizationData[0].id,
-			name: "Apartment 101",
-			type: "room",
-			address: "123 Main St, Apt 101, Springfield, IL 62701",
-			utilityBillingMode: "tenant_managed",
-			createdAt: new Date(),
-			updatedAt: new Date(),
-		},
-		{
-			organizationId: organizationData[0].id,
 			name: "House A",
 			type: "house",
 			address: "456 Oak Ave, Springfield, IL 62702",

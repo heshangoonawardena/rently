@@ -10,7 +10,7 @@ async function resetTable(db: DB, table: Table) {
 
 async function main() {
 	try {
-		console.log("Starting database seeding...");
+		console.log("🗑️ Resetting database tables...");
 		for (const table of [
 			schema.leaseDocument,
 			schema.tenantDocument,
@@ -35,9 +35,8 @@ async function main() {
 			await resetTable(db, table);
 		}
 
-		console.log("Database resetting completed successfully!");
+		console.log("\n✅ Database reset completed!\n");
 
-		// // Seed in order of dependencies
 		await seeds.auth(db);
 		await seeds.units(db);
 		await seeds.tenants(db);
@@ -48,7 +47,7 @@ async function main() {
 		await seeds.inspections(db);
 		await seeds.documents(db);
 
-		console.log("Database seeding completed successfully!");
+		console.log("🌱 Database seeding completed successfully!");
 	} catch (error) {
 		console.error("Error during seeding:", error);
 		process.exit(1);

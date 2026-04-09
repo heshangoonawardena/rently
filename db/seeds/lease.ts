@@ -9,16 +9,16 @@ export const leases = async (db: DB) => {
 
 	await db.insert(lease).values([
 		{
-			unitId: unitData[0].id,
 			tenantId: tenantData[0].id,
+			unitId: unitData[0].id,
 			startDate: new Date().toISOString().split("T")[0],
 			depositAmount: "1000",
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		},
 		{
+			tenantId: tenantData[0].id,
 			unitId: unitData[1].id,
-			tenantId: tenantData[1].id,
 			startDate: new Date().toISOString().split("T")[0],
 			depositAmount: "2000",
 			createdAt: new Date(),

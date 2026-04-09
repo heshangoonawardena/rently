@@ -21,7 +21,7 @@ export const repairs = async (db: DB) => {
 		},
 		{
 			unitId: unitData[1].id,
-			userId: userData[0].id,
+			userId: userData[1].id,
 			repairType: "electrical",
 			title: "Broken Light Switch",
 			description: "Light switch in living room is not working",
@@ -37,7 +37,7 @@ export const repairs = async (db: DB) => {
 	await db.insert(repairUpdate).values([
 		{
 			repairRequestId: repairRequestData[0].id,
-			userId: userData[0].id,
+			userId: userData[1].id,
 			oldStatus: "open",
 			newStatus: "in_progress",
 			createdAt: new Date(),
@@ -45,7 +45,7 @@ export const repairs = async (db: DB) => {
 		},
 		{
 			repairRequestId: repairRequestData[1].id,
-			userId: userData[0].id,
+			userId: userData[1].id,
 			oldStatus: "in_progress",
 			newStatus: "resolved",
 			createdAt: new Date(),

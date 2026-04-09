@@ -1,5 +1,5 @@
 added seeding. Have some issues ->
-- seeding done.
+- changed seeding files. check correction
 - watch and implement method in https://youtu.be/vyU5mJGCJMw?t=3140&si=Ei6cmrlLn25I0obs
 - truncate issue due to not setting cascade delete correctly
 - haven't pushed since seed file creation

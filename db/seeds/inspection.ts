@@ -20,7 +20,7 @@ export const inspections = async (db: DB) => {
 		},
 		{
 			unitId: unitData[1].id,
-			userId: userData[0].id,
+			userId: userData[1].id,
 			title: "Move-out Inspection",
 			scheduledDate: "2024-01-01",
 			status: "scheduled",

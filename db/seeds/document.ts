@@ -39,7 +39,6 @@ export const documents = async (db: DB) => {
 	await db.insert(tenantDocument).values([
 		{
 			tenantId: tenantData[0].id,
-			tenantOccupantId: tenantOccupantData[0].id,
 			documentType: "identification",
 			label: "ID Card",
 			storageKey: "/documents/id-alice-williams.pdf",
@@ -48,7 +47,8 @@ export const documents = async (db: DB) => {
 			updatedAt: new Date(),
 		},
 		{
-			tenantId: tenantData[1].id,
+			tenantId: tenantData[0].id,
+			tenantOccupantId: tenantOccupantData[0].id,
 			documentType: "identification",
 			label: "Passport",
 			storageKey: "/documents/id-alice-williams.pdf",
@@ -63,8 +63,8 @@ export const documents = async (db: DB) => {
 	await db.insert(leaseDocument).values([
 		{
 			leaseId: leaseData[0].id,
-			documentType: "identification",
-			label: "ID Card",
+			documentType: "agreement",
+			label: "agreement copy",
 			storageKey: "/documents/id-alice-williams.pdf",
 			documentDate: "2023-12-01",
 			status: "active",
@@ -73,8 +73,8 @@ export const documents = async (db: DB) => {
 		},
 		{
 			leaseId: leaseData[1].id,
-			documentType: "identification",
-			label: "Passport",
+			documentType: "agreement",
+			label: "agreement copy",
 			storageKey: "/documents/id-alice-williams.pdf",
 			documentDate: "2023-12-01",
 			status: "expired",
