@@ -23,7 +23,7 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		sendResetPassword: async ({ user, url }) => {
-			// Send reset password email (online)
+			// Send reset password email (online) 👇
 			await resend.emails.send({
 				from: "Rently <rently@resend.dev>",
 				to: user.email,
@@ -35,14 +35,15 @@ export const auth = betterAuth({
 				}),
 			});
 
-			// For development purposes (offline)
+			// For development purposes (offline) 👇
 			console.log("Reset password URL:", url);
 		},
 		// requireEmailVerification: true,
 	},
+	// if requireEmailVerification is true, email must verify before logging in
 	emailVerification: {
 		sendVerificationEmail: async ({ user, url }) => {
-			// Send verify email url (online)
+			// Send verify email url (online) 👇
 			await resend.emails.send({
 				from: "Rently <rently@resend.dev>",
 				to: user.email,
@@ -54,7 +55,7 @@ export const auth = betterAuth({
 				}),
 			});
 
-			// For development purposes (offline)
+			// For development purposes (offline) 👇
 			console.log("Email verification URL:", url);
 		},
 		sendOnSignUp: true,
