@@ -1,8 +1,21 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, index, serial, integer } from "drizzle-orm/pg-core";
+import {
+	pgTable,
+	text,
+	timestamp,
+	index,
+	serial,
+	integer,
+} from "drizzle-orm/pg-core";
 import { unit } from "./unit";
 import { user } from "./auth";
 import { repairTypeEnum, repairPriorityEnum, repairStatusEnum } from "./enums";
+import z from "zod";
+import {
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
+} from "drizzle-zod";
 
 export const repairRequest = pgTable(
 	"repair_request",
@@ -60,6 +73,26 @@ export const repairUpdate = pgTable(
 		index("repair_update_userId_idx").on(table.userId),
 	],
 );
+
+// repair request schema
+export const selectRepairRequestSchema = createSelectSchema(repairRequest);
+export type RepairRequest = z.infer<typeof selectRepairRequestSchema>;
+
+export const insertRepairRequestSchema = createInsertSchema(repairRequest);
+export type InsertRepairRequest = z.infer<typeof insertRepairRequestSchema>;
+
+export const updateRepairRequestSchema = createUpdateSchema(repairRequest);
+export type UpdateRepairRequest = z.infer<typeof updateRepairRequestSchema>;
+
+// repair update schema
+export const selectRepairUpdateSchema = createSelectSchema(repairUpdate);
+export type RepairUpdate = z.infer<typeof selectRepairUpdateSchema>;
+
+export const insertRepairUpdateSchema = createInsertSchema(repairUpdate);
+export type InsertRepairUpdate = z.infer<typeof insertRepairUpdateSchema>;
+
+export const updateRepairUpdateSchema = createUpdateSchema(repairUpdate);
+export type UpdateRepairUpdate = z.infer<typeof updateRepairUpdateSchema>;
 
 // ============================================================
 // RELATIONS

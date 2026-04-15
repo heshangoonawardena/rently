@@ -77,6 +77,28 @@ export const leaseRent = pgTable(
 	],
 );
 
+// lease schema
+
+export const selectLeaseSchema = createSelectSchema(lease);
+export type Lease = z.infer<typeof selectLeaseSchema>;
+
+export const insertLeaseSchema = createInsertSchema(lease);
+export type InsertLease = z.infer<typeof insertLeaseSchema>;
+
+export const updateLeaseSchema = createUpdateSchema(lease);
+export type UpdateLease = z.infer<typeof updateLeaseSchema>;
+
+// lease rent schemas
+
+export const selectLeaseRentSchema = createSelectSchema(leaseRent);
+export type LeaseRent = z.infer<typeof selectLeaseRentSchema>;
+
+export const insertLeaseRentSchema = createInsertSchema(leaseRent);
+export type InsertLeaseRent = z.infer<typeof insertLeaseRentSchema>;
+
+export const updateLeaseRentSchema = createUpdateSchema(leaseRent);
+export type UpdateLeaseRent = z.infer<typeof updateLeaseRentSchema>;
+
 // ============================================================
 // RELATIONS
 // ============================================================
@@ -104,3 +126,9 @@ export const leaseRentRelations = relations(leaseRent, ({ one }) => ({
 
 import { payment } from "./payment";
 import { leaseDocument } from "./document";
+import {
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
+} from "drizzle-zod";
+import z from "zod";

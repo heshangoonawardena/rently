@@ -15,6 +15,12 @@ import {
 	utilityStatusEnum,
 	utilityBillStatusEnum,
 } from "./enums";
+import {
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
+} from "drizzle-zod";
+import z from "zod";
 
 // Represents a physical utility account on a unit (electricity, water account).
 // Tied to the unit, not the lease. When a tenant changes and the utility
@@ -73,6 +79,26 @@ export const utilityBill = pgTable(
 		index("utility_bill_period_idx").on(table.periodStart, table.periodEnd),
 	],
 );
+
+// utility schema
+export const selectUtilitySchema = createSelectSchema(utility);
+export type Utility = z.infer<typeof selectUtilitySchema>;
+
+export const insertUtilitySchema = createInsertSchema(utility);
+export type InsertUtility = z.infer<typeof insertUtilitySchema>;
+
+export const updateUtilitySchema = createUpdateSchema(utility);
+export type UpdateUtility = z.infer<typeof updateUtilitySchema>;
+
+// utility bill schema
+export const selectUtilityBillSchema = createSelectSchema(utilityBill);
+export type UtilityBill = z.infer<typeof selectUtilityBillSchema>;
+
+export const insertUtilityBillSchema = createInsertSchema(utilityBill);
+export type InsertUtilityBill = z.infer<typeof insertUtilityBillSchema>;
+
+export const updateUtilityBillSchema = createUpdateSchema(utilityBill);
+export type UpdateUtilityBill = z.infer<typeof updateUtilityBillSchema>;
 
 // ============================================================
 // RELATIONS

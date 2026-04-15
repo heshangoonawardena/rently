@@ -2,6 +2,12 @@ import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, index, serial } from "drizzle-orm/pg-core";
 import { organization } from "./auth";
 import { unitTypeEnum, unitStatusEnum, utilityBillingModeEnum } from "./enums";
+import {
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
+} from "drizzle-zod";
+import z from "zod";
 
 export const unit = pgTable(
 	"unit",
@@ -26,6 +32,15 @@ export const unit = pgTable(
 	},
 	(table) => [index("unit_orgId_idx").on(table.organizationId)],
 );
+
+export const selectUnitSchema = createSelectSchema(unit);
+export type Unit = z.infer<typeof selectUnitSchema>;
+
+export const insertUnitSchema = createInsertSchema(unit);
+export type InsertUnit = z.infer<typeof insertUnitSchema>;
+
+export const updateUnitSchema = createUpdateSchema(unit);
+export type UpdateUnit = z.infer<typeof updateUnitSchema>;
 
 // ============================================================
 // RELATIONS

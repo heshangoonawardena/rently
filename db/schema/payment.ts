@@ -11,6 +11,12 @@ import {
 } from "drizzle-orm/pg-core";
 import { lease } from "./lease";
 import { paymentTypeEnum, paymentMethodEnum } from "./enums";
+import {
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
+} from "drizzle-zod";
+import z from "zod";
 
 export const payment = pgTable(
 	"payment",
@@ -76,6 +82,26 @@ export const paymentReceipt = pgTable(
 	},
 	(table) => [index("payment_receiptNumber_idx").on(table.receiptNumber)],
 );
+
+// payment schema
+export const selectPaymentSchema = createSelectSchema(payment);
+export type Payment = z.infer<typeof selectPaymentSchema>;
+
+export const insertPaymentSchema = createInsertSchema(payment);
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+
+export const updatePaymentSchema = createUpdateSchema(payment);
+export type UpdatePayment = z.infer<typeof updatePaymentSchema>;
+
+// payment receipt schema
+export const selectPaymentReceiptSchema = createSelectSchema(paymentReceipt);
+export type PaymentReceipt = z.infer<typeof selectPaymentReceiptSchema>;
+
+export const insertPaymentReceiptSchema = createInsertSchema(paymentReceipt);
+export type InsertPaymentReceipt = z.infer<typeof insertPaymentReceiptSchema>;
+
+export const updatePaymentReceiptSchema = createUpdateSchema(paymentReceipt);
+export type UpdatePaymentReceipt = z.infer<typeof updatePaymentReceiptSchema>;
 
 // ============================================================
 // RELATIONS

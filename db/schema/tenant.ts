@@ -1,5 +1,12 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, index, serial, integer } from "drizzle-orm/pg-core";
+import {
+	pgTable,
+	text,
+	timestamp,
+	index,
+	serial,
+	integer,
+} from "drizzle-orm/pg-core";
 import { organization, user } from "./auth";
 
 export const tenant = pgTable(
@@ -53,6 +60,26 @@ export const tenantOccupant = pgTable(
 	(table) => [index("tenant_occupant_tenantId_idx").on(table.tenantId)],
 );
 
+// tenant schema
+export const selectTenantSchema = createSelectSchema(tenant);
+export type Tenant = z.infer<typeof selectTenantSchema>;
+
+export const insertTenantSchema = createInsertSchema(tenant);
+export type InsertTenant = z.infer<typeof insertTenantSchema>;
+
+export const updateTenantSchema = createUpdateSchema(tenant);
+export type UpdateTenant = z.infer<typeof updateTenantSchema>;
+
+// tenant occupant schema
+export const selectTenantOccupantSchema = createSelectSchema(tenantOccupant);
+export type TenantOccupant = z.infer<typeof selectTenantOccupantSchema>;
+
+export const insertTenantOccupantSchema = createInsertSchema(tenantOccupant);
+export type InsertTenantOccupant = z.infer<typeof insertTenantOccupantSchema>;
+
+export const updateTenantOccupantSchema = createUpdateSchema(tenantOccupant);
+export type UpdateTenantOccupant = z.infer<typeof updateTenantOccupantSchema>;
+
 // ============================================================
 // RELATIONS
 // ============================================================
@@ -84,3 +111,9 @@ export const tenantOccupantRelations = relations(
 
 import { lease } from "./lease";
 import { tenantDocument } from "./document";
+import {
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
+} from "drizzle-zod";
+import z from "zod";
