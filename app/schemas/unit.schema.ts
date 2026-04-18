@@ -10,6 +10,11 @@ import { unitStatusEnum } from "@/db/schema/enums";
 
 export const UnitOutput = selectUnitSchema;
 
+export const UnitListOutput = z.object({
+	items: z.array(UnitOutput),
+	nextCursor: z.number().positive().nullable(),
+});
+
 // ── Input schemas ──
 
 export const CreateUnit = insertUnitSchema.omit({
@@ -19,8 +24,6 @@ export const CreateUnit = insertUnitSchema.omit({
 	updatedAt: true,
 });
 
-// ── Alter schemas ──
-
 export const UpdateUnit = updateUnitSchema
 	.omit({
 		organizationId: true,
@@ -28,34 +31,15 @@ export const UpdateUnit = updateUnitSchema
 		updatedAt: true,
 	})
 	.extend({
-		id: z.number().int().positive(),
+		id: z.number(),
 	});
 
-// ── Filter schemas ──
+export const DeleteUnit = z.object({
+	id: z.number(),
+});
 
-export const ListUnit = z.object({
+export const ListUnitInput = z.object({
 	cursor: z.number().positive().nullable(),
 	limit: z.number().int().min(1).max(100).default(20),
-	status: unitStatusEnum.enumValues
-		? z.enum(unitStatusEnum.enumValues).optional()
-		: z.string().optional(),
-	items: z.array(UnitOutput),
+	status: z.enum(unitStatusEnum.enumValues).optional(),
 });
-
-// ── Delete schemas ──
-
-export const DeleteUnit = z.object({
-	id: z.number().int().positive(),
-});
-
-// export const GetBySlugInput = z.object({
-// 	slug: z.string().min(1).max(100),
-// });
-
-// export const ListTutorialsInput = z.object({
-// 	cursor: z.uuid().optional(),
-// 	limit: z.number().int().min(1).max(100).default(20),
-// 	status: TutorialStatusEnum.exclude(["Archived"]).optional(),
-// 	tag: z.string().min(1).optional(),
-// 	authorId: z.string().optional(),
-// });
