@@ -22,6 +22,14 @@ export const auth = async (db: DB) => {
 				createdAt: new Date(),
 				updatedAt: new Date(),
 			},
+			{
+				id: "zP41e7ZCZBMFpOKA2CwIno0cHmulr9AQ",
+				name: "Marcus",
+				email: "heshangoonawardena3@gmail.com",
+				emailVerified: false,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			},
 		])
 		.returning();
 
@@ -42,6 +50,14 @@ export const auth = async (db: DB) => {
 			createdAt: new Date(),
 			updatedAt: new Date(),
 			userId: users[1].id,
+		},
+		{
+			id: "5ONSttp4imp98et8tyChyAT6F3xtL9K5",
+			expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days from now
+			token: "xPm0J4TxadiwN8sLUL6RqVaydESpP6Ol",
+			createdAt: new Date(),
+			updatedAt: new Date(),
+			userId: users[2].id,
 		},
 	]);
 
@@ -64,6 +80,16 @@ export const auth = async (db: DB) => {
 			userId: users[1].id,
 			password:
 				"c984f4958136e1d639eceef6d449163c:ebeb29ed80ac79c9857ec8763cab0f584165e882f2665e7d34e482d091792584389496d7124cb8506b5740e45bc95ee672fcb3c6c41aacbb21b722f8a4905ffb",
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		},
+		{
+			id: "Pq2NAfHsn9tfUSwdPjTaKdaKt7WxAUTZ",
+			accountId: users[2].id,
+			providerId: "credential",
+			userId: users[2].id,
+			password:
+				"0bf153c5990be4bbc4af9866024a141c:63804676a3bfd7d2c3cf8e313fe630922efe99dc7961d054b040edea1aaa6f718ede64c6ec1ecb741a1f72ef7206bc174d62abf34789513c7d15c3004b28ee58",
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		},
@@ -94,8 +120,14 @@ export const auth = async (db: DB) => {
 		{
 			id: "member_2",
 			organizationId: organizations[0].id,
+			userId: users[2].id,
+			role: "manager",
+			createdAt: new Date(),
+		},
+		{
+			id: "member_3",
+			organizationId: organizations[0].id,
 			userId: users[1].id,
-			role: "tenant",
 			createdAt: new Date(),
 		},
 	]);
