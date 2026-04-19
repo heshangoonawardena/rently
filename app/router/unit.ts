@@ -3,12 +3,17 @@ import { contract } from "../contract";
 import { db } from "@/db/db";
 import { unit } from "@/db/schema/unit";
 import { and, desc, eq, gt } from "drizzle-orm";
-import { authMiddleware, BaseContext } from "./middleware";
+import {
+	authMiddleware,
+	BaseContext,
+	permissionMiddleware,
+} from "./middleware";
 
 const os = implement(contract).$context<BaseContext>();
 
 export const createUnit = os.unit.create
 	.use(authMiddleware)
+	.use(permissionMiddleware({ unit: ["create"] }))
 	.handler(async ({ input, errors, context }) => {
 		const existing = await db
 			.select({
@@ -39,6 +44,7 @@ export const createUnit = os.unit.create
 
 export const updateUnit = os.unit.update
 	.use(authMiddleware)
+	.use(permissionMiddleware({ unit: ["update"] }))
 	.handler(async ({ input, errors, context }) => {
 		const { id, ...updates } = input;
 
@@ -63,6 +69,7 @@ export const updateUnit = os.unit.update
 
 export const deleteUnit = os.unit.delete
 	.use(authMiddleware)
+	.use(permissionMiddleware({ unit: ["delete"] }))
 	.handler(async ({ input, errors, context }) => {
 		const existing = await db.select().from(unit).where(eq(unit.id, input.id));
 
@@ -87,6 +94,7 @@ export const deleteUnit = os.unit.delete
 
 export const listUnit = os.unit.list
 	.use(authMiddleware)
+	.use(permissionMiddleware({ unit: ["read"] }))
 	.handler(async ({ input }) => {
 		const { cursor, limit, status } = input;
 

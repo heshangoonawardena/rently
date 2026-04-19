@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db/db";
 import { member } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
+import { statement } from "@/lib/auth/permissions";
 
 export interface AuthedUser {
 	id: string;
@@ -21,7 +22,6 @@ export interface AuthedContext extends BaseContext {
 
 const os = implement(contract).$context<BaseContext>();
 
-// Validates the better-auth session cookie
 export const authMiddleware = os
 	.$context<BaseContext>()
 	.middleware(async ({ context, next, errors }) => {
@@ -33,7 +33,6 @@ export const authMiddleware = os
 			throw errors.UNAUTHORIZED();
 		}
 
-		// Resolve the user's active org membership
 		const activeOrgId = session.session.activeOrganizationId;
 
 		if (!activeOrgId) {
@@ -64,4 +63,22 @@ export const authMiddleware = os
 				},
 			},
 		});
+	});
+
+export const permissionMiddleware = (permissions: {
+	[K in keyof typeof statement]?: (typeof statement)[K][number][];
+}) =>
+	os.$context<AuthedContext>().middleware(async ({ context, next, errors }) => {
+		const result = await auth.api.hasPermission({
+			headers: context.headers,
+			body: {
+				permissions,
+			},
+		});
+
+		if (!result.success) {
+			throw errors.FORBIDDEN();
+		}
+
+		return next({ context });
 	});

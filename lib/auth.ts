@@ -7,6 +7,7 @@ import { nextCookies } from "better-auth/next-js";
 import { Resend } from "resend";
 import { ForgotPasswordEmail } from "@/components/emails/reset-password";
 import { EmailVerification } from "@/components/emails/verify-email";
+import { ac, manager, owner, tenant } from "./auth/permissions";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -62,5 +63,15 @@ export const auth = betterAuth({
 			enabled: true,
 		},
 	},
-	plugins: [organization(), nextCookies()], // this must be the last in the array
+	plugins: [
+		organization({
+			ac,
+			roles: {
+				owner,
+				manager,
+				tenant,
+			},
+		}),
+		nextCookies(),
+	], // this must be the last in the array
 });
