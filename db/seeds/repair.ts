@@ -45,7 +45,7 @@ export const repairs = async (db: DB) => {
 		},
 		{
 			repairRequestId: repairRequestData[1].id,
-			userId: userData[1].id,
+			userId: userData[2].id,
 			oldStatus: "in_progress",
 			newStatus: "resolved",
 			createdAt: new Date(),
