@@ -1,8 +1,14 @@
 import { implement } from "@orpc/server";
 import { contract } from "../contract";
+import { auth } from "@/lib/auth";
+import { db } from "@/db/db";
+import { member } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 
-export interface User {
+export interface AuthedUser {
 	id: string;
+	organizationId: string;
+	role: "owner" | "manager" | "tenant";
 }
 
 export interface BaseContext {
@@ -10,46 +16,52 @@ export interface BaseContext {
 }
 
 export interface AuthedContext extends BaseContext {
-	user: User;
+	user: AuthedUser;
 }
 
-export interface OptionalAuthContext extends BaseContext {
-	user: User | null;
-}
+const os = implement(contract).$context<BaseContext>();
 
-
-/**
- * Extracts a user from the Bearer token. In production this would verify a JWT
- * or look up a session. For demo purposes we treat the token as the userId.
- */
-function parseToken(authorization: string | null): User | null {
-  if (!authorization) return null;
-  const token = authorization.split(" ")[1];
-  if (!token) return null;
-  return { id: token };
-}
-
-const os = implement(contract);
-
-/**
- * Requires a valid Bearer token. Throws UNAUTHORIZED if missing.
- */
+// Validates the better-auth session cookie
 export const authMiddleware = os
-  .$context<BaseContext>()
-  .middleware(async ({ context, next, errors }) => {
-    const user = parseToken(context.headers.get("authorization"));
-    if (!user) {
-      throw errors.UNAUTHORIZED();
-    }
-    return next({ context: { user } });
-  });
+	.$context<BaseContext>()
+	.middleware(async ({ context, next, errors }) => {
+		const session = await auth.api.getSession({
+			headers: context.headers,
+		});
 
-/**
- * Optionally resolves a user from the Bearer token. Sets user to null if absent.
- */
-export const optionalAuthMiddleware = os
-  .$context<BaseContext>()
-  .middleware(async ({ context, next }) => {
-    const user = parseToken(context.headers.get("authorization"));
-    return next({ context: { user } });
-  });
+		if (!session?.user || !session?.session) {
+			throw errors.UNAUTHORIZED();
+		}
+
+		// Resolve the user's active org membership
+		const activeOrgId = session.session.activeOrganizationId;
+
+		if (!activeOrgId) {
+			throw errors.UNAUTHORIZED();
+		}
+
+		const [membership] = await db
+			.select()
+			.from(member)
+			.where(
+				and(
+					eq(member.userId, session.user.id),
+					eq(member.organizationId, activeOrgId),
+				),
+			)
+			.limit(1);
+
+		if (!membership) {
+			throw errors.FORBIDDEN();
+		}
+
+		return next({
+			context: {
+				user: {
+					id: session.user.id,
+					organizationId: activeOrgId,
+					role: membership.role as AuthedUser["role"],
+				},
+			},
+		});
+	});
