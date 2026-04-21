@@ -21,12 +21,14 @@ export const tenant = pgTable(
 		userId: text("user_id").references(() => user.id, {
 			onDelete: "set null",
 		}),
-		fullName: text("full_name").notNull(),
-		nickname: text("nickname"),
+		firstName: text("first_name").notNull(),
+		lastName: text("last_name"),
+		nickname: text("nickname").unique(),
 		address: text("address"),
 		nic: text("nic").notNull().unique(),
 		phoneNumber: text("phone_number").notNull().unique(),
 		occupation: text("occupation"),
+		status: tenantStatusEnum("status").default("pending").notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()
@@ -47,7 +49,8 @@ export const tenantOccupant = pgTable(
 		tenantId: integer("tenant_id")
 			.notNull()
 			.references(() => tenant.id, { onDelete: "cascade" }),
-		fullName: text("full_name").notNull(),
+		firstName: text("first_name").notNull(),
+		lastName: text("last_name"),
 		nic: text("nic"),
 		relationship: text("relationship").notNull(),
 		phone: text("phone"),
@@ -117,3 +120,4 @@ import {
 	createUpdateSchema,
 } from "drizzle-zod";
 import z from "zod";
+import { tenantStatusEnum } from "./enums";

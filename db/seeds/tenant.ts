@@ -11,7 +11,7 @@ export const tenants = async (db: DB) => {
 		{
 			organizationId: organizationData[0].id,
 			userId: userData[1].id,
-			fullName: "Alice",
+			firstName: "Alice",
 			nic: "200000000000",
 			phoneNumber: "+94764468108",
 			createdAt: new Date(),
@@ -24,7 +24,7 @@ export const tenants = async (db: DB) => {
 	await db.insert(tenantOccupant).values([
 		{
 			tenantId: tenantData[0].id,
-			fullName: "Bob",
+			firstName: "Bob",
 			nic: "2000000000012",
 			relationship: "Spouse",
 			phone: "94764468109",

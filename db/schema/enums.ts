@@ -14,6 +14,13 @@ export const unitStatusEnum = pgEnum("unit_status", [
   "inactive",
 ]);
 
+export const tenantStatusEnum = pgEnum("tenant_status", [
+	"active",
+	"inactive",
+	"pending",
+	"evicted",
+]);
+
 export const utilityBillingModeEnum = pgEnum("utility_billing_mode", [
   "tenant_managed",
   "fixed_charge",
