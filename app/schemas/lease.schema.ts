@@ -1,61 +1,43 @@
 import z from "zod";
-import { leaseStatusEnum } from "@/db/schema/enums";
 import {
 	insertLeaseSchema,
 	selectLeaseSchema,
 	updateLeaseSchema,
 } from "@/db/schema/lease";
+import { leaseStatusEnum } from "@/db/schema/enums";
 
 // ── Output schemas ──
 
 export const LeaseOutput = selectLeaseSchema;
 
+export const LeaseListOutput = z.object({
+	items: z.array(LeaseOutput),
+	nextCursor: z.number().positive().nullable(),
+});
+
 // ── Input schemas ──
 
 export const CreateLease = insertLeaseSchema.omit({
 	id: true,
-	organizationId: true,
 	createdAt: true,
 	updatedAt: true,
 });
 
-// ── Alter schemas ──
-
 export const UpdateLease = updateLeaseSchema
 	.omit({
-		organizationId: true,
 		createdAt: true,
 		updatedAt: true,
 	})
 	.extend({
-		id: z.number().int().positive(),
+		id: z.number(),
 	});
 
-// ── Filter schemas ──
+export const DeleteLease = z.object({
+	id: z.number(),
+});
 
-export const ListLease = z.object({
+export const ListLeaseInput = z.object({
 	cursor: z.number().positive().nullable(),
 	limit: z.number().int().min(1).max(100).default(20),
-	status: leaseStatusEnum.enumValues
-		? z.enum(leaseStatusEnum.enumValues).optional()
-		: z.string().optional(),
-	items: z.array(LeaseOutput),
+	status: z.enum(leaseStatusEnum.enumValues).optional(),
 });
-
-// ── Delete schemas ──
-
-export const DeleteLease = z.object({
-	id: z.number().int().positive(),
-});
-
-// export const GetBySlugInput = z.object({
-// 	slug: z.string().min(1).max(100),
-// });
-
-// export const ListTutorialsInput = z.object({
-// 	cursor: z.uuid().optional(),
-// 	limit: z.number().int().min(1).max(100).default(20),
-// 	status: TutorialStatusEnum.exclude(["Archived"]).optional(),
-// 	tag: z.string().min(1).optional(),
-// 	authorId: z.string().optional(),
-// });

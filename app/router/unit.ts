@@ -15,7 +15,7 @@ export const createUnit = os.unit.create
 	.use(authMiddleware)
 	.use(permissionMiddleware({ unit: ["create"] }))
 	.handler(async ({ input, errors, context }) => {
-		const existing = await db
+		const [existing] = await db
 			.select({
 				id: unit.id,
 			})
@@ -35,7 +35,7 @@ export const createUnit = os.unit.create
 			.insert(unit)
 			.values({
 				...input,
-				organizationId: "1",
+				organizationId: "1", // set the active organization ID here
 			})
 			.returning();
 
@@ -71,7 +71,7 @@ export const deleteUnit = os.unit.delete
 	.use(authMiddleware)
 	.use(permissionMiddleware({ unit: ["delete"] }))
 	.handler(async ({ input, errors, context }) => {
-		const existing = await db.select().from(unit).where(eq(unit.id, input.id));
+		const [existing] = await db.select().from(unit).where(eq(unit.id, input.id));
 
 		if (!existing) {
 			throw errors.NOT_FOUND({

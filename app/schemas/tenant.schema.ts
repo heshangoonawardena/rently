@@ -4,10 +4,16 @@ import {
 	selectTenantSchema,
 	updateTenantSchema,
 } from "@/db/schema/tenant";
+import { tenantStatusEnum } from "@/db/schema/enums";
 
 // ── Output schemas ──
 
 export const TenantOutput = selectTenantSchema;
+
+export const TenantListOutput = z.object({
+	items: z.array(TenantOutput),
+	nextCursor: z.number().positive().nullable(),
+});
 
 // ── Input schemas ──
 
@@ -19,8 +25,6 @@ export const CreateTenant = insertTenantSchema.omit({
 	updatedAt: true,
 });
 
-// ── Alter schemas ──
-
 export const UpdateTenant = updateTenantSchema
 	.omit({
 		organizationId: true,
@@ -29,31 +33,15 @@ export const UpdateTenant = updateTenantSchema
 		updatedAt: true,
 	})
 	.extend({
-		id: z.number().int().positive(),
+		id: z.number(),
 	});
 
-// ── Filter schemas ──
+export const DeleteTenant = z.object({
+	id: z.number(),
+});
 
-export const ListTenant = z.object({
+export const ListTenantInput = z.object({
 	cursor: z.number().positive().nullable(),
 	limit: z.number().int().min(1).max(100).default(20),
-	items: z.array(TenantOutput),
+	status: z.enum(tenantStatusEnum.enumValues).optional(),
 });
-
-// ── Delete schemas ──
-
-export const DeleteTenant = z.object({
-	id: z.number().int().positive(),
-});
-
-// export const GetBySlugInput = z.object({
-// 	slug: z.string().min(1).max(100),
-// });
-
-// export const ListTutorialsInput = z.object({
-// 	cursor: z.uuid().optional(),
-// 	limit: z.number().int().min(1).max(100).default(20),
-// 	status: TutorialStatusEnum.exclude(["Archived"]).optional(),
-// 	tag: z.string().min(1).optional(),
-// 	authorId: z.string().optional(),
-// });
