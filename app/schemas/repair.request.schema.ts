@@ -1,5 +1,9 @@
 import z from "zod";
-import { repairStatusEnum } from "@/db/schema/enums";
+import {
+	repairPriorityEnum,
+	repairStatusEnum,
+	repairTypeEnum,
+} from "@/db/schema/enums";
 import {
 	insertRepairRequestSchema,
 	selectRepairRequestSchema,
@@ -10,56 +14,47 @@ import {
 
 export const RepairRequestOutput = selectRepairRequestSchema;
 
+export const ListRepairRequestOutput = z.object({
+	nextCursor: z.number().positive().nullable(),
+	items: z.array(RepairRequestOutput),
+});
+
 // ── Input schemas ──
 
 export const CreateRepairRequest = insertRepairRequestSchema.omit({
 	id: true,
-	unitId: true,
 	userId: true,
 	status: true,
 	createdAt: true,
 	updatedAt: true,
 });
 
-// ── Alter schemas ──
-
 export const UpdateRepairRequest = updateRepairRequestSchema
 	.omit({
-		unitId: true,
 		userId: true,
-		status: true,
 		createdAt: true,
 		updatedAt: true,
 	})
 	.extend({
+		unitId: z.number(),
 		id: z.number().int().positive(),
 	});
 
-// ── Filter schemas ──
-
-export const ListRepairRequest = z.object({
-	cursor: z.number().positive().nullable(),
-	limit: z.number().int().min(1).max(100).default(20),
-	status: repairStatusEnum.enumValues
-		? z.enum(repairStatusEnum.enumValues).optional()
-		: z.string().optional(),
-	items: z.array(RepairRequestOutput),
-});
-
-// ── Delete schemas ──
-
 export const DeleteRepairRequest = z.object({
 	id: z.number().int().positive(),
+	unitId: z.number(),
 });
 
-// export const GetBySlugInput = z.object({
-// 	slug: z.string().min(1).max(100),
-// });
+export const RepairRequestInput = z.object({
+	unitId: z.number(),
+	id: z.number(),
+});
 
-// export const ListTutorialsInput = z.object({
-// 	cursor: z.uuid().optional(),
-// 	limit: z.number().int().min(1).max(100).default(20),
-// 	status: TutorialStatusEnum.exclude(["Archived"]).optional(),
-// 	tag: z.string().min(1).optional(),
-// 	authorId: z.string().optional(),
-// });
+export const ListRepairRequestInput = z.object({
+	unitId: z.number(),
+	cursor: z.number().positive().nullable(),
+	limit: z.number().int().min(1).max(100).default(20),
+	status: z.enum(repairStatusEnum.enumValues).optional(),
+	priority: z.enum(repairPriorityEnum.enumValues).optional(),
+	repairType: z.enum(repairTypeEnum.enumValues).optional(),
+});

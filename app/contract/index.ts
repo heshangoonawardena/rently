@@ -1,14 +1,51 @@
 import {
+	createTenantDocumentContract,
+	createUnitDocumentContract,
+	deleteTenantDocumentContract,
+	deleteUnitDocumentContract,
+	listTenantDocumentContract,
+	listUnitDocumentContract,
+	supersededUnitDocumentContract,
+	updateTenantDocumentContract,
+	updateUnitDocumentContract,
+} from "./document.contract";
+import {
+	completeInspectionContract,
+	createInspectionContract,
+	deleteInspectionContract,
+	getInspectionContract,
+	listInspectionContract,
+	skipInspectionContract,
+	updateInspectionContract,
+} from "./inspection.contract";
+import {
 	createLeaseContract,
 	createLeaseRentContract,
 	deleteLeaseRentContract,
 	getLeaseContract,
 	listLeaseContract,
 	listLeaseRentContract,
-	terminateLeaseContract,
+	deleteLeaseContract,
 	updateLeaseContract,
 	updateLeaseRentContract,
 } from "./lease.contract";
+import {
+	createPaymentContract,
+	getPaymentContract,
+	getReceiptContract,
+	listPaymentContract,
+	listReceiptsContract,
+	updatePaymentContract,
+} from "./payment.contract";
+import {
+	addRepairUpdateContract,
+	createRepairRequestContract,
+	deleteRepairRequestContract,
+	getRepairRequestContract,
+	listRepairRequestContract,
+	listRepairUpdatesContract,
+	updateRepairRequestContract,
+} from "./repair.contract";
 import {
 	createTenantContract,
 	deleteTenantContract,
@@ -27,6 +64,18 @@ import {
 	listUnitContract,
 	updateUnitContract,
 } from "./unit.contract";
+import {
+	createUtilityBillContract,
+	createUtilityContract,
+	deactivateUtilityContract,
+	deleteUtilityBillContract,
+	deleteUtilityContract,
+	listUtilityBillContract,
+	listUtilityContract,
+	markUtilityBillPaidContract,
+	updateUtilityBillContract,
+	updateUtilityContract,
+} from "./utility.contract";
 
 export const contract = {
 	unit: {
@@ -50,12 +99,61 @@ export const contract = {
 	lease: {
 		create: createLeaseContract,
 		update: updateLeaseContract,
-		terminate: terminateLeaseContract,
+		delete: deleteLeaseContract,
 		get: getLeaseContract,
 		list: listLeaseContract,
 		createRent: createLeaseRentContract,
 		updateRent: updateLeaseRentContract,
 		deleteRent: deleteLeaseRentContract,
 		listRents: listLeaseRentContract,
+	},
+	payment: {
+		create: createPaymentContract,
+		update: updatePaymentContract,
+		get: getPaymentContract,
+		list: listPaymentContract,
+		getReceipt: getReceiptContract,
+		listReceipts: listReceiptsContract,
+	},
+	utility: {
+		create: createUtilityContract,
+		update: updateUtilityContract,
+		deactivate: deactivateUtilityContract,
+		delete: deleteUtilityContract,
+		list: listUtilityContract,
+		createBill: createUtilityBillContract,
+		updateBill: updateUtilityBillContract,
+		markBillPaid: markUtilityBillPaidContract,
+		deleteBill: deleteUtilityBillContract,
+		listBills: listUtilityBillContract,
+	},
+	repair: {
+		create: createRepairRequestContract,
+		update: updateRepairRequestContract,
+		delete: deleteRepairRequestContract,
+		get: getRepairRequestContract,
+		list: listRepairRequestContract,
+		addUpdate: addRepairUpdateContract,
+		listUpdates: listRepairUpdatesContract,
+	},
+	inspection: {
+		create: createInspectionContract,
+		update: updateInspectionContract,
+		complete: completeInspectionContract,
+		skip: skipInspectionContract,
+		delete: deleteInspectionContract,
+		get: getInspectionContract,
+		list: listInspectionContract,
+	},
+	document: {
+		createUnit: createUnitDocumentContract,
+		updateUnit: updateUnitDocumentContract,
+		supersedeUnit: supersededUnitDocumentContract,
+		deleteUnit: deleteUnitDocumentContract,
+		listUnit: listUnitDocumentContract,
+		createTenant: createTenantDocumentContract,
+		updateTenant: updateTenantDocumentContract,
+		deleteTenant: deleteTenantDocumentContract,
+		listTenant: listTenantDocumentContract,
 	},
 };

@@ -70,8 +70,8 @@ export const utilityStatusEnum = pgEnum("utility_status", [
 ]);
 
 export const utilityBillStatusEnum = pgEnum("utility_bill_status", [
-	"draft",
 	"issued",
+	"discarded",
 	"paid",
 	"warned",
 	"overdue",
@@ -102,10 +102,12 @@ export const inspectionStatusEnum = pgEnum("inspection_status", [
 	"scheduled",
 	"completed",
 	"skipped",
+	"cancelled",
 ]);
 
 export const documentStatusEnum = pgEnum("document_status", [
 	"active",
 	"expired",
+	"cancelled",
 	"superseded",
 ]);

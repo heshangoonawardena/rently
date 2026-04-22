@@ -1,9 +1,18 @@
-import { insertPaymentReceiptSchema, selectPaymentReceiptSchema, updatePaymentReceiptSchema } from "@/db/schema/payment";
+import {
+	insertPaymentReceiptSchema,
+	selectPaymentReceiptSchema,
+	updatePaymentReceiptSchema,
+} from "@/db/schema/payment";
 import z from "zod";
 
 // ── Output schemas ──
 
 export const PaymentReceiptOutput = selectPaymentReceiptSchema;
+
+export const ListPaymentReceiptOutput = z.object({
+	nextCursor: z.number().positive().nullable(),
+	items: z.array(PaymentReceiptOutput),
+});
 
 // ── Input schemas ──
 
@@ -14,8 +23,6 @@ export const CreatePaymentReceipt = insertPaymentReceiptSchema.omit({
 	createdAt: true,
 	updatedAt: true,
 });
-
-// ── Alter schemas ──
 
 export const UpdatePaymentReceipt = updatePaymentReceiptSchema
 	.omit({
@@ -28,28 +35,17 @@ export const UpdatePaymentReceipt = updatePaymentReceiptSchema
 		id: z.number().int().positive(),
 	});
 
-// ── Filter schemas ──
-
-export const ListPaymentReceipt = z.object({
-	cursor: z.number().positive().nullable(),
-	limit: z.number().int().min(1).max(100).default(20),
-	items: z.array(PaymentReceiptOutput),
-});
-
-// ── Delete schemas ──
-
 export const DeletePaymentReceipt = z.object({
 	id: z.number().int().positive(),
 });
 
-// export const GetBySlugInput = z.object({
-// 	slug: z.string().min(1).max(100),
-// });
+export const ReceiptInput = z.object({
+	id: z.number(),
+});
 
-// export const ListTutorialsInput = z.object({
-// 	cursor: z.uuid().optional(),
-// 	limit: z.number().int().min(1).max(100).default(20),
-// 	status: TutorialStatusEnum.exclude(["Archived"]).optional(),
-// 	tag: z.string().min(1).optional(),
-// 	authorId: z.string().optional(),
-// });
+
+export const ListPaymentReceiptInput = z.object({
+	leaseId: z.number(),
+	cursor: z.number().positive().nullable(),
+	limit: z.number().int().min(1).max(100).default(20),
+});

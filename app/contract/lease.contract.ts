@@ -80,10 +80,10 @@ export const updateLeaseContract = base
 	.input(UpdateLease)
 	.output(LeaseOutput);
 
-export const terminateLeaseContract = base
+export const deleteLeaseContract = base
 	.route({
-		method: "POST",
-		path: "/leases/{id}/terminate",
+		method: "DELETE",
+		path: "/leases/{id}",
 		summary: "terminate a lease",
 		description:
 			"Sets lease status to 'terminated' and records an end date. The unit status is updated to 'available' automatically.",
@@ -125,7 +125,7 @@ export const createLeaseRentContract = base
 		summary: "Add a rent revision",
 		description:
 			"Appends a new rent amount row effective from the given date. The most recent row with effectiveDate ≤ today is the current rent.",
-		tags: ["Leases", "Rent Schedule"],
+		tags: ["Lease Rents"],
 	})
 	.input(CreateLeaseRent)
 	.output(LeaseRentOutput);
@@ -137,7 +137,7 @@ export const updateLeaseRentContract = base
 		summary: "Update a rent revision",
 		description:
 			"Allows correcting a future rent row before it takes effect. Past rows should not be modified.",
-		tags: ["Leases", "Rent Schedule"],
+		tags: ["Lease Rents"],
 	})
 	.input(UpdateLeaseRent)
 	.output(LeaseRentOutput);
@@ -149,7 +149,7 @@ export const deleteLeaseRentContract = base
 		summary: "Delete a rent revision",
 		description:
 			"Removes a future rent row. The initial rent row (seeded at lease creation) cannot be deleted.",
-		tags: ["Leases", "Rent Schedule"],
+		tags: ["Lease Rents"],
 	})
 	.input(DeleteLeaseRent)
 	.output(LeaseRentOutput);
@@ -161,7 +161,7 @@ export const listLeaseRentContract = base
 		summary: "List rent history for a lease",
 		description:
 			"Returns the full rent schedule for a lease, ordered by effectiveDate ascending.",
-		tags: ["Leases", "Rent Schedule"],
+		tags: ["Lease Rents"],
 	})
 	.input(ListLeaseRentInput)
 	.output(ListLeaseRentOutput);

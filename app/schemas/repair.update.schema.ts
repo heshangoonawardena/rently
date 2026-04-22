@@ -4,9 +4,10 @@ import {
 	selectUnitSchema,
 	updateUnitSchema,
 } from "@/db/schema/unit";
-import { unitStatusEnum } from "@/db/schema/enums";
+import { repairStatusEnum, unitStatusEnum } from "@/db/schema/enums";
 import {
 	insertRepairUpdateSchema,
+	repairRequest,
 	selectRepairUpdateSchema,
 	updateRepairUpdateSchema,
 } from "@/db/schema/repair";
@@ -15,22 +16,23 @@ import {
 
 export const RepairUpdateOutput = selectRepairUpdateSchema;
 
+export const ListRepairUpdateOutput = z.object({
+	nextCursor: z.number().positive().nullable(),
+	items: z.array(RepairUpdateOutput),
+});
+
 // ── Input schemas ──
 
 export const CreateRepairUpdate = insertRepairUpdateSchema.omit({
 	id: true,
-	repairRequestId: true,
 	userId: true,
 	oldStatus: true,
 	createdAt: true,
 	updatedAt: true,
 });
 
-// ── Alter schemas ──
-
 export const UpdateRepairUpdate = updateRepairUpdateSchema
 	.omit({
-		repairRequestId: true,
 		userId: true,
 		oldStatus: true,
 		createdAt: true,
@@ -40,28 +42,13 @@ export const UpdateRepairUpdate = updateRepairUpdateSchema
 		id: z.number().int().positive(),
 	});
 
-// ── Filter schemas ──
-
-export const ListRepairUpdate = z.object({
-	cursor: z.number().positive().nullable(),
-	limit: z.number().int().min(1).max(100).default(20),
-	items: z.array(RepairUpdateOutput),
-});
-
-// ── Delete schemas ──
-
 export const DeleteRepairUpdate = z.object({
+	unitId: z.number(),
 	id: z.number().int().positive(),
 });
 
-// export const GetBySlugInput = z.object({
-// 	slug: z.string().min(1).max(100),
-// });
-
-// export const ListTutorialsInput = z.object({
-// 	cursor: z.uuid().optional(),
-// 	limit: z.number().int().min(1).max(100).default(20),
-// 	status: TutorialStatusEnum.exclude(["Archived"]).optional(),
-// 	tag: z.string().min(1).optional(),
-// 	authorId: z.string().optional(),
-// });
+export const ListRepairUpdateInput = z.object({
+	repairRequestId: z.number(),
+	cursor: z.number().positive().nullable(),
+	limit: z.number().int().min(1).max(100).default(20),
+});

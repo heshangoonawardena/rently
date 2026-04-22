@@ -9,7 +9,7 @@ import {
 
 export const TenantOccupantOutput = selectTenantOccupantSchema;
 
-export const TenantOccupantListOutput = z.object({
+export const ListTenantOccupantOutput = z.object({
 	items: z.array(TenantOccupantOutput),
 	nextCursor: z.number().positive().nullable(),
 });
@@ -39,7 +39,7 @@ export const DeleteTenantOccupant = z.object({
 	id: z.number(),
 });
 
-export const TenantOccupantListInput = z.object({
+export const ListTenantOccupantInput = z.object({
 	tenantId: z.number(),
 	cursor: z.number().positive().nullable(),
 	limit: z.number().int().min(1).max(100).default(20),
