@@ -1,20 +1,20 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 
 export const unitTypeEnum = pgEnum("unit_type", [
-  "room",
-  "house",
-  "warehouse",
-  "land",
+	"room",
+	"house",
+	"warehouse",
+	"land",
 ]);
 
 export const unitStatusEnum = pgEnum("unit_status", [
-  "available",
-  "occupied",
-  "maintenance",
-  "inactive",
+	"available",
+	"occupied",
+	"maintenance",
+	"inactive",
 ]);
 
-export const tenantStatusEnum = pgEnum("tenant_status", [
+export const occupancyStatusEnum = pgEnum("tenant_status", [
 	"active",
 	"inactive",
 	"pending",
@@ -22,84 +22,90 @@ export const tenantStatusEnum = pgEnum("tenant_status", [
 ]);
 
 export const utilityBillingModeEnum = pgEnum("utility_billing_mode", [
-  "tenant_managed",
-  "fixed_charge",
-  "metered",
+	"tenant_managed",
+	"fixed_charge",
+	"metered",
 ]);
 
 export const leaseStatusEnum = pgEnum("lease_status", [
-  "active",
-  "ended",
-  "terminated",
+	"active",
+	"ended",
+	"extended",
+	"terminated",
+]);
+
+export const leaseRentStatusEnum = pgEnum("lease_rent_status", [
+	"active",
+	"inactive",
 ]);
 
 export const paymentTypeEnum = pgEnum("payment_type", [
-  "deposit",
-  "deposit_deduction",
-  "rent",
-  "partial_rent",
-  "arrear",
-  "refund",
-  "other",
+	"deposit",
+	"deposit_deduction",
+	"rent",
+	"partial_rent",
+	"arrear",
+	"refund",
+	"other",
 ]);
 
 export const paymentMethodEnum = pgEnum("payment_method", [
-  "cash",
-  "bank_transfer",
-  "cheque",
-  "online",
-  "other",
+	"cash",
+	"bank_transfer",
+	"cheque",
+	"online",
+	"other",
 ]);
 
 export const utilityTypeEnum = pgEnum("utility_type", [
-  "electricity",
-  "water",
-  "tax",
-  "other",
+	"electricity",
+	"water",
+	"tax",
+	"other",
 ]);
 
 export const utilityStatusEnum = pgEnum("utility_status", [
-  "active",
-  "inactive",
+	"active",
+	"inactive",
 ]);
 
 export const utilityBillStatusEnum = pgEnum("utility_bill_status", [
-  "draft",
-  "issued",
-  "paid",
-  "warned",
-  "overdue",
+	"draft",
+	"issued",
+	"paid",
+	"warned",
+	"overdue",
 ]);
 
 export const repairTypeEnum = pgEnum("repair_type", [
-  "plumbing",
-  "electrical",
-  "structural",
-  "other",
+	"plumbing",
+	"electrical",
+	"structural",
+	"other",
 ]);
 
 export const repairPriorityEnum = pgEnum("repair_priority", [
-  "low",
-  "medium",
-  "high",
-  "urgent",
+	"low",
+	"medium",
+	"high",
+	"urgent",
 ]);
 
 export const repairStatusEnum = pgEnum("repair_status", [
-  "open",
-  "in_progress",
-  "resolved",
-  "cancelled",
+	"open",
+	"in_progress",
+	"resolved",
+	"cancelled",
 ]);
 
 export const inspectionStatusEnum = pgEnum("inspection_status", [
-  "scheduled",
-  "completed",
-  "skipped",
+	"scheduled",
+	"completed",
+	"skipped",
 ]);
 
 export const documentStatusEnum = pgEnum("document_status", [
-  "active",
-  "expired",
-  "superseded",
+	"active",
+	"expired",
+	"superseded",
 ]);

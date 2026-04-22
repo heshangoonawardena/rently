@@ -15,6 +15,7 @@ export const createUnit = os.unit.create
 	.use(authMiddleware)
 	.use(permissionMiddleware({ unit: ["create"] }))
 	.handler(async ({ input, errors, context }) => {
+		const { organizationId } = context.user;
 		const [existing] = await db
 			.select({
 				id: unit.id,
@@ -35,7 +36,7 @@ export const createUnit = os.unit.create
 			.insert(unit)
 			.values({
 				...input,
-				organizationId: "1", // set the active organization ID here
+				organizationId,
 			})
 			.returning();
 
@@ -71,7 +72,10 @@ export const deleteUnit = os.unit.delete
 	.use(authMiddleware)
 	.use(permissionMiddleware({ unit: ["delete"] }))
 	.handler(async ({ input, errors, context }) => {
-		const [existing] = await db.select().from(unit).where(eq(unit.id, input.id));
+		const [existing] = await db
+			.select()
+			.from(unit)
+			.where(eq(unit.id, input.id));
 
 		if (!existing) {
 			throw errors.NOT_FOUND({
@@ -90,6 +94,33 @@ export const deleteUnit = os.unit.delete
 			.returning();
 
 		return data[0];
+	});
+
+export const getUnit = os.unit.get
+	.use(authMiddleware)
+	.use(permissionMiddleware({ unit: ["read"] }))
+	.handler(async ({ input, errors, context }) => {
+		const { organizationId } = context.user;
+
+		const [data] = await db
+			.select()
+			.from(unit)
+			.where(
+				and(eq(unit.id, input.id), eq(unit.organizationId, organizationId)),
+			)
+			.limit(1);
+
+		if (!data) {
+			throw errors.NOT_FOUND({
+				data: {
+					resourceType: "Unit",
+					resourceId: input.id,
+				},
+				cause: "UNIT_NOT_FOUND",
+			});
+		}
+
+		return data;
 	});
 
 export const listUnit = os.unit.list

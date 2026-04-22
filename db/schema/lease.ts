@@ -13,7 +13,7 @@ import {
 import { sql } from "drizzle-orm";
 import { unit } from "./unit";
 import { tenant } from "./tenant";
-import { leaseStatusEnum } from "./enums";
+import { leaseRentStatusEnum, leaseStatusEnum } from "./enums";
 
 export const lease = pgTable(
 	"lease",
@@ -65,6 +65,7 @@ export const leaseRent = pgTable(
 		rentAmount: numeric("rent_amount", { precision: 12, scale: 2 }).notNull(),
 		effectiveDate: date("effective_date").notNull(),
 		description: text("description"),
+		status: leaseRentStatusEnum("status").default("active").notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()

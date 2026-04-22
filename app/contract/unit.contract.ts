@@ -4,7 +4,8 @@ import {
 	CreateUnit,
 	DeleteUnit,
 	ListUnitInput,
-	UnitListOutput,
+	ListUnitOutput,
+	UnitInput,
 	UnitOutput,
 	UpdateUnit,
 } from "../schemas/unit.schema";
@@ -79,6 +80,17 @@ export const deleteUnitContract = base
 	.input(DeleteUnit)
 	.output(UnitOutput);
 
+export const getUnitContract = base
+	.route({
+		method: "GET",
+		path: "/units/{id}",
+		summary: "Get a unit",
+		description: "Retrieves a single unit by ID.",
+		tags: ["Units"],
+	})
+	.input(UnitInput)
+	.output(UnitOutput);
+
 export const listUnitContract = base
 	.route({
 		method: "GET",
@@ -89,4 +101,4 @@ export const listUnitContract = base
 		tags: ["Units"],
 	})
 	.input(ListUnitInput)
-	.output(UnitListOutput);
+	.output(ListUnitOutput);

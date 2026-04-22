@@ -9,37 +9,36 @@ import {
 
 export const LeaseRentOutput = selectLeaseRentSchema;
 
+export const ListLeaseRentOutput = z.object({
+	items: z.array(LeaseRentOutput),
+	nextCursor: z.number().positive().nullable(),
+});
+
 // ── Input schemas ──
 
 export const CreateLeaseRent = insertLeaseRentSchema.omit({
 	id: true,
-	leaseId: true,
 	createdAt: true,
 	updatedAt: true,
 });
 
-// ── Alter schemas ──
-
 export const UpdateLeaseRent = updateLeaseRentSchema
 	.omit({
-		leaseId: true,
 		createdAt: true,
 		updatedAt: true,
 	})
 	.extend({
 		id: z.number().int().positive(),
+		leaseId: z.number(),
 	});
 
-// ── Filter schemas ──
-
-export const ListLeaseRent = z.object({
-	cursor: z.number().positive().nullable(),
-	limit: z.number().int().min(1).max(100).default(20),
-	items: z.array(LeaseRentOutput),
+export const DeleteLeaseRent = z.object({
+	leaseId: z.number(),
+	id: z.number().int().positive(),
 });
 
-// ── Delete schemas ──
-
-export const DeleteLeaseRent = z.object({
-	id: z.number().int().positive(),
+export const ListLeaseRentInput = z.object({
+	leaseId: z.number(),
+	cursor: z.number().positive().nullable(),
+	limit: z.number().int().min(1).max(100).default(20),
 });

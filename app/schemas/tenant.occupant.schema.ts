@@ -9,49 +9,39 @@ import {
 
 export const TenantOccupantOutput = selectTenantOccupantSchema;
 
+export const TenantOccupantListOutput = z.object({
+	items: z.array(TenantOccupantOutput),
+	nextCursor: z.number().positive().nullable(),
+});
+
 // ── Input schemas ──
 
 export const CreateTenantOccupant = insertTenantOccupantSchema.omit({
 	id: true,
-	tenantId: true,
 	createdAt: true,
 	updatedAt: true,
+}).extend({
+	tenantId: z.number(),
 });
-
-// ── Alter schemas ──
 
 export const UpdateTenantOccupant = updateTenantOccupantSchema
 	.omit({
-		tenantId: true,
 		createdAt: true,
 		updatedAt: true,
 	})
 	.extend({
-		id: z.number().int().positive(),
+		tenantId: z.number(),
+		id: z.number(),
 	});
 
-// ── Filter schemas ──
+export const DeleteTenantOccupant = z.object({
+	tenantId: z.number(),
+	id: z.number(),
+});
 
-export const ListTenantOccupant = z.object({
+export const TenantOccupantListInput = z.object({
+	tenantId: z.number(),
 	cursor: z.number().positive().nullable(),
 	limit: z.number().int().min(1).max(100).default(20),
-	items: z.array(TenantOccupantOutput),
+	search: z.string().optional().describe("Search by name, NIC, or phone"),
 });
-
-// ── Delete schemas ──
-
-export const DeleteTenantOccupant = z.object({
-	id: z.number().int().positive(),
-});
-
-// export const GetBySlugInput = z.object({
-// 	slug: z.string().min(1).max(100),
-// });
-
-// export const ListTutorialsInput = z.object({
-// 	cursor: z.uuid().optional(),
-// 	limit: z.number().int().min(1).max(100).default(20),
-// 	status: TutorialStatusEnum.exclude(["Archived"]).optional(),
-// 	tag: z.string().min(1).optional(),
-// 	authorId: z.string().optional(),
-// });

@@ -28,7 +28,7 @@ export const tenant = pgTable(
 		nic: text("nic").notNull().unique(),
 		phoneNumber: text("phone_number").notNull().unique(),
 		occupation: text("occupation"),
-		status: tenantStatusEnum("status").default("pending").notNull(),
+		status: occupancyStatusEnum("status").default("pending").notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()
@@ -54,6 +54,7 @@ export const tenantOccupant = pgTable(
 		nic: text("nic"),
 		relationship: text("relationship").notNull(),
 		phone: text("phone"),
+		status: occupancyStatusEnum("status").default("active").notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()
@@ -120,4 +121,4 @@ import {
 	createUpdateSchema,
 } from "drizzle-zod";
 import z from "zod";
-import { tenantStatusEnum } from "./enums";
+import { occupancyStatusEnum } from "./enums";

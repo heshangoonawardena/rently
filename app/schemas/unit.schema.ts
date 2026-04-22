@@ -10,7 +10,7 @@ import { unitStatusEnum } from "@/db/schema/enums";
 
 export const UnitOutput = selectUnitSchema;
 
-export const UnitListOutput = z.object({
+export const ListUnitOutput = z.object({
 	items: z.array(UnitOutput),
 	nextCursor: z.number().positive().nullable(),
 });
@@ -35,6 +35,10 @@ export const UpdateUnit = updateUnitSchema
 	});
 
 export const DeleteUnit = z.object({
+	id: z.number(),
+});
+
+export const UnitInput = z.object({
 	id: z.number(),
 });
 

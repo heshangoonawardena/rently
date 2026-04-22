@@ -1,4 +1,4 @@
-import z from "zod";
+import z, { coerce } from "zod";
 import {
 	insertLeaseSchema,
 	selectLeaseSchema,
@@ -10,18 +10,22 @@ import { leaseStatusEnum } from "@/db/schema/enums";
 
 export const LeaseOutput = selectLeaseSchema;
 
-export const LeaseListOutput = z.object({
+export const ListLeaseOutput = z.object({
 	items: z.array(LeaseOutput),
 	nextCursor: z.number().positive().nullable(),
 });
 
 // ── Input schemas ──
 
-export const CreateLease = insertLeaseSchema.omit({
-	id: true,
-	createdAt: true,
-	updatedAt: true,
-});
+export const CreateLease = insertLeaseSchema
+	.omit({
+		id: true,
+		createdAt: true,
+		updatedAt: true,
+	})
+	.extend({
+		rentAmount: coerce.string(),
+	});
 
 export const UpdateLease = updateLeaseSchema
 	.omit({
@@ -34,10 +38,17 @@ export const UpdateLease = updateLeaseSchema
 
 export const DeleteLease = z.object({
 	id: z.number(),
+	endDate: z.string(),
+});
+
+export const LeaseInput = z.object({
+	id: z.number(),
 });
 
 export const ListLeaseInput = z.object({
 	cursor: z.number().positive().nullable(),
 	limit: z.number().int().min(1).max(100).default(20),
 	status: z.enum(leaseStatusEnum.enumValues).optional(),
+	unitId: z.number().int().positive().optional(),
+	tenantId: z.number().int().positive().optional(),
 });
