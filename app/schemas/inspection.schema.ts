@@ -10,55 +10,45 @@ import {
 
 export const InspectionOutput = selectInspectionSchema;
 
+export const ListInspectionOutput = z.object({
+	nextCursor: z.number().positive().nullable(),
+	items: z.array(InspectionOutput),
+});
+
 // ── Input schemas ──
 
 export const CreateInspection = insertInspectionSchema.omit({
 	id: true,
-	unitId: true,
 	userId: true,
 	status: true,
 	createdAt: true,
 	updatedAt: true,
 });
 
-// ── Alter schemas ──
-
 export const UpdateInspection = updateInspectionSchema
 	.omit({
-		unitId: true,
 		userId: true,
 		createdAt: true,
 		updatedAt: true,
 	})
 	.extend({
-		id: z.number().int().positive(),
+		unitId: z.number(),
+		id: z.number(),
 	});
 
-// ── Filter schemas ──
+export const DeleteInspection = z.object({
+	unitId: z.number(),
+	id: z.number(),
+});
 
-export const ListInspection = z.object({
+export const InspectionInput = z.object({
+	unitId: z.number(),
+	id: z.number(),
+});
+
+export const ListInspectionInput = z.object({
+	unitId: z.number(),
 	cursor: z.number().positive().nullable(),
 	limit: z.number().int().min(1).max(100).default(20),
-	status: inspectionStatusEnum.enumValues
-		? z.enum(inspectionStatusEnum.enumValues).optional()
-		: z.string().optional(),
-	items: z.array(InspectionOutput),
+	status: z.enum(inspectionStatusEnum.enumValues).optional(),
 });
-
-// ── Delete schemas ──
-
-export const DeleteInspection = z.object({
-	id: z.number().int().positive(),
-});
-
-// export const GetBySlugInput = z.object({
-// 	slug: z.string().min(1).max(100),
-// });
-
-// export const ListTutorialsInput = z.object({
-// 	cursor: z.uuid().optional(),
-// 	limit: z.number().int().min(1).max(100).default(20),
-// 	status: TutorialStatusEnum.exclude(["Archived"]).optional(),
-// 	tag: z.string().min(1).optional(),
-// 	authorId: z.string().optional(),
-// });

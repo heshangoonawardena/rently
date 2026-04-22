@@ -12,8 +12,8 @@ import {
 import {
 	CreateTenantOccupant,
 	DeleteTenantOccupant,
-	TenantOccupantListInput,
-	TenantOccupantListOutput,
+	ListTenantOccupantInput,
+	ListTenantOccupantOutput,
 	TenantOccupantOutput,
 	UpdateTenantOccupant,
 } from "../schemas/tenant.occupant.schema";
@@ -122,7 +122,7 @@ export const createTenantOccupantContract = base
 		summary: "Add an occupant to a tenant",
 		description:
 			"Registers an additional occupant (family member, employee, etc.) under a tenant.",
-		tags: ["Tenants", "Occupants"],
+		tags: ["Tenant Occupants"],
 	})
 	.input(CreateTenantOccupant)
 	.output(TenantOccupantOutput);
@@ -133,7 +133,7 @@ export const updateTenantOccupantContract = base
 		path: "/tenants/{tenantId}/occupants/{id}",
 		summary: "Update a tenant occupant",
 		description: "Updates an occupant record.",
-		tags: ["Tenants", "Occupants"],
+		tags: ["Tenant Occupants"],
 	})
 	.input(UpdateTenantOccupant)
 	.output(TenantOccupantOutput);
@@ -145,7 +145,7 @@ export const deleteTenantOccupantContract = base
 		summary: "Remove a tenant occupant",
 		description:
 			"Soft deletes an occupant from a tenant by setting its status to inactive.",
-		tags: ["Tenants", "Occupants"],
+		tags: ["Tenant Occupants"],
 	})
 	.input(DeleteTenantOccupant)
 	.output(TenantOccupantOutput);
@@ -156,7 +156,7 @@ export const listTenantOccupantContract = base
 		path: "/tenants/{tenantId}/occupants",
 		summary: "List occupants for a tenant",
 		description: "Returns all occupants registered under a tenant.",
-		tags: ["Tenants", "Occupants"],
+		tags: ["Tenant Occupants"],
 	})
-	.input(TenantOccupantListInput)
-	.output(TenantOccupantListOutput);
+	.input(ListTenantOccupantInput)
+	.output(ListTenantOccupantOutput);

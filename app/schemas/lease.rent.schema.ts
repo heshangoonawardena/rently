@@ -10,8 +10,8 @@ import {
 export const LeaseRentOutput = selectLeaseRentSchema;
 
 export const ListLeaseRentOutput = z.object({
-	items: z.array(LeaseRentOutput),
 	nextCursor: z.number().positive().nullable(),
+	items: z.array(LeaseRentOutput),
 });
 
 // ── Input schemas ──

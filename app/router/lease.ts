@@ -19,6 +19,7 @@ export const createLease = os.lease.create
 	.use(permissionMiddleware({ lease: ["create"] }))
 	.handler(async ({ input, errors, context }) => {
 		const { rentAmount, ...leaseData } = input;
+		const { organizationId } = context.user;
 
 		// Check the unit exists and belongs to this org
 		const [targetUnit] = await db
@@ -27,7 +28,7 @@ export const createLease = os.lease.create
 			.where(
 				and(
 					eq(unit.id, leaseData.unitId),
-					eq(unit.organizationId, context.user.organizationId),
+					eq(unit.organizationId, organizationId),
 				),
 			)
 			.limit(1);
@@ -99,7 +100,7 @@ export const updateLease = os.lease.update
 		return data;
 	});
 
-export const terminateLease = os.lease.terminate
+export const deleteLease = os.lease.delete
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["delete"] }))
 	.handler(async ({ input, errors, context }) => {

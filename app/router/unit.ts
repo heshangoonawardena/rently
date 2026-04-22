@@ -21,7 +21,9 @@ export const createUnit = os.unit.create
 				id: unit.id,
 			})
 			.from(unit)
-			.where(eq(unit.name, input.name));
+			.where(eq(unit.name, input.name))
+			.limit(1);
+
 		if (existing) {
 			throw errors.CONFLICT({
 				data: {
@@ -75,8 +77,8 @@ export const deleteUnit = os.unit.delete
 		const [existing] = await db
 			.select()
 			.from(unit)
-			.where(eq(unit.id, input.id));
-
+			.where(eq(unit.id, input.id))
+			.limit(1);
 		if (!existing) {
 			throw errors.NOT_FOUND({
 				data: {

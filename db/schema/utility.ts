@@ -35,7 +35,7 @@ export const utility = pgTable(
 		utilityType: utilityTypeEnum("utility_type").notNull(),
 		holderName: text("holder_name").notNull(),
 		address: text("address"),
-		accountNumber: text("account_number").notNull(),
+		accountNumber: text("account_number").notNull().unique(),
 		description: text("description"),
 		status: utilityStatusEnum("status").default("active").notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -67,7 +67,7 @@ export const utilityBill = pgTable(
 		periodStart: date("period_start").notNull(),
 		periodEnd: date("period_end").notNull(),
 		description: text("description"),
-		status: utilityBillStatusEnum("status").default("draft").notNull(),
+		status: utilityBillStatusEnum("status").default("issued").notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()

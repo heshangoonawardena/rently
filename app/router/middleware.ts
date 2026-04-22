@@ -7,7 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { statement } from "@/lib/auth/permissions";
 
 export interface AuthedUser {
-	id: string;
+	userId: string;
 	organizationId: string;
 	role: "owner" | "manager" | "tenant";
 }
@@ -57,7 +57,7 @@ export const authMiddleware = os
 		return next({
 			context: {
 				user: {
-					id: session.user.id,
+					userId: session.user.id,
 					organizationId: activeOrgId,
 					role: membership.role as AuthedUser["role"],
 				},
