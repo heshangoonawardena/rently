@@ -23,6 +23,7 @@ import {
 	deleteLeaseRent,
 	createLeaseRent,
 	updateLeaseRent,
+	renewLease,
 } from "./lease";
 import {
 	createPayment,
@@ -99,6 +100,7 @@ export const router = os.router({
 		create: createLease,
 		update: updateLease,
 		delete: deleteLease,
+		renew: renewLease,
 		get: getLease,
 		list: listLease,
 		createRent: createLeaseRent,

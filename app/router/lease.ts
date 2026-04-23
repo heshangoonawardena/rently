@@ -151,6 +151,60 @@ export const deleteLease = os.lease.delete
 		return data;
 	});
 
+export const renewLease = os.lease.renew
+	.use(authMiddleware)
+	.use(permissionMiddleware({ lease: ["update"] }))
+	.handler(async ({ input, errors }) => {
+		const { id, newEndDate, rentAmount, effectiveDate } = input;
+
+		const [existing] = await db
+			.select({
+				id: lease.id,
+				status: lease.status,
+				unitId: lease.unitId,
+			})
+			.from(lease)
+			.where(eq(lease.id, id))
+			.limit(1);
+
+		if (!existing) {
+			throw errors.NOT_FOUND({
+				data: {
+					resourceType: "Lease",
+					resourceId: id,
+				},
+				cause: "LEASE_NOT_FOUND",
+			});
+		}
+
+		if (existing.status !== "active" && existing.status !== "extended") {
+			throw errors.DOMAIN_RULE_VIOLATION({
+				data: { rule: "LEASE_NOT_RENEWABLE" },
+				cause: "Only active or previously extended leases can be renewed",
+			});
+		}
+
+		const [updated] = await db
+			.update(lease)
+			.set({
+				status: "extended",
+				endDate: newEndDate,
+			})
+			.where(eq(lease.id, id))
+			.returning();
+
+		// Optionally seed a new rent revision
+		if (rentAmount) {
+			await db.insert(leaseRent).values({
+				leaseId: id,
+				rentAmount,
+				effectiveDate: effectiveDate ?? newEndDate,
+			});
+		}
+
+		return updated;
+	});
+
 export const getLease = os.lease.get
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["read"] }))
