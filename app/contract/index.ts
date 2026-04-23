@@ -28,6 +28,7 @@ import {
 	deleteLeaseContract,
 	updateLeaseContract,
 	updateLeaseRentContract,
+	renewLeaseContract,
 } from "./lease.contract";
 import {
 	createPaymentContract,
@@ -99,6 +100,7 @@ export const contract = {
 	lease: {
 		create: createLeaseContract,
 		update: updateLeaseContract,
+		renew: renewLeaseContract,
 		delete: deleteLeaseContract,
 		get: getLeaseContract,
 		list: listLeaseContract,

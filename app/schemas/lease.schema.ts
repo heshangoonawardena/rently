@@ -36,6 +36,13 @@ export const UpdateLease = updateLeaseSchema
 		id: z.number(),
 	});
 
+export const RenewLease = z.object({
+	id: z.number(),
+	newEndDate: z.string(),
+	rentAmount: z.coerce.string().optional(), // if rent changes on renewal
+	effectiveDate: z.string().optional(), // if rent changes on renewal
+});
+
 export const DeleteLease = z.object({
 	id: z.number(),
 	endDate: z.string(),
