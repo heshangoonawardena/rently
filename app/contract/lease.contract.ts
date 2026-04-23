@@ -7,6 +7,7 @@ import {
 	LeaseOutput,
 	ListLeaseInput,
 	ListLeaseOutput,
+	RenewLease,
 	UpdateLease,
 } from "../schemas/lease.schema";
 import {
@@ -78,6 +79,19 @@ export const updateLeaseContract = base
 		tags: ["Leases"],
 	})
 	.input(UpdateLease)
+	.output(LeaseOutput);
+
+export const renewLeaseContract = base
+	.route({
+		method: "POST",
+		path: "/leases/{id}/renew",
+		successStatus: 200,
+		summary: "Extend a lease",
+		description:
+			"Extends an active lease by updating the end date and optionally adding a new rent revision. Sets status to 'extended'.",
+		tags: ["Leases"],
+	})
+	.input(RenewLease)
 	.output(LeaseOutput);
 
 export const deleteLeaseContract = base

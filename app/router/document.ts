@@ -124,6 +124,7 @@ export const deleteUnitDocument = os.document.deleteUnit
 		const [data] = await db
 			.update(unitDocument)
 			.set({ status: "cancelled" })
+			.where(eq(unitDocument.id, input.id))
 			.returning();
 
 		return data;
@@ -227,6 +228,7 @@ export const deleteTenantDocument = os.document.deleteTenant
 		const [data] = await db
 			.update(tenantDocument)
 			.set({ status: "cancelled" })
+			.where(eq(tenantDocument.id, input.id))
 			.returning();
 
 		return data;
