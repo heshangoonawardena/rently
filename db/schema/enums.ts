@@ -111,3 +111,28 @@ export const documentStatusEnum = pgEnum("document_status", [
 	"cancelled",
 	"superseded",
 ]);
+
+export const notificationChannelEnum = pgEnum("notification_channel", [
+	"in-app",
+	"sms",
+	"whatsapp",
+	"email",
+]);
+
+export const notificationEventEnum = pgEnum("notification_event", [
+	"rent_due",
+	"rent_overdue",
+	"document_expiring",
+	"document_expired",
+	"inspection_upcoming",
+	"utility_bill_overdue",
+	"lease_expiring",
+	"repair_status_changed",
+]);
+
+export const notificationStatusEnum = pgEnum("notification_status", [
+	"pending",
+	"sent",
+	"failed",
+	"read",
+]);
