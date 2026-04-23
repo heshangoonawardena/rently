@@ -31,7 +31,7 @@ export const utilities = async (db: DB) => {
 			billAmount: "5000",
 			periodStart: new Date().toISOString().split("T")[0],
 			periodEnd: new Date().toISOString().split("T")[0],
-			status: "draft",
+			status: "issued",
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		},
