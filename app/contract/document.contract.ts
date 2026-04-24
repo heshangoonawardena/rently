@@ -5,6 +5,7 @@ import {
 	DeleteUnitDocument,
 	ListUnitDocumentInput,
 	ListUnitDocumentOutput,
+	UnitDocumentInput,
 	UnitDocumentOutput,
 	UpdateUnitDocument,
 } from "../schemas/unit.document.schema";
@@ -13,9 +14,19 @@ import {
 	DeleteTenantDocument,
 	ListTenantDocumentInput,
 	ListTenantDocumentOutput,
+	TenantDocumentInput,
 	TenantDocumentOutput,
 	UpdateTenantDocument,
 } from "../schemas/tenant.document.schema";
+import {
+	CreateLeaseDocument,
+	DeleteLeaseDocument,
+	LeaseDocumentInput,
+	LeaseDocumentOutput,
+	ListLeaseDocumentInput,
+	ListLeaseDocumentOutput,
+	UpdateLeaseDocument,
+} from "../schemas/lease.document.schema";
 
 export const base = oc.errors({
 	UNAUTHORIZED: {
@@ -90,6 +101,17 @@ export const supersededUnitDocumentContract = base
 	.input(UpdateUnitDocument)
 	.output(UnitDocumentOutput);
 
+export const getUnitDocumentContract = base
+	.route({
+		method: "GET",
+		path: "/units/{unitId}/documents/{id}",
+		summary: "Get a unit document",
+		description: "Retrieves a single unit document by ID.",
+		tags: ["Unit Documents"],
+	})
+	.input(UnitDocumentInput)
+	.output(UnitDocumentOutput);
+
 export const deleteUnitDocumentContract = base
 	.route({
 		method: "DELETE",
@@ -140,6 +162,17 @@ export const updateTenantDocumentContract = base
 	.input(UpdateTenantDocument)
 	.output(TenantDocumentOutput);
 
+export const getTenantDocumentContract = base
+	.route({
+		method: "GET",
+		path: "/tenants/{tenantId}/documents/{id}",
+		summary: "Get a tenant document",
+		description: "Retrieves a single tenant document by ID.",
+		tags: ["Tenant Documents"],
+	})
+	.input(TenantDocumentInput)
+	.output(TenantDocumentOutput);
+
 export const deleteTenantDocumentContract = base
 	.route({
 		method: "DELETE",
@@ -162,3 +195,82 @@ export const listTenantDocumentContract = base
 	})
 	.input(ListTenantDocumentInput)
 	.output(ListTenantDocumentOutput);
+
+// ── Lease Document contracts ──
+
+export const createLeaseDocumentContract = base
+	.route({
+		method: "POST",
+		path: "/leases/{leaseId}/documents",
+		successStatus: 201,
+		summary: "Attach a document to a lease",
+		description:
+			"Attaches a document (signed agreement, addendum, notice, etc.) to a lease. " +
+			"The storageKey references the file in your object storage bucket. " +
+			"A lease can have multiple documents; use status to track which is current.",
+		tags: ["Lease Documents"],
+	})
+	.input(CreateLeaseDocument)
+	.output(LeaseDocumentOutput);
+
+export const updateLeaseDocumentContract = base
+	.route({
+		method: "PATCH",
+		path: "/leases/{leaseId}/documents/{id}",
+		summary: "Update a lease document",
+		description:
+			"Updates label, description, documentDate, or status of a lease document.",
+		tags: ["Lease Documents"],
+	})
+	.input(UpdateLeaseDocument)
+	.output(LeaseDocumentOutput);
+
+export const supersededLeaseDocumentContract = base
+	.route({
+		method: "POST",
+		path: "/leases/{leaseId}/documents/{id}/supersede",
+		summary: "Mark a lease document as superseded",
+		description:
+			"Marks a document as superseded — typically when a new version of an agreement " +
+			"or addendum is uploaded. Only active documents can be superseded.",
+		tags: ["Lease Documents"],
+	})
+	.input(UpdateLeaseDocument)
+	.output(LeaseDocumentOutput);
+
+export const deleteLeaseDocumentContract = base
+	.route({
+		method: "DELETE",
+		path: "/leases/{leaseId}/documents/{id}",
+		summary: "Delete a lease document",
+		description:
+			"Soft-deletes a lease document by setting its status to 'cancelled'. " +
+			"Does not delete the file from storage.",
+		tags: ["Lease Documents"],
+	})
+	.input(DeleteLeaseDocument)
+	.output(LeaseDocumentOutput);
+
+export const getLeaseDocumentContract = base
+	.route({
+		method: "GET",
+		path: "/leases/{leaseId}/documents/{id}",
+		summary: "Get a lease document",
+		description: "Retrieves a single lease document by ID.",
+		tags: ["Lease Documents"],
+	})
+	.input(LeaseDocumentInput)
+	.output(LeaseDocumentOutput);
+
+export const listLeaseDocumentContract = base
+	.route({
+		method: "GET",
+		path: "/leases/{leaseId}/documents",
+		summary: "List documents for a lease",
+		description:
+			"Returns all documents attached to a lease. Filter by status to find " +
+			"active, expired, superseded, or cancelled documents.",
+		tags: ["Lease Documents"],
+	})
+	.input(ListLeaseDocumentInput)
+	.output(ListLeaseDocumentOutput);

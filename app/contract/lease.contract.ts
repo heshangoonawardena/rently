@@ -34,7 +34,6 @@ export const base = oc.errors({
 		data: z.object({
 			resourceType: z.string(),
 			resourceId: z.number(),
-			// resourceId: z.union([z.number(), z.string()]),
 		}),
 	},
 	CONFLICT: {

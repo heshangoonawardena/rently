@@ -9,6 +9,7 @@ import {
 } from "./middleware";
 import { lease, leaseRent } from "@/db/schema/lease";
 import { unit } from "@/db/schema/unit";
+import { tenant } from "@/db/schema/tenant";
 
 const os = implement(contract).$context<BaseContext>();
 
@@ -100,6 +101,72 @@ export const updateLease = os.lease.update
 		return data;
 	});
 
+export const renewLease = os.lease.renew
+	.use(authMiddleware)
+	.use(permissionMiddleware({ lease: ["update"] }))
+	.handler(async ({ input, errors }) => {
+		const { id, newEndDate, rentAmount, effectiveDate } = input;
+
+		const [existing] = await db
+			.select({
+				id: lease.id,
+				status: lease.status,
+				unitId: lease.unitId,
+				startDate: lease.startDate,
+				endDate: lease.endDate,
+			})
+			.from(lease)
+			.where(eq(lease.id, id))
+			.limit(1);
+
+		if (!existing) {
+			throw errors.NOT_FOUND({
+				data: {
+					resourceType: "Lease",
+					resourceId: id,
+				},
+				cause: "LEASE_NOT_FOUND",
+			});
+		}
+
+		if (existing.status !== "active" && existing.status !== "extended") {
+			throw errors.DOMAIN_RULE_VIOLATION({
+				data: { rule: "LEASE_NOT_RENEWABLE" },
+				cause: `Lease has status '${existing.status}' — only 'active' or 'extended' leases can be renewed`,
+			});
+		}
+
+		// New end date must be in the future relative to the current end date
+		if (existing.endDate && newEndDate <= existing.endDate) {
+			throw errors.DOMAIN_RULE_VIOLATION({
+				data: { rule: "RENEWAL_DATE_NOT_AFTER_CURRENT_END" },
+				cause: `newEndDate (${newEndDate}) must be after the current end date (${existing.endDate})`,
+			});
+		}
+
+		const [updated] = await db
+			.update(lease)
+			.set({
+				status: "extended",
+				endDate: newEndDate,
+			})
+			.where(eq(lease.id, id))
+			.returning();
+
+		// Insert a new rent revision if the rent is changing on renewal
+		if (rentAmount) {
+
+			await db.insert(leaseRent).values({
+				leaseId: id,
+				rentAmount,
+				effectiveDate: effectiveDate ?? newEndDate,
+				description: `Rent revised on lease renewal (effective ${effectiveDate})`,
+			});
+		}
+
+		return updated;
+	});
+
 export const deleteLease = os.lease.delete
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["delete"] }))
@@ -126,10 +193,10 @@ export const deleteLease = os.lease.delete
 			});
 		}
 
-		if (existing.status !== "active") {
+		if (existing.status !== "active" && existing.status !== "extended") {
 			throw errors.DOMAIN_RULE_VIOLATION({
-				data: { rule: "LEASE_NOT_ACTIVE" },
-				cause: "Only active leases can be terminated",
+				data: { rule: "LEASE_NOT_TERMINABLE" },
+				cause: `Lease has status '${existing.status}' — only 'active' or 'extended' leases can be terminated`,
 			});
 		}
 
@@ -151,68 +218,33 @@ export const deleteLease = os.lease.delete
 		return data;
 	});
 
-export const renewLease = os.lease.renew
-	.use(authMiddleware)
-	.use(permissionMiddleware({ lease: ["update"] }))
-	.handler(async ({ input, errors }) => {
-		const { id, newEndDate, rentAmount, effectiveDate } = input;
-
-		const [existing] = await db
-			.select({
-				id: lease.id,
-				status: lease.status,
-				unitId: lease.unitId,
-			})
-			.from(lease)
-			.where(eq(lease.id, id))
-			.limit(1);
-
-		if (!existing) {
-			throw errors.NOT_FOUND({
-				data: {
-					resourceType: "Lease",
-					resourceId: id,
-				},
-				cause: "LEASE_NOT_FOUND",
-			});
-		}
-
-		if (existing.status !== "active" && existing.status !== "extended") {
-			throw errors.DOMAIN_RULE_VIOLATION({
-				data: { rule: "LEASE_NOT_RENEWABLE" },
-				cause: "Only active or previously extended leases can be renewed",
-			});
-		}
-
-		const [updated] = await db
-			.update(lease)
-			.set({
-				status: "extended",
-				endDate: newEndDate,
-			})
-			.where(eq(lease.id, id))
-			.returning();
-
-		// Optionally seed a new rent revision
-		if (rentAmount) {
-			await db.insert(leaseRent).values({
-				leaseId: id,
-				rentAmount,
-				effectiveDate: effectiveDate ?? newEndDate,
-			});
-		}
-
-		return updated;
-	});
-
 export const getLease = os.lease.get
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["read"] }))
-	.handler(async ({ input, errors }) => {
+	.handler(async ({ input, errors, context }) => {
+		const { role, userId } = context.user;
+
+		// Tenants can only read their own lease
+		let tenantIdFilter: number | undefined;
+		if (role === "tenant") {
+			const [self] = await db
+				.select({ id: tenant.id })
+				.from(tenant)
+				.where(eq(tenant.userId, userId))
+				.limit(1);
+			if (!self) throw errors.FORBIDDEN();
+			tenantIdFilter = self.id;
+		}
+
 		const [data] = await db
 			.select()
 			.from(lease)
-			.where(eq(lease.id, input.id))
+			.where(
+				and(
+					eq(lease.id, input.id),
+					tenantIdFilter ? eq(lease.tenantId, tenantIdFilter) : undefined,
+				),
+			)
 			.limit(1);
 
 		if (!data) {
@@ -231,8 +263,21 @@ export const getLease = os.lease.get
 export const listLease = os.lease.list
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["read"] }))
-	.handler(async ({ input }) => {
+	.handler(async ({ input, errors, context }) => {
 		const { cursor, limit, status, unitId, tenantId } = input;
+		const { role, userId } = context.user;
+
+		// Tenants can only see their own leases regardless of what they pass in
+		let scopedTenantId = tenantId;
+		if (role === "tenant") {
+			const [self] = await db
+				.select({ id: tenant.id })
+				.from(tenant)
+				.where(eq(tenant.userId, userId))
+				.limit(1);
+			if (!self) throw errors.FORBIDDEN();
+			scopedTenantId = self.id;
+		}
 
 		const rows = await db
 			.select()
@@ -241,7 +286,7 @@ export const listLease = os.lease.list
 				and(
 					status ? eq(lease.status, status) : undefined,
 					unitId ? eq(lease.unitId, unitId) : undefined,
-					tenantId ? eq(lease.tenantId, tenantId) : undefined,
+					scopedTenantId ? eq(lease.tenantId, scopedTenantId) : undefined,
 					cursor ? gt(lease.id, cursor) : undefined,
 				),
 			)
@@ -281,10 +326,10 @@ export const createLeaseRent = os.lease.createRent
 			});
 		}
 
-		if (parentLease.status !== "active") {
+		if (parentLease.status !== "active" && parentLease.status !== "extended") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "LEASE_NOT_ACTIVE" },
-				cause: "Rent revisions can only be added to active leases",
+				cause: "Rent revisions can only be added to active or extended leases",
 			});
 		}
 
