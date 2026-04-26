@@ -82,6 +82,17 @@ import {
 	updateTenantDocument,
 	updateUnitDocument,
 } from "./document";
+import {
+	arrearsOverview,
+	expiringDocuments,
+	expiringLeases,
+	occupancySummary,
+	overdueUtilityBills,
+	rentCollection,
+	repairSummary,
+	upcomingInspections,
+	upcomingRentDue,
+} from "./report";
 
 const os = implement(contract).$context<BaseContext>();
 
@@ -172,5 +183,16 @@ export const router = os.router({
 		deleteLease: deleteLeaseDocument,
 		getLease: getLeaseDocument,
 		listLease: listLeaseDocument,
+	},
+	report: {
+		occupancySummary: occupancySummary,
+		rentCollection: rentCollection,
+		arrearsOverview: arrearsOverview,
+		upcomingRentDue: upcomingRentDue,
+		expiringDocuments: expiringDocuments,
+		upcomingInspections: upcomingInspections,
+		overdueUtilityBills: overdueUtilityBills,
+		repairSummary: repairSummary,
+		expiringLeases: expiringLeases,
 	},
 });

@@ -56,6 +56,17 @@ import {
 	updateRepairRequestContract,
 } from "./repair.contract";
 import {
+	arrearsOverviewContract,
+	expiringDocumentsContract,
+	expiringLeasesContract,
+	occupancySummaryContract,
+	overdueUtilityBillsContract,
+	rentCollectionContract,
+	repairSummaryContract,
+	upcomingInspectionsContract,
+	upcomingRentDueContract,
+} from "./report.contract";
+import {
 	createTenantContract,
 	deleteTenantContract,
 	getTenantContract,
@@ -173,5 +184,16 @@ export const contract = {
 		deleteLease: deleteLeaseDocumentContract,
 		getLease: getLeaseDocumentContract,
 		listLease: listLeaseDocumentContract,
+	},
+	report: {
+		occupancySummary: occupancySummaryContract,
+		rentCollection: rentCollectionContract,
+		arrearsOverview: arrearsOverviewContract,
+		upcomingRentDue: upcomingRentDueContract,
+		expiringDocuments: expiringDocumentsContract,
+		upcomingInspections: upcomingInspectionsContract,
+		overdueUtilityBills: overdueUtilityBillsContract,
+		repairSummary: repairSummaryContract,
+		expiringLeases: expiringLeasesContract,
 	},
 };
