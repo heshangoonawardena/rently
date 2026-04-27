@@ -4,8 +4,8 @@ import z from "zod";
 
 // Used by any endpoint that accepts a date-range filter
 export const DateRangeInput = z.object({
-	from: z.date("from must be a valid ISO date (YYYY-MM-DD)").optional(),
-	to: z.date("to must be a valid ISO date (YYYY-MM-DD)").optional(),
+	from: z.iso.date("from must be a valid ISO date (YYYY-MM-DD)").optional(),
+	to: z.iso.date("to must be a valid ISO date (YYYY-MM-DD)").optional(),
 });
 
 // ── Occupancy ──
@@ -44,8 +44,8 @@ export const RentCollectionInput = DateRangeInput.extend({
 
 export const RentCollectionOutput = z.object({
 	period: z.object({
-		from: z.date(),
-		to: z.date(),
+		from: z.iso.date(),
+		to: z.iso.date(),
 	}),
 	totalExpected: z.string(),
 	totalCollected: z.string(),
@@ -91,7 +91,7 @@ export const UpcomingRentDueRow = z.object({
 	tenantName: z.string(),
 	tenantPhone: z.string(),
 	rentAmount: z.string(),
-	dueDate: z.date().describe("Date rent is next due"),
+	dueDate: z.iso.date().describe("Date rent is next due"),
 	daysUntilDue: z.number().int(),
 });
 
@@ -115,8 +115,9 @@ export const ExpiringDocumentRow = z.object({
 	id: z.number().int(),
 	documentType: z.string(),
 	label: z.string(),
-	expiryDate: z.date(),
+	expiryDate: z.iso.date(),
 	daysUntilExpiry: z.number().int(),
+
 	// Which resource this document belongs to
 	resourceType: z.enum(["unit", "tenant", "lease"]),
 	resourceId: z.number().int(),
@@ -144,7 +145,7 @@ export const UpcomingInspectionRow = z.object({
 	title: z.string(),
 	unitId: z.number().int(),
 	unitName: z.string(),
-	scheduledDate: z.date(),
+	scheduledDate: z.iso.date(),
 	daysUntilInspection: z.number().int(),
 	assignedUserName: z.string().nullable(),
 });
@@ -174,7 +175,7 @@ export const OverdueUtilityBillRow = z.object({
 	unitName: z.string(),
 	billAmount: z.string(),
 	previousDueAmount: z.string(),
-	periodEnd: z.date(),
+	periodEnd: z.iso.date(),
 	daysPastDue: z.number().int(),
 	status: z.string(),
 });
@@ -218,7 +219,7 @@ export const ExpiringLeaseRow = z.object({
 	tenantId: z.number().int(),
 	tenantName: z.string(),
 	tenantPhone: z.string(),
-	endDate: z.date(),
+	endDate: z.iso.date(),
 	daysUntilExpiry: z.number().int(),
 	status: z.string(),
 });

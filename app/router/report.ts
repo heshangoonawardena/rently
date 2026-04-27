@@ -19,16 +19,12 @@ import {
 	asc,
 	desc,
 	eq,
-	gt,
 	gte,
 	inArray,
 	isNotNull,
-	lt,
 	lte,
-	ne,
 	or,
 	sql,
-	sum,
 } from "drizzle-orm";
 import {
 	authMiddleware,
@@ -40,9 +36,9 @@ const os = implement(contract).$context<BaseContext>();
 
 // ── Helpers ──
 
-/** Converts a Date object to ISO date string (YYYY-MM-DD). */
-function dateToIsoString(date: Date): string {
-	return date.toISOString().split("T")[0];
+/** Returns today's ISO date string (YYYY-MM-DD). */
+function today(): string {
+	return new Date().toISOString().split("T")[0];
 }
 
 /** Returns the first and last day of the current calendar month as ISO strings. */
@@ -57,19 +53,6 @@ function currentMonthRange(): { from: string; to: string } {
 	return { from, to };
 }
 
-/** Returns the first and last day of the current calendar month as Date objects. */
-function currentMonthRangeAsDate(): { from: Date; to: Date } {
-	const now = new Date();
-	const from = new Date(now.getFullYear(), now.getMonth(), 1);
-	const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-	return { from, to };
-}
-
-/** Returns today's ISO date string. */
-function today(): string {
-	return new Date().toISOString().split("T")[0];
-}
-
 /** Calculates the number of days between two ISO date strings. */
 function daysBetween(a: string, b: string): number {
 	return Math.round(
@@ -77,24 +60,21 @@ function daysBetween(a: string, b: string): number {
 	);
 }
 
-// Blocks tenant-role callers — all report endpoints are owner/manager only.
-const reportsAuthMiddleware = os
-	.$context<BaseContext>()
-	.middleware(async ({ context, next, errors }) => {
-		// authMiddleware has already run, context.user is populated
-		if ((context as any).user?.role === "tenant") {
-			throw errors.FORBIDDEN();
-		}
-		return next({ context });
-	});
+/** Converts a Date or ISO string to ISO date string (YYYY-MM-DD). */
+function toIsoDate(d: Date | string): string {
+	if (typeof d === "string") return d.split("T")[0];
+	return d.toISOString().split("T")[0];
+}
 
 // ── Handlers ──
 
 export const occupancySummary = os.report.occupancySummary
 	.use(authMiddleware)
 	.use(permissionMiddleware({ unit: ["read"] }))
-	.handler(async ({ context }) => {
-		const { organizationId } = context.user;
+	.handler(async ({ context, errors }) => {
+		const { organizationId, role } = context.user;
+
+		if (role === "tenant") throw errors.FORBIDDEN();
 
 		const rows = await db
 			.select({ status: unit.status, count: sql<number>`count(*)::int` })
@@ -121,19 +101,15 @@ export const occupancySummary = os.report.occupancySummary
 export const rentCollection = os.report.rentCollection
 	.use(authMiddleware)
 	.use(permissionMiddleware({ payment: ["read"] }))
-	.handler(async ({ input, context }) => {
-		const { organizationId } = context.user;
+	.handler(async ({ input, errors, context }) => {
+		const { organizationId, role } = context.user;
+
+		if (role === "tenant") throw errors.FORBIDDEN();
+
 		const period =
 			input.from && input.to
-				? {
-						from: input.from,
-						to: input.to,
-					}
-				: currentMonthRangeAsDate();
-
-		// Convert Date objects to ISO strings for database queries
-		const periodFrom = dateToIsoString(period.from);
-		const periodTo = dateToIsoString(period.to);
+				? { from: input.from, to: input.to }
+				: currentMonthRange();
 
 		// Fetch all active/extended leases for this org
 		const leaseRows = await db
@@ -164,7 +140,7 @@ export const rentCollection = os.report.rentCollection
 
 		const leaseIds = leaseRows.map((l) => l.id);
 
-		// Current rent per lease (most recent row where effectiveDate <= period.to)
+		// Current rent per lease — most recent row with effectiveDate <= period.to
 		const rentRows = await db
 			.select({
 				leaseId: leaseRent.leaseId,
@@ -175,7 +151,7 @@ export const rentCollection = os.report.rentCollection
 				and(
 					inArray(leaseRent.leaseId, leaseIds),
 					eq(leaseRent.status, "active"),
-					lte(leaseRent.effectiveDate, periodTo),
+					lte(leaseRent.effectiveDate, period.to),
 				),
 			)
 			.orderBy(desc(leaseRent.effectiveDate));
@@ -188,19 +164,18 @@ export const rentCollection = os.report.rentCollection
 			}
 		}
 
-		// Payments made in the period
+		// Payments in the period (rent-type only)
 		const paymentRows = await db
 			.select({
 				leaseId: payment.leaseId,
 				paymentAmount: payment.paymentAmount,
-				paymentType: payment.paymentType,
 			})
 			.from(payment)
 			.where(
 				and(
 					inArray(payment.leaseId, leaseIds),
-					gte(payment.paymentDate, periodFrom),
-					lte(payment.paymentDate, periodTo),
+					gte(payment.paymentDate, period.from),
+					lte(payment.paymentDate, period.to),
 					inArray(payment.paymentType, ["rent", "partial_rent", "arrear"]),
 				),
 			);
@@ -280,11 +255,11 @@ export const rentCollection = os.report.rentCollection
 export const arrearsOverview = os.report.arrearsOverview
 	.use(authMiddleware)
 	.use(permissionMiddleware({ payment: ["read"] }))
-	.handler(async ({ context }) => {
-		const { organizationId } = context.user;
+	.handler(async ({ errors, context }) => {
+		const { organizationId, role } = context.user;
 
-		// Find all active leases with a negative running balance
-		// (balance is stored on the most recent payment row)
+		if (role === "tenant") throw errors.FORBIDDEN();
+
 		const leaseRows = await db
 			.select({
 				id: lease.id,
@@ -306,22 +281,22 @@ export const arrearsOverview = os.report.arrearsOverview
 
 		const leaseIds = leaseRows.map((l) => l.id);
 
-		// Latest payment (and its balanceAfter) per lease
+		// Latest balanceAfter per lease (from most recent payment)
 		const latestPayments = await db
 			.selectDistinctOn([payment.leaseId], {
 				leaseId: payment.leaseId,
 				balanceAfter: payment.balanceAfter,
-				paymentDate: payment.paymentDate,
 			})
 			.from(payment)
 			.where(inArray(payment.leaseId, leaseIds))
-			.orderBy(payment.leaseId, desc(payment.paymentDate));
+			.orderBy(payment.leaseId, desc(payment.createdAt));
 
 		const balanceByLease = new Map(
 			latestPayments.map((p) => [p.leaseId, parseFloat(p.balanceAfter)]),
 		);
 
 		// Current rent per lease (for estimating months overdue)
+		const todayStr = today();
 		const rentRows = await db
 			.select({ leaseId: leaseRent.leaseId, rentAmount: leaseRent.rentAmount })
 			.from(leaseRent)
@@ -329,7 +304,7 @@ export const arrearsOverview = os.report.arrearsOverview
 				and(
 					inArray(leaseRent.leaseId, leaseIds),
 					eq(leaseRent.status, "active"),
-					lte(leaseRent.effectiveDate, today()),
+					lte(leaseRent.effectiveDate, todayStr),
 				),
 			)
 			.orderBy(desc(leaseRent.effectiveDate));
@@ -407,18 +382,17 @@ export const arrearsOverview = os.report.arrearsOverview
 export const upcomingRentDue = os.report.upcomingRentDue
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["read"] }))
-	.handler(async ({ input, context }) => {
-		const { organizationId } = context.user;
-		const { daysAhead } = input;
+	.handler(async ({ input, errors, context }) => {
+		const { organizationId, role } = context.user;
 
+		if (role === "tenant") throw errors.FORBIDDEN();
+
+		const { daysAhead } = input;
 		const todayStr = today();
 		const futureDate = new Date();
 		futureDate.setDate(futureDate.getDate() + daysAhead);
-		const futureDateStr = futureDate.toISOString().split("T")[0];
+		const futureDateStr = toIsoDate(futureDate);
 
-		// Leases whose endDate (or next monthly cycle) falls in range.
-		// For simplicity: active leases where the monthly anniversary of
-		// startDate falls within the window.
 		const leaseRows = await db
 			.select({
 				id: lease.id,
@@ -489,16 +463,16 @@ export const upcomingRentDue = os.report.upcomingRentDue
 		const now = new Date();
 
 		for (const l of leaseRows) {
-			// Calculate the next due date based on the startDate day-of-month
+			// Next monthly due date based on the start day-of-month
 			const startDay = new Date(l.startDate).getDate();
 			const dueDate = new Date(now.getFullYear(), now.getMonth(), startDay);
 
-			// If this month's due date has passed, look to next month
-			if (dueDate < now) {
+			// If this month's due date has already passed, advance to next month
+			if (dueDate <= now) {
 				dueDate.setMonth(dueDate.getMonth() + 1);
 			}
 
-			const dueDateStr = dateToIsoString(dueDate);
+			const dueDateStr = toIsoDate(dueDate);
 			if (dueDateStr > futureDateStr) continue;
 
 			const daysUntilDue = daysBetween(todayStr, dueDateStr);
@@ -514,7 +488,7 @@ export const upcomingRentDue = os.report.upcomingRentDue
 					: "",
 				tenantPhone: t?.phoneNumber ?? "",
 				rentAmount: currentRentByLease.get(l.id) ?? "0.00",
-				dueDate,
+				dueDate: dueDateStr,
 				daysUntilDue,
 			});
 		}
@@ -527,20 +501,22 @@ export const upcomingRentDue = os.report.upcomingRentDue
 export const expiringDocuments = os.report.expiringDocuments
 	.use(authMiddleware)
 	.use(permissionMiddleware({ document: ["read"] }))
-	.handler(async ({ input, context }) => {
-		const { organizationId } = context.user;
-		const { daysAhead } = input;
+	.handler(async ({ input, errors, context }) => {
+		const { organizationId, role } = context.user;
 
+		if (role === "tenant") throw errors.FORBIDDEN();
+
+		const { daysAhead } = input;
 		const todayStr = today();
 		const futureDate = new Date();
 		futureDate.setDate(futureDate.getDate() + daysAhead);
-		const futureDateStr = dateToIsoString(futureDate);
+		const futureDateStr = toIsoDate(futureDate);
 
 		const rows: Array<{
 			id: number;
 			documentType: string;
 			label: string;
-			expiryDate: Date;
+			expiryDate: string;
 			daysUntilExpiry: number;
 			resourceType: "unit" | "tenant" | "lease";
 			resourceId: number;
@@ -574,7 +550,7 @@ export const expiringDocuments = os.report.expiringDocuments
 				id: d.id,
 				documentType: d.documentType,
 				label: d.label,
-				expiryDate: new Date(d.expiryDate!),
+				expiryDate: d.expiryDate!,
 				daysUntilExpiry: daysBetween(todayStr, d.expiryDate!),
 				resourceType: "unit",
 				resourceId: d.unitId,
@@ -582,11 +558,7 @@ export const expiringDocuments = os.report.expiringDocuments
 			});
 		}
 
-		// Tenant documents — they don't have expiryDate in the schema,
-		// but checking active status so we only return relevant ones.
-		// If you add expiryDate to tenantDocument later, extend this query.
-
-		// Lease documents with expiryDate (if documentDate is used as expiry proxy)
+		// Lease documents — using documentDate as the expiry proxy
 		const leaseDocRows = await db
 			.select({
 				id: leaseDocument.id,
@@ -615,7 +587,7 @@ export const expiringDocuments = os.report.expiringDocuments
 				id: d.id,
 				documentType: d.documentType,
 				label: d.label,
-				expiryDate: new Date(d.documentDate!),
+				expiryDate: d.documentDate!,
 				daysUntilExpiry: daysBetween(todayStr, d.documentDate!),
 				resourceType: "lease",
 				resourceId: d.leaseId,
@@ -631,14 +603,16 @@ export const expiringDocuments = os.report.expiringDocuments
 export const upcomingInspections = os.report.upcomingInspections
 	.use(authMiddleware)
 	.use(permissionMiddleware({ inspection: ["read"] }))
-	.handler(async ({ input, context }) => {
-		const { organizationId } = context.user;
-		const { daysAhead, unitId } = input;
+	.handler(async ({ input, errors, context }) => {
+		const { organizationId, role } = context.user;
 
+		if (role === "tenant") throw errors.FORBIDDEN();
+
+		const { daysAhead, unitId } = input;
 		const todayStr = today();
 		const futureDate = new Date();
 		futureDate.setDate(futureDate.getDate() + daysAhead);
-		const futureDateStr = dateToIsoString(futureDate);
+		const futureDateStr = toIsoDate(futureDate);
 
 		const rows = await db
 			.select({
@@ -670,7 +644,7 @@ export const upcomingInspections = os.report.upcomingInspections
 				title: r.title,
 				unitId: r.unitId,
 				unitName: r.unitName,
-				scheduledDate: new Date(r.scheduledDate),
+				scheduledDate: r.scheduledDate,
 				daysUntilInspection: daysBetween(todayStr, r.scheduledDate),
 				assignedUserName: r.userName ?? null,
 			})),
@@ -680,8 +654,10 @@ export const upcomingInspections = os.report.upcomingInspections
 export const overdueUtilityBills = os.report.overdueUtilityBills
 	.use(authMiddleware)
 	.use(permissionMiddleware({ utility: ["read"] }))
-	.handler(async ({ context }) => {
-		const { organizationId } = context.user;
+	.handler(async ({ errors, context }) => {
+		const { organizationId, role } = context.user;
+
+		if (role === "tenant") throw errors.FORBIDDEN();
 
 		const todayStr = today();
 
@@ -723,7 +699,7 @@ export const overdueUtilityBills = os.report.overdueUtilityBills
 				unitName: r.unitName,
 				billAmount: r.billAmount,
 				previousDueAmount: r.previousDueAmount,
-				periodEnd: new Date(r.periodEnd),
+				periodEnd: r.periodEnd,
 				daysPastDue,
 				status: r.status,
 			};
@@ -738,8 +714,10 @@ export const overdueUtilityBills = os.report.overdueUtilityBills
 export const repairSummary = os.report.repairSummary
 	.use(authMiddleware)
 	.use(permissionMiddleware({ repair: ["read"] }))
-	.handler(async ({ input, context }) => {
-		const { organizationId } = context.user;
+	.handler(async ({ input, errors, context }) => {
+		const { organizationId, role } = context.user;
+
+		if (role === "tenant") throw errors.FORBIDDEN();
 
 		const rows = await db
 			.select({
@@ -785,14 +763,16 @@ export const repairSummary = os.report.repairSummary
 export const expiringLeases = os.report.expiringLeases
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["read"] }))
-	.handler(async ({ input, context }) => {
-		const { organizationId } = context.user;
-		const { daysAhead } = input;
+	.handler(async ({ input, errors, context }) => {
+		const { organizationId, role } = context.user;
 
+		if (role === "tenant") throw errors.FORBIDDEN();
+
+		const { daysAhead } = input;
 		const todayStr = today();
 		const futureDate = new Date();
 		futureDate.setDate(futureDate.getDate() + daysAhead);
-		const futureDateStr = dateToIsoString(futureDate);
+		const futureDateStr = toIsoDate(futureDate);
 
 		const leaseRows = await db
 			.select({
@@ -847,7 +827,7 @@ export const expiringLeases = os.report.expiringLeases
 						? [t.firstName, t.lastName].filter(Boolean).join(" ")
 						: "",
 					tenantPhone: t?.phoneNumber ?? "",
-					endDate: new Date(l.endDate!),
+					endDate: l.endDate!,
 					daysUntilExpiry: daysBetween(todayStr, l.endDate!),
 					status: l.status,
 				};
