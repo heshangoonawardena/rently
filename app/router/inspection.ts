@@ -8,8 +8,40 @@ import {
 	BaseContext,
 	permissionMiddleware,
 } from "./middleware";
+import { tenant } from "@/db/schema/tenant";
+import { lease } from "@/db/schema/lease";
 
 const os = implement(contract).$context<BaseContext>();
+
+/**
+ * Returns true if the tenant (looked up by userId) has an active lease on unitId.
+ */
+async function tenantCanAccessUnit(
+	userId: string,
+	unitId: number,
+): Promise<boolean> {
+	const [self] = await db
+		.select({ id: tenant.id })
+		.from(tenant)
+		.where(eq(tenant.userId, userId))
+		.limit(1);
+
+	if (!self) return false;
+
+	const [activeLease] = await db
+		.select({ id: lease.id })
+		.from(lease)
+		.where(
+			and(
+				eq(lease.unitId, unitId),
+				eq(lease.tenantId, self.id),
+				eq(lease.status, "active"),
+			),
+		)
+		.limit(1);
+
+	return activeLease !== undefined;
+}
 
 export const createInspection = os.inspection.create
 	.use(authMiddleware)
@@ -193,6 +225,7 @@ export const deleteInspection = os.inspection.delete
 		const [data] = await db
 			.update(inspection)
 			.set({ status: "cancelled" })
+			.where(eq(inspection.id, input.id))
 			.returning();
 
 		return data;
@@ -226,8 +259,15 @@ export const getInspection = os.inspection.get
 export const listInspection = os.inspection.list
 	.use(authMiddleware)
 	.use(permissionMiddleware({ inspection: ["read"] }))
-	.handler(async ({ input }) => {
+	.handler(async ({ input, errors, context }) => {
 		const { unitId, cursor, limit, status } = input;
+		const { role, userId } = context.user;
+
+		// Tenants may only list inspections on their own unit
+		if (role === "tenant") {
+			const allowed = await tenantCanAccessUnit(userId, unitId);
+			if (!allowed) throw errors.FORBIDDEN();
+		}
 
 		const rows = await db
 			.select()

@@ -8,8 +8,41 @@ import {
 	BaseContext,
 	permissionMiddleware,
 } from "./middleware";
+import { tenant } from "@/db/schema/tenant";
+import { lease } from "@/db/schema/lease";
 
 const os = implement(contract).$context<BaseContext>();
+
+/**
+ * Verify a tenant user can access a specific unit — they must have an active
+ * lease on that unit.
+ */
+async function assertTenantCanAccessUnit(
+	userId: string,
+	unitId: number,
+): Promise<boolean> {
+	const [self] = await db
+		.select({ id: tenant.id })
+		.from(tenant)
+		.where(eq(tenant.userId, userId))
+		.limit(1);
+
+	if (!self) return false;
+
+	const [activeLease] = await db
+		.select({ id: lease.id })
+		.from(lease)
+		.where(
+			and(
+				eq(lease.unitId, unitId),
+				eq(lease.tenantId, self.id),
+				eq(lease.status, "active"),
+			),
+		)
+		.limit(1);
+
+	return activeLease !== undefined;
+}
 
 // ── Utility account handlers ──
 
@@ -17,8 +50,6 @@ export const createUtility = os.utility.create
 	.use(authMiddleware)
 	.use(permissionMiddleware({ utility: ["create"] }))
 	.handler(async ({ input, errors }) => {
-		const { unitId, ...rest } = input;
-
 		const [existing] = await db
 			.select({ id: utility.id })
 			.from(utility)
@@ -35,10 +66,7 @@ export const createUtility = os.utility.create
 			});
 		}
 
-		const [data] = await db
-			.insert(utility)
-			.values({ ...rest, unitId })
-			.returning();
+		const [data] = await db.insert(utility).values(input).returning();
 
 		return data;
 	});
@@ -117,13 +145,13 @@ export const deleteUtility = os.utility.delete
 	.use(authMiddleware)
 	.use(permissionMiddleware({ utility: ["delete"] }))
 	.handler(async ({ input, errors }) => {
-		// Prevent deletion if bills exist
 		const [bill] = await db
 			.select({ id: utilityBill.id })
 			.from(utilityBill)
 			.where(eq(utilityBill.utilityId, input.id))
 			.limit(1);
 
+		// Prevent deletion if bills exist
 		if (bill) {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "UTILITY_HAS_BILLS" },
@@ -152,8 +180,15 @@ export const deleteUtility = os.utility.delete
 export const listUtility = os.utility.list
 	.use(authMiddleware)
 	.use(permissionMiddleware({ utility: ["read"] }))
-	.handler(async ({ input }) => {
+	.handler(async ({ input, errors, context }) => {
 		const { unitId, cursor, limit, status } = input;
+		const { role, userId } = context.user;
+
+		// Tenants may only list utilities for units they actively lease
+		if (role === "tenant") {
+			const allowed = await assertTenantCanAccessUnit(userId, unitId);
+			if (!allowed) throw errors.FORBIDDEN();
+		}
 
 		const rows = await db
 			.select()
@@ -234,7 +269,7 @@ export const updateUtilityBill = os.utility.updateBill
 			});
 		}
 
-		if (existing.status == "discarded") {
+		if (existing.status === "discarded") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "BILL_NOT_EDITABLE" },
 				cause: "Discarded bills are not editable",
@@ -276,7 +311,7 @@ export const markUtilityBillPaid = os.utility.markBillPaid
 		if (existing.status !== "issued") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "BILL_NOT_PAYABLE" },
-				cause: "Only issued or not discarded bills can be marked as paid",
+				cause: "Only issued bills can be marked as paid",
 			});
 		}
 
@@ -331,8 +366,31 @@ export const deleteUtilityBill = os.utility.deleteBill
 export const listUtilityBill = os.utility.listBills
 	.use(authMiddleware)
 	.use(permissionMiddleware({ utility: ["read"] }))
-	.handler(async ({ input }) => {
+	.handler(async ({ input, errors, context }) => {
 		const { utilityId, cursor, limit, status } = input;
+		const { role, userId } = context.user;
+
+		// Tenants may only read bills for utilities on their own unit
+		if (role === "tenant") {
+			const [parentUtility] = await db
+				.select({ unitId: utility.unitId })
+				.from(utility)
+				.where(eq(utility.id, utilityId))
+				.limit(1);
+
+			if (!parentUtility) {
+				throw errors.NOT_FOUND({
+					data: { resourceType: "Utility", resourceId: utilityId },
+					cause: "UTILITY_NOT_FOUND",
+				});
+			}
+
+			const allowed = await assertTenantCanAccessUnit(
+				userId,
+				parentUtility.unitId,
+			);
+			if (!allowed) throw errors.FORBIDDEN();
+		}
 
 		const rows = await db
 			.select()

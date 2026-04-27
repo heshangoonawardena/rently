@@ -7,26 +7,27 @@ export const leases = async (db: DB) => {
 		db.query.tenant.findMany(),
 	]);
 
-	await db.insert(lease).values([
-		{
-			tenantId: tenantData[0].id,
-			unitId: unitData[0].id,
-			startDate: new Date().toISOString().split("T")[0],
-			depositAmount: "1000",
-			createdAt: new Date(),
-			updatedAt: new Date(),
-		},
-		{
-			tenantId: tenantData[0].id,
-			unitId: unitData[1].id,
-			startDate: new Date().toISOString().split("T")[0],
-			depositAmount: "2000",
-			createdAt: new Date(),
-			updatedAt: new Date(),
-		},
-	]);
-
-	const leaseData = await db.query.lease.findMany();
+	const leaseData = await db
+		.insert(lease)
+		.values([
+			{
+				tenantId: tenantData[0].id,
+				unitId: unitData[0].id,
+				startDate: new Date().toISOString().split("T")[0],
+				depositAmount: "1000",
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			},
+			{
+				tenantId: tenantData[0].id,
+				unitId: unitData[1].id,
+				startDate: new Date().toISOString().split("T")[0],
+				depositAmount: "2000",
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			},
+		])
+		.returning();
 
 	await db.insert(leaseRent).values([
 		{

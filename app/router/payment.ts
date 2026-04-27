@@ -9,6 +9,7 @@ import {
 	BaseContext,
 	permissionMiddleware,
 } from "./middleware";
+import { tenant } from "@/db/schema/tenant";
 
 const os = implement(contract).$context<BaseContext>();
 
@@ -41,6 +42,23 @@ async function generateReceiptNumber(): Promise<string> {
 		.from(paymentReceipt);
 	const seq = String(Number(count) + 1).padStart(5, "0");
 	return `RCP-${year}-${seq}`;
+}
+
+/**
+ * Resolve the tenant record for the authenticated user, if the role is 'tenant'.
+ * Returns undefined for owner/manager (no scoping needed).
+ */
+async function resolveTenantScope(
+	role: string,
+	userId: string,
+): Promise<number | undefined> {
+	if (role !== "tenant") return undefined;
+	const [self] = await db
+		.select({ id: tenant.id })
+		.from(tenant)
+		.where(eq(tenant.userId, userId))
+		.limit(1);
+	return self?.id;
 }
 
 // ── Payment handlers ──
@@ -99,19 +117,15 @@ export const createPayment = os.payment.create
 			.returning();
 
 		const receiptNumber = await generateReceiptNumber();
-		const [receipt] = await db
-			.insert(paymentReceipt)
-			.values({
-				paymentId: newPayment.id,
-				receiptNumber,
-				issuedDate: paymentData.paymentDate,
-				amountPaid: paymentData.paymentAmount,
-				balanceAfter: balanceAfter.toFixed(2),
-			})
-			.returning();
+		await db.insert(paymentReceipt).values({
+			paymentId: newPayment.id,
+			receiptNumber,
+			issuedDate: paymentData.paymentDate,
+			amountPaid: paymentData.paymentAmount,
+			balanceAfter: balanceAfter.toFixed(2),
+		});
 
 		return newPayment;
-		// return { payment: newPayment, receipt };
 	});
 
 export const updatePayment = os.payment.update
@@ -148,14 +162,30 @@ export const updatePayment = os.payment.update
 export const getPayment = os.payment.get
 	.use(authMiddleware)
 	.use(permissionMiddleware({ payment: ["read"] }))
-	.handler(async ({ input, errors }) => {
-		const [paymentData] = await db
+	.handler(async ({ input, errors, context }) => {
+		const { role, userId } = context.user;
+
+		// Tenants may only read payments on their own leases
+		const tenantId = await resolveTenantScope(role, userId);
+		if (role === "tenant" && tenantId === undefined) throw errors.FORBIDDEN();
+
+		// If tenant, verify the lease belongs to them before reading
+		if (tenantId !== undefined) {
+			const [parentLease] = await db
+				.select({ id: lease.id })
+				.from(lease)
+				.where(and(eq(lease.id, input.leaseId), eq(lease.tenantId, tenantId)))
+				.limit(1);
+			if (!parentLease) throw errors.FORBIDDEN();
+		}
+
+		const [data] = await db
 			.select()
 			.from(payment)
 			.where(and(eq(payment.id, input.id), eq(payment.leaseId, input.leaseId)))
 			.limit(1);
 
-		if (!paymentData) {
+		if (!data) {
 			throw errors.NOT_FOUND({
 				data: {
 					resourceType: "Payment",
@@ -165,21 +195,28 @@ export const getPayment = os.payment.get
 			});
 		}
 
-		const [receipt] = await db
-			.select()
-			.from(paymentReceipt)
-			.where(eq(paymentReceipt.paymentId, paymentData.id))
-			.limit(1);
-
-		return paymentData;
-		// return { payment: paymentData, receipt: receipt ?? null };
+		return data;
 	});
 
 export const listPayment = os.payment.list
 	.use(authMiddleware)
 	.use(permissionMiddleware({ payment: ["read"] }))
-	.handler(async ({ input }) => {
+	.handler(async ({ input, errors, context }) => {
 		const { leaseId, cursor, limit, paymentType } = input;
+		const { role, userId } = context.user;
+
+		// Tenants may only list payments on their own leases
+		const tenantId = await resolveTenantScope(role, userId);
+		if (role === "tenant" && tenantId === undefined) throw errors.FORBIDDEN();
+
+		if (tenantId !== undefined) {
+			const [parentLease] = await db
+				.select({ id: lease.id })
+				.from(lease)
+				.where(and(eq(lease.id, leaseId), eq(lease.tenantId, tenantId)))
+				.limit(1);
+			if (!parentLease) throw errors.FORBIDDEN();
+		}
 
 		const rows = await db
 			.select()
@@ -208,7 +245,9 @@ export const listPayment = os.payment.list
 export const getReceipt = os.payment.getReceipt
 	.use(authMiddleware)
 	.use(permissionMiddleware({ payment: ["read"] }))
-	.handler(async ({ input, errors }) => {
+	.handler(async ({ input, errors, context }) => {
+		const { role, userId } = context.user;
+
 		const [data] = await db
 			.select()
 			.from(paymentReceipt)
@@ -225,16 +264,56 @@ export const getReceipt = os.payment.getReceipt
 			});
 		}
 
+		// Tenants may only read receipts tied to their own leases
+		if (role === "tenant") {
+			const tenantId = await resolveTenantScope(role, userId);
+			if (tenantId === undefined) throw errors.FORBIDDEN();
+
+			const [parentPayment] = await db
+				.select({ leaseId: payment.leaseId })
+				.from(payment)
+				.where(eq(payment.id, data.paymentId))
+				.limit(1);
+
+			if (!parentPayment) throw errors.FORBIDDEN();
+
+			const [parentLease] = await db
+				.select({ id: lease.id })
+				.from(lease)
+				.where(
+					and(
+						eq(lease.id, parentPayment.leaseId),
+						eq(lease.tenantId, tenantId),
+					),
+				)
+				.limit(1);
+
+			if (!parentLease) throw errors.FORBIDDEN();
+		}
+
 		return data;
 	});
 
 export const listReceipts = os.payment.listReceipts
 	.use(authMiddleware)
 	.use(permissionMiddleware({ payment: ["read"] }))
-	.handler(async ({ input }) => {
+	.handler(async ({ input, errors, context }) => {
 		const { leaseId, cursor, limit } = input;
+		const { role, userId } = context.user;
 
-		// Join through payment to filter by lease
+		// Tenants may only list receipts on their own leases
+		const tenantId = await resolveTenantScope(role, userId);
+		if (role === "tenant" && tenantId === undefined) throw errors.FORBIDDEN();
+
+		if (tenantId !== undefined) {
+			const [parentLease] = await db
+				.select({ id: lease.id })
+				.from(lease)
+				.where(and(eq(lease.id, leaseId), eq(lease.tenantId, tenantId)))
+				.limit(1);
+			if (!parentLease) throw errors.FORBIDDEN();
+		}
+
 		const rows = await db
 			.select({ receipt: paymentReceipt })
 			.from(paymentReceipt)

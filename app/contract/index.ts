@@ -39,6 +39,15 @@ import {
 	renewLeaseContract,
 } from "./lease.contract";
 import {
+	bulkUpsertNotificationPreferencesContract,
+	deleteNotificationPreferenceContract,
+	listNotificationLogsContract,
+	listNotificationPreferencesContract,
+	markAllNotificationsReadContract,
+	markNotificationReadContract,
+	upsertNotificationPreferenceContract,
+} from "./notification.contract";
+import {
 	createPaymentContract,
 	getPaymentContract,
 	getReceiptContract,
@@ -195,5 +204,14 @@ export const contract = {
 		overdueUtilityBills: overdueUtilityBillsContract,
 		repairSummary: repairSummaryContract,
 		expiringLeases: expiringLeasesContract,
+	},
+	notification: {
+		upsert: upsertNotificationPreferenceContract,
+		bulkUpsert: bulkUpsertNotificationPreferencesContract,
+		deletePreference: deleteNotificationPreferenceContract,
+		listPreferences: listNotificationPreferencesContract,
+		listLogs: listNotificationLogsContract,
+		markRead: markNotificationReadContract,
+		markAllRead: markAllNotificationsReadContract,
 	},
 };

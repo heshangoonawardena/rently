@@ -8,8 +8,48 @@ import {
 	BaseContext,
 	permissionMiddleware,
 } from "./middleware";
+import { lease } from "@/db/schema/lease";
+import { tenant } from "@/db/schema/tenant";
 
 const os = implement(contract).$context<BaseContext>();
+
+/**
+ * Returns the tenant.id for the authenticated user if role === 'tenant',
+ * otherwise undefined.
+ */
+async function resolveTenantId(
+	role: string,
+	userId: string,
+): Promise<number | undefined> {
+	if (role !== "tenant") return undefined;
+	const [self] = await db
+		.select({ id: tenant.id })
+		.from(tenant)
+		.where(eq(tenant.userId, userId))
+		.limit(1);
+	return self?.id;
+}
+
+/**
+ * Verify that a tenant has an active lease on a given unit.
+ */
+async function tenantHasLeaseOnUnit(
+	tenantId: number,
+	unitId: number,
+): Promise<boolean> {
+	const [row] = await db
+		.select({ id: lease.id })
+		.from(lease)
+		.where(
+			and(
+				eq(lease.unitId, unitId),
+				eq(lease.tenantId, tenantId),
+				eq(lease.status, "active"),
+			),
+		)
+		.limit(1);
+	return row !== undefined;
+}
 
 // ── Repair Request handlers ──
 
@@ -61,7 +101,7 @@ export const updateRepairRequest = os.repair.update
 		if (existing.status === "resolved" || existing.status === "cancelled") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "REPAIR_REQUEST_ALREADY_RESOLVED" },
-				cause: "repair requests is already resolved",
+				cause: "Repair request is already resolved",
 			});
 		}
 
@@ -100,13 +140,14 @@ export const deleteRepairRequest = os.repair.delete
 		if (existing.status === "resolved" || existing.status === "cancelled") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "REPAIR_REQUEST_ALREADY_RESOLVED" },
-				cause: "Repair requests is already resolved",
+				cause: "Repair request is already resolved",
 			});
 		}
 
 		const [data] = await db
 			.update(repairRequest)
 			.set({ status: "cancelled" })
+			.where(eq(repairRequest.id, input.id))
 			.returning();
 
 		return data;
@@ -115,7 +156,17 @@ export const deleteRepairRequest = os.repair.delete
 export const getRepairRequest = os.repair.get
 	.use(authMiddleware)
 	.use(permissionMiddleware({ repair: ["read"] }))
-	.handler(async ({ input, errors }) => {
+	.handler(async ({ input, errors, context }) => {
+		const { role, userId } = context.user;
+
+		// Tenants may only read repair requests on their own unit
+		const tenantId = await resolveTenantId(role, userId);
+		if (role === "tenant") {
+			if (tenantId === undefined) throw errors.FORBIDDEN();
+			const allowed = await tenantHasLeaseOnUnit(tenantId, input.unitId);
+			if (!allowed) throw errors.FORBIDDEN();
+		}
+
 		const [data] = await db
 			.select()
 			.from(repairRequest)
@@ -143,8 +194,17 @@ export const getRepairRequest = os.repair.get
 export const listRepairRequest = os.repair.list
 	.use(authMiddleware)
 	.use(permissionMiddleware({ repair: ["read"] }))
-	.handler(async ({ input }) => {
+	.handler(async ({ input, errors, context }) => {
 		const { unitId, cursor, limit, status, priority, repairType } = input;
+		const { role, userId } = context.user;
+
+		// Tenants may only list repairs on their own unit
+		const tenantId = await resolveTenantId(role, userId);
+		if (role === "tenant") {
+			if (tenantId === undefined) throw errors.FORBIDDEN();
+			const allowed = await tenantHasLeaseOnUnit(tenantId, unitId);
+			if (!allowed) throw errors.FORBIDDEN();
+		}
 
 		const rows = await db
 			.select()
@@ -227,8 +287,31 @@ export const addRepairUpdate = os.repair.addUpdate
 export const listRepairUpdates = os.repair.listUpdates
 	.use(authMiddleware)
 	.use(permissionMiddleware({ repair: ["read"] }))
-	.handler(async ({ input }) => {
+	.handler(async ({ input, errors, context }) => {
 		const { repairRequestId, cursor, limit } = input;
+		const { role, userId } = context.user;
+
+		// Tenants may only list updates for repairs on their own unit
+		if (role === "tenant") {
+			const tenantId = await resolveTenantId(role, userId);
+			if (tenantId === undefined) throw errors.FORBIDDEN();
+
+			const [parent] = await db
+				.select({ unitId: repairRequest.unitId })
+				.from(repairRequest)
+				.where(eq(repairRequest.id, repairRequestId))
+				.limit(1);
+
+			if (!parent) {
+				throw errors.NOT_FOUND({
+					data: { resourceType: "RepairRequest", resourceId: repairRequestId },
+					cause: "REPAIR_REQUEST_NOT_FOUND",
+				});
+			}
+
+			const allowed = await tenantHasLeaseOnUnit(tenantId, parent.unitId);
+			if (!allowed) throw errors.FORBIDDEN();
+		}
 
 		const rows = await db
 			.select()

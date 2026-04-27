@@ -28,7 +28,7 @@ export const notificationPreference = pgTable(
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
 		organizationId: text("organization_id").notNull(),
-		channel: notificationChannelEnum("channel").default("in-app").notNull(),
+		channel: notificationChannelEnum("channel").notNull(),
 		event: notificationEventEnum("event").notNull(),
 		daysBeforeThreshold: integer("days_before_threshold").default(7),
 		enabled: boolean("enabled").default(true).notNull(),
@@ -74,26 +74,14 @@ export const notificationLog = pgTable(
 	],
 );
 
-export const selectNotificationPreferenceSchema = createSelectSchema(
-	notificationPreference,
-);
-export type NotificationPreference = z.infer<
-	typeof selectNotificationPreferenceSchema
->;
+export const selectNotificationPreferenceSchema = createSelectSchema(notificationPreference);
+export type NotificationPreference = z.infer<typeof selectNotificationPreferenceSchema>;
 
-export const insertNotificationPreferenceSchema = createInsertSchema(
-	notificationPreference,
-);
-export type InsertNotificationPreference = z.infer<
-	typeof insertNotificationPreferenceSchema
->;
+export const insertNotificationPreferenceSchema = createInsertSchema(notificationPreference);
+export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferenceSchema>;
 
-export const updateNotificationPreferenceSchema = createUpdateSchema(
-	notificationPreference,
-);
-export type UpdateNotificationPreference = z.infer<
-	typeof updateNotificationPreferenceSchema
->;
+export const updateNotificationPreferenceSchema = createUpdateSchema(notificationPreference);
+export type UpdateNotificationPreference = z.infer<typeof updateNotificationPreferenceSchema>;
 
 export const selectNotificationLogSchema = createSelectSchema(notificationLog);
 export type NotificationLog = z.infer<typeof selectNotificationLogSchema>;

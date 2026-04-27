@@ -93,6 +93,15 @@ import {
 	upcomingInspections,
 	upcomingRentDue,
 } from "./report";
+import {
+	bulkUpsertNotificationPreferences,
+	deleteNotificationPreference,
+	listNotificationLogs,
+	listNotificationPreferences,
+	markAllNotificationsRead,
+	markNotificationRead,
+	upsertNotificationPreference,
+} from "./notification";
 
 const os = implement(contract).$context<BaseContext>();
 
@@ -194,5 +203,14 @@ export const router = os.router({
 		overdueUtilityBills: overdueUtilityBills,
 		repairSummary: repairSummary,
 		expiringLeases: expiringLeases,
+	},
+	notification: {
+		upsert: upsertNotificationPreference,
+		bulkUpsert: bulkUpsertNotificationPreferences,
+		deletePreference: deleteNotificationPreference,
+		listPreferences: listNotificationPreferences,
+		listLogs: listNotificationLogs,
+		markRead: markNotificationRead,
+		markAllRead: markAllNotificationsRead,
 	},
 });

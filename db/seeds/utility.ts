@@ -4,26 +4,27 @@ import { utility, utilityBill } from "@/db/schema/utility";
 export const utilities = async (db: DB) => {
 	const unitData = await db.query.unit.findMany();
 
-	await db.insert(utility).values([
-		{
-			unitId: unitData[0].id,
-			utilityType: "electricity",
-			holderName: "A B Perera",
-			accountNumber: "12345",
-			createdAt: new Date(),
-			updatedAt: new Date(),
-		},
-		{
-			unitId: unitData[1].id,
-			utilityType: "water",
-			holderName: "Y Z Silva",
-			accountNumber: "6712",
-			createdAt: new Date(),
-			updatedAt: new Date(),
-		},
-	]);
-
-	const utilityData = await db.query.utility.findMany();
+	const utilityData = await db
+		.insert(utility)
+		.values([
+			{
+				unitId: unitData[0].id,
+				utilityType: "electricity",
+				holderName: "A B Perera",
+				accountNumber: "12345",
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			},
+			{
+				unitId: unitData[1].id,
+				utilityType: "water",
+				holderName: "Y Z Silva",
+				accountNumber: "6712",
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			},
+		])
+		.returning();
 
 	await db.insert(utilityBill).values([
 		{

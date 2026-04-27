@@ -19,3 +19,4 @@ export * from "./utility";
 export * from "./repair";
 export * from "./inspection";
 export * from "./document";
+export * from "./notification";
