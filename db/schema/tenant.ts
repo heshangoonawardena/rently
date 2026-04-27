@@ -8,6 +8,13 @@ import {
 	integer,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./auth";
+import { occupancyStatusEnum } from "./enums";
+import {
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
+} from "drizzle-zod";
+import z from "zod";
 
 export const tenant = pgTable(
 	"tenant",
@@ -119,10 +126,3 @@ export const tenantOccupantRelations = relations(
 
 import { lease } from "./lease";
 import { tenantDocument } from "./document";
-import {
-	createInsertSchema,
-	createSelectSchema,
-	createUpdateSchema,
-} from "drizzle-zod";
-import z from "zod";
-import { occupancyStatusEnum } from "./enums";

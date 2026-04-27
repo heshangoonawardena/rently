@@ -53,8 +53,7 @@ export const unitRelations = relations(unit, ({ one, many }) => ({
 		fields: [unit.organizationId],
 		references: [organization.id],
 	}),
-	// Back-references declared here to keep unit self-contained.
-	// The other side is declared in each domain file.
+
 	leases: many(lease),
 	utilities: many(utility),
 	repairRequests: many(repairRequest),
@@ -62,11 +61,9 @@ export const unitRelations = relations(unit, ({ one, many }) => ({
 	documents: many(unitDocument),
 }));
 
-// Lazy imports to avoid circular dependency — these are resolved
-// at runtime by Drizzle's relation system, not at module load time.
+// Lazy imports to avoid circular dependency — resolved at runtime by Drizzle.
 import { lease } from "./lease";
 import { utility } from "./utility";
 import { repairRequest } from "./repair";
 import { inspection } from "./inspection";
 import { unitDocument } from "./document";
-import { timestamptz } from "drizzle-orm/gel-core";

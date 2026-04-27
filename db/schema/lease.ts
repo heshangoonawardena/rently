@@ -14,6 +14,12 @@ import { sql } from "drizzle-orm";
 import { unit } from "./unit";
 import { tenant } from "./tenant";
 import { leaseRentStatusEnum, leaseStatusEnum } from "./enums";
+import {
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
+} from "drizzle-zod";
+import z from "zod";
 
 export const lease = pgTable(
 	"lease",
@@ -131,9 +137,3 @@ export const leaseRentRelations = relations(leaseRent, ({ one }) => ({
 
 import { payment } from "./payment";
 import { leaseDocument } from "./document";
-import {
-	createInsertSchema,
-	createSelectSchema,
-	createUpdateSchema,
-} from "drizzle-zod";
-import z from "zod";

@@ -299,7 +299,7 @@ export const deleteTenantOccupant = os.tenant.deleteOccupant
 		const [data] = await db
 			.update(tenantOccupant)
 			.set({ status: "inactive" })
-			.where(eq(tenant.id, input.id))
+			.where(eq(tenantOccupant.id, input.id))
 			.returning();
 
 		return data;

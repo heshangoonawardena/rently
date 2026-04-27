@@ -12,6 +12,8 @@ async function main() {
 	try {
 		console.log("🗑️ Resetting database tables...");
 		for (const table of [
+			schema.notificationLog,
+			schema.notificationPreference,
 			schema.leaseDocument,
 			schema.tenantDocument,
 			schema.unitDocument,

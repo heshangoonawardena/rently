@@ -1,7 +1,7 @@
 // ============================================================
-// SCHEMA BARREL
-// Re-exports all tables, relations, and enums.
-// Import from here in drizzle.config.ts and db/index.ts.
+// SEED BARREL
+// Re-exports all seed data
+// Import from here in db/seeds/index.ts.
 // ============================================================
 
 // Better Auth

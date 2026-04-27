@@ -88,10 +88,11 @@ export const createPayment = os.payment.create
 			});
 		}
 
-		if (parentLease.status !== "active") {
+		if (parentLease.status !== "active" && parentLease.status !== "extended") {
 			throw errors.DOMAIN_RULE_VIOLATION({
-				data: { rule: "LEASE_NOT_ACTIVE" },
-				cause: "Payments can only be recorded against active leases",
+				data: { rule: "LEASE_NOT_ACTIVE_OR_EXTENDED" },
+				cause:
+					"Payments can only be recorded against active or extended leases",
 			});
 		}
 
