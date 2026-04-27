@@ -38,8 +38,10 @@ export const utility = pgTable(
 		accountNumber: text("account_number").notNull().unique(),
 		description: text("description"),
 		status: utilityStatusEnum("status").default("active").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
@@ -68,8 +70,10 @@ export const utilityBill = pgTable(
 		periodEnd: date("period_end").notNull(),
 		description: text("description"),
 		status: utilityBillStatusEnum("status").default("issued").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),

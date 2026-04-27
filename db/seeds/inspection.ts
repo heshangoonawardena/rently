@@ -15,8 +15,6 @@ export const inspections = async (db: DB) => {
 			scheduledDate: "2024-01-01",
 			completedDate: "2024-01-01",
 			status: "completed",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 		{
 			unitId: unitData[1].id,
@@ -24,8 +22,6 @@ export const inspections = async (db: DB) => {
 			title: "Move-out Inspection",
 			scheduledDate: "2024-01-01",
 			status: "scheduled",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 	]);
 

@@ -16,8 +16,6 @@ export const documents = async (db: DB) => {
 			storageKey: "/documents/deed-house-a.pdf",
 			documentDate: "2023-12-01",
 			status: "active",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 		{
 			unitId: unitData[2].id,
@@ -26,8 +24,6 @@ export const documents = async (db: DB) => {
 			storageKey: "/documents/insurance-house-a.pdf",
 			documentDate: "2024-01-01",
 			status: "superseded",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 	]);
 
@@ -43,8 +39,6 @@ export const documents = async (db: DB) => {
 			label: "ID Card",
 			storageKey: "/documents/id-alice-williams.pdf",
 			status: "active",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 		{
 			tenantId: tenantData[0].id,
@@ -53,8 +47,6 @@ export const documents = async (db: DB) => {
 			label: "Passport",
 			storageKey: "/documents/id-alice-williams.pdf",
 			status: "expired",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 	]);
 
@@ -68,8 +60,6 @@ export const documents = async (db: DB) => {
 			storageKey: "/documents/id-alice-williams.pdf",
 			documentDate: "2023-12-01",
 			status: "active",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 		{
 			leaseId: leaseData[1].id,
@@ -78,8 +68,6 @@ export const documents = async (db: DB) => {
 			storageKey: "/documents/id-alice-williams.pdf",
 			documentDate: "2023-12-01",
 			status: "expired",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 	]);
 

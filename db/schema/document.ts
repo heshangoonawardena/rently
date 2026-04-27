@@ -12,7 +12,11 @@ import { unit } from "./unit";
 import { tenant, tenantOccupant } from "./tenant";
 import { lease } from "./lease";
 import { documentStatusEnum } from "./enums";
-import { createInsertSchema, createSelectSchema, createUpdateSchema } from "drizzle-zod";
+import {
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
+} from "drizzle-zod";
 import z from "zod";
 
 // Property-level documents: tax receipts, council permits, property photos.
@@ -32,8 +36,10 @@ export const unitDocument = pgTable(
 		documentDate: date("document_date"),
 		expiryDate: date("expiry_date"),
 		status: documentStatusEnum("status").default("active").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
@@ -61,8 +67,10 @@ export const tenantDocument = pgTable(
 		description: text("description"),
 		storageKey: text("storage_key").notNull(),
 		status: documentStatusEnum("status").default("active").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
@@ -88,15 +96,16 @@ export const leaseDocument = pgTable(
 		storageKey: text("storage_key").notNull(),
 		documentDate: date("document_date"),
 		status: documentStatusEnum("status").default("active").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
 	(table) => [index("lease_document_leaseId_idx").on(table.leaseId)],
 );
-
 
 // unit document schemas
 export const selectUnitDocumentSchema = createSelectSchema(unitDocument);
@@ -108,7 +117,6 @@ export type InsertUnitDocument = z.infer<typeof insertUnitDocumentSchema>;
 export const updateUnitDocumentSchema = createUpdateSchema(unitDocument);
 export type UpdateUnitDocument = z.infer<typeof updateUnitDocumentSchema>;
 
-	
 // tenant document schemas
 export const selectTenantDocumentSchema = createSelectSchema(tenantDocument);
 export type TenantDocument = z.infer<typeof selectTenantDocumentSchema>;
@@ -119,7 +127,6 @@ export type InsertTenantDocument = z.infer<typeof insertTenantDocumentSchema>;
 export const updateTenantDocumentSchema = createUpdateSchema(tenantDocument);
 export type UpdateTenantDocument = z.infer<typeof updateTenantDocumentSchema>;
 
-
 // lease document schemas
 export const selectLeaseDocumentSchema = createSelectSchema(leaseDocument);
 export type LeaseDocument = z.infer<typeof selectLeaseDocumentSchema>;
@@ -129,7 +136,6 @@ export type InsertLeaseDocument = z.infer<typeof insertLeaseDocumentSchema>;
 
 export const updateLeaseDocumentSchema = createUpdateSchema(leaseDocument);
 export type UpdateLeaseDocument = z.infer<typeof updateLeaseDocumentSchema>;
-
 
 // ============================================================
 // RELATIONS

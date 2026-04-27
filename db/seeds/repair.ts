@@ -18,8 +18,6 @@ export const repairs = async (db: DB) => {
 				description: "The kitchen faucet has been dripping for the past week",
 				priority: "medium",
 				status: "resolved",
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			},
 			{
 				unitId: unitData[1].id,
@@ -29,8 +27,6 @@ export const repairs = async (db: DB) => {
 				description: "Light switch in living room is not working",
 				priority: "high",
 				status: "in_progress",
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			},
 		])
 		.returning();
@@ -43,16 +39,12 @@ export const repairs = async (db: DB) => {
 			userId: userData[1].id,
 			oldStatus: "open",
 			newStatus: "in_progress",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 		{
 			repairRequestId: repairRequestData[1].id,
 			userId: userData[2].id,
 			oldStatus: "in_progress",
 			newStatus: "resolved",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 	]);
 

@@ -34,8 +34,10 @@ export const lease = pgTable(
 			scale: 2,
 		}).notNull(),
 		status: leaseStatusEnum("status").default("active").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
@@ -66,8 +68,10 @@ export const leaseRent = pgTable(
 		effectiveDate: date("effective_date").notNull(),
 		description: text("description"),
 		status: leaseRentStatusEnum("status").default("active").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),

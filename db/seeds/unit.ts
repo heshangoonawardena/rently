@@ -12,8 +12,6 @@ export const units = async (db: DB) => {
 			address: "456 Oak Ave, Springfield, IL 62702",
 			utilityBillingMode: "fixed_charge",
 			status: "occupied",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 		{
 			organizationId: organizationData[0].id,
@@ -22,8 +20,6 @@ export const units = async (db: DB) => {
 			address: "789 Industrial Blvd, Springfield, IL 62703",
 			utilityBillingMode: "metered",
 			status: "available",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 		{
 			organizationId: organizationData[0].id,
@@ -32,8 +28,6 @@ export const units = async (db: DB) => {
 			address: "321 Green Valley Rd, Springfield, IL 62704",
 			utilityBillingMode: "tenant_managed",
 			status: "available",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 	]);
 

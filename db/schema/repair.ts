@@ -33,8 +33,10 @@ export const repairRequest = pgTable(
 		description: text("description"),
 		priority: repairPriorityEnum("priority").default("medium").notNull(),
 		status: repairStatusEnum("status").default("open").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
@@ -62,8 +64,10 @@ export const repairUpdate = pgTable(
 		oldStatus: repairStatusEnum("old_status"),
 		newStatus: repairStatusEnum("new_status"),
 		description: text("description"),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),

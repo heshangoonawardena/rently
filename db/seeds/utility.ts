@@ -12,16 +12,12 @@ export const utilities = async (db: DB) => {
 				utilityType: "electricity",
 				holderName: "A B Perera",
 				accountNumber: "12345",
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			},
 			{
 				unitId: unitData[1].id,
 				utilityType: "water",
 				holderName: "Y Z Silva",
 				accountNumber: "6712",
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			},
 		])
 		.returning();
@@ -33,8 +29,6 @@ export const utilities = async (db: DB) => {
 			periodStart: new Date().toISOString().split("T")[0],
 			periodEnd: new Date().toISOString().split("T")[0],
 			status: "issued",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 		{
 			utilityId: utilityData[1].id,
@@ -42,8 +36,6 @@ export const utilities = async (db: DB) => {
 			periodStart: new Date().toISOString().split("T")[0],
 			periodEnd: new Date().toISOString().split("T")[0],
 			status: "issued",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 	]);
 

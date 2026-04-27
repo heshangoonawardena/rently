@@ -29,8 +29,10 @@ export const tenant = pgTable(
 		phoneNumber: text("phone_number").notNull().unique(),
 		occupation: text("occupation"),
 		status: occupancyStatusEnum("status").default("pending").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
@@ -55,8 +57,10 @@ export const tenantOccupant = pgTable(
 		relationship: text("relationship").notNull(),
 		phone: text("phone"),
 		status: occupancyStatusEnum("status").default("active").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),

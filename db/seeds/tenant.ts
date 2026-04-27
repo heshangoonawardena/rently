@@ -14,8 +14,6 @@ export const tenants = async (db: DB) => {
 			firstName: "Alice",
 			nic: "200000000000",
 			phoneNumber: "+94764468108",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 	]);
 
@@ -28,8 +26,6 @@ export const tenants = async (db: DB) => {
 			nic: "2000000000012",
 			relationship: "Spouse",
 			phone: "94764468109",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 	]);
 

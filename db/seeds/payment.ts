@@ -14,8 +14,6 @@ export const payments = async (db: DB) => {
 				paymentDate: new Date().toISOString().split("T")[0],
 				paymentAmount: "1000",
 				balanceAfter: "0",
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			},
 			{
 				leaseId: leaseData[1].id,
@@ -24,8 +22,6 @@ export const payments = async (db: DB) => {
 				paymentDate: new Date().toISOString().split("T")[0],
 				paymentAmount: "2000",
 				balanceAfter: "0",
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			},
 			{
 				leaseId: leaseData[1].id,
@@ -34,8 +30,6 @@ export const payments = async (db: DB) => {
 				paymentDate: new Date().toISOString().split("T")[0],
 				paymentAmount: "1000",
 				balanceAfter: "500",
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			},
 			{
 				leaseId: leaseData[1].id,
@@ -44,8 +38,6 @@ export const payments = async (db: DB) => {
 				paymentDate: new Date().toISOString().split("T")[0],
 				paymentAmount: "500",
 				balanceAfter: "0",
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			},
 		])
 		.returning();
@@ -57,8 +49,6 @@ export const payments = async (db: DB) => {
 			issuedDate: new Date().toISOString().split("T")[0],
 			amountPaid: "1000",
 			balanceAfter: "0",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 		{
 			paymentId: paymentData[1].id,
@@ -66,8 +56,6 @@ export const payments = async (db: DB) => {
 			issuedDate: new Date().toISOString().split("T")[0],
 			amountPaid: "2000",
 			balanceAfter: "0",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 		{
 			paymentId: paymentData[2].id,
@@ -75,8 +63,6 @@ export const payments = async (db: DB) => {
 			issuedDate: new Date().toISOString().split("T")[0],
 			amountPaid: "1000",
 			balanceAfter: "500",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 		{
 			paymentId: paymentData[3].id,
@@ -84,8 +70,6 @@ export const payments = async (db: DB) => {
 			issuedDate: new Date().toISOString().split("T")[0],
 			amountPaid: "500",
 			balanceAfter: "0",
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 	]);
 

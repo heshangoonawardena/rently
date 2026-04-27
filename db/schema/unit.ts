@@ -24,8 +24,10 @@ export const unit = pgTable(
 			"utility_billing_mode",
 		).notNull(),
 		status: unitStatusEnum("status").default("available").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
@@ -67,3 +69,4 @@ import { utility } from "./utility";
 import { repairRequest } from "./repair";
 import { inspection } from "./inspection";
 import { unitDocument } from "./document";
+import { timestamptz } from "drizzle-orm/gel-core";

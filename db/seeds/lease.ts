@@ -15,16 +15,12 @@ export const leases = async (db: DB) => {
 				unitId: unitData[0].id,
 				startDate: new Date().toISOString().split("T")[0],
 				depositAmount: "1000",
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			},
 			{
 				tenantId: tenantData[0].id,
 				unitId: unitData[1].id,
 				startDate: new Date().toISOString().split("T")[0],
 				depositAmount: "2000",
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			},
 		])
 		.returning();
@@ -34,8 +30,6 @@ export const leases = async (db: DB) => {
 			leaseId: leaseData[0].id,
 			rentAmount: "1500",
 			effectiveDate: new Date().toISOString().split("T")[0],
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		},
 	]);
 

@@ -41,8 +41,10 @@ export const payment = pgTable(
 		periodStart: date("period_start"),
 		periodEnd: date("period_end"),
 		description: text("description"),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
@@ -74,8 +76,10 @@ export const paymentReceipt = pgTable(
 		}).notNull(),
 		// Human-readable period label e.g. "March 2025" or "15 Jan – 14 Feb 2025"
 		period: text("period"),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),

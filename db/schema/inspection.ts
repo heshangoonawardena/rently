@@ -33,8 +33,10 @@ export const inspection = pgTable(
 		scheduledDate: date("scheduled_date").notNull(),
 		completedDate: date("completed_date"),
 		status: inspectionStatusEnum("status").default("scheduled").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),

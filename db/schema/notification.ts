@@ -32,8 +32,10 @@ export const notificationPreference = pgTable(
 		event: notificationEventEnum("event").notNull(),
 		daysBeforeThreshold: integer("days_before_threshold").default(7),
 		enabled: boolean("enabled").default(true).notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
@@ -61,8 +63,10 @@ export const notificationLog = pgTable(
 		payload: text("payload"), // JSON stringified context
 		sentAt: timestamp("sent_at"),
 		readAt: timestamp("read_at"),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
@@ -74,14 +78,26 @@ export const notificationLog = pgTable(
 	],
 );
 
-export const selectNotificationPreferenceSchema = createSelectSchema(notificationPreference);
-export type NotificationPreference = z.infer<typeof selectNotificationPreferenceSchema>;
+export const selectNotificationPreferenceSchema = createSelectSchema(
+	notificationPreference,
+);
+export type NotificationPreference = z.infer<
+	typeof selectNotificationPreferenceSchema
+>;
 
-export const insertNotificationPreferenceSchema = createInsertSchema(notificationPreference);
-export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferenceSchema>;
+export const insertNotificationPreferenceSchema = createInsertSchema(
+	notificationPreference,
+);
+export type InsertNotificationPreference = z.infer<
+	typeof insertNotificationPreferenceSchema
+>;
 
-export const updateNotificationPreferenceSchema = createUpdateSchema(notificationPreference);
-export type UpdateNotificationPreference = z.infer<typeof updateNotificationPreferenceSchema>;
+export const updateNotificationPreferenceSchema = createUpdateSchema(
+	notificationPreference,
+);
+export type UpdateNotificationPreference = z.infer<
+	typeof updateNotificationPreferenceSchema
+>;
 
 export const selectNotificationLogSchema = createSelectSchema(notificationLog);
 export type NotificationLog = z.infer<typeof selectNotificationLogSchema>;
