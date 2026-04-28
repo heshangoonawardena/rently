@@ -19,14 +19,15 @@ const handler = new OpenAPIHandler(router, {
 					title: "Rently API",
 					version: "0.1.0",
 					description:
-						"API documentation for Rently -  a rental property management system for managing properties, tenants, and lease agreements.",
+						"API documentation for Rently - a rental property management system.",
 				},
-				security: [{ bearerAuth: [] }],
+				security: [{ sessionCookie: [] }],
 				components: {
 					securitySchemes: {
-						bearerAuth: {
-							type: "http",
-							scheme: "bearer",
+						sessionCookie: {
+							type: "apiKey",
+							in: "cookie",
+							name: "better-auth.session_token",
 						},
 					},
 				},
