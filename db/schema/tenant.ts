@@ -77,23 +77,23 @@ export const tenantOccupant = pgTable(
 
 // tenant schema
 export const selectTenantSchema = createSelectSchema(tenant);
-export type Tenant = z.infer<typeof selectTenantSchema>;
+export type TenantType = z.infer<typeof selectTenantSchema>;
 
 export const insertTenantSchema = createInsertSchema(tenant);
-export type InsertTenant = z.infer<typeof insertTenantSchema>;
+export type InsertTenantType = z.infer<typeof insertTenantSchema>;
 
 export const updateTenantSchema = createUpdateSchema(tenant);
-export type UpdateTenant = z.infer<typeof updateTenantSchema>;
+export type UpdateTenantType = z.infer<typeof updateTenantSchema>;
 
 // tenant occupant schema
 export const selectTenantOccupantSchema = createSelectSchema(tenantOccupant);
-export type TenantOccupant = z.infer<typeof selectTenantOccupantSchema>;
+export type TenantOccupantType = z.infer<typeof selectTenantOccupantSchema>;
 
 export const insertTenantOccupantSchema = createInsertSchema(tenantOccupant);
-export type InsertTenantOccupant = z.infer<typeof insertTenantOccupantSchema>;
+export type InsertTenantOccupantType = z.infer<typeof insertTenantOccupantSchema>;
 
 export const updateTenantOccupantSchema = createUpdateSchema(tenantOccupant);
-export type UpdateTenantOccupant = z.infer<typeof updateTenantOccupantSchema>;
+export type UpdateTenantOccupantType = z.infer<typeof updateTenantOccupantSchema>;
 
 // ============================================================
 // RELATIONS

@@ -86,23 +86,23 @@ export const utilityBill = pgTable(
 
 // utility schema
 export const selectUtilitySchema = createSelectSchema(utility);
-export type Utility = z.infer<typeof selectUtilitySchema>;
+export type UtilityType = z.infer<typeof selectUtilitySchema>;
 
 export const insertUtilitySchema = createInsertSchema(utility);
-export type InsertUtility = z.infer<typeof insertUtilitySchema>;
+export type InsertUtilityType = z.infer<typeof insertUtilitySchema>;
 
 export const updateUtilitySchema = createUpdateSchema(utility);
-export type UpdateUtility = z.infer<typeof updateUtilitySchema>;
+export type UpdateUtilityType = z.infer<typeof updateUtilitySchema>;
 
 // utility bill schema
 export const selectUtilityBillSchema = createSelectSchema(utilityBill);
-export type UtilityBill = z.infer<typeof selectUtilityBillSchema>;
+export type UtilityBillType = z.infer<typeof selectUtilityBillSchema>;
 
 export const insertUtilityBillSchema = createInsertSchema(utilityBill);
-export type InsertUtilityBill = z.infer<typeof insertUtilityBillSchema>;
+export type InsertUtilityBillType = z.infer<typeof insertUtilityBillSchema>;
 
 export const updateUtilityBillSchema = createUpdateSchema(utilityBill);
-export type UpdateUtilityBill = z.infer<typeof updateUtilityBillSchema>;
+export type UpdateUtilityBillType = z.infer<typeof updateUtilityBillSchema>;
 
 // ============================================================
 // RELATIONS

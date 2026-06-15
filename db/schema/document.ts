@@ -109,33 +109,33 @@ export const leaseDocument = pgTable(
 
 // unit document schemas
 export const selectUnitDocumentSchema = createSelectSchema(unitDocument);
-export type UnitDocument = z.infer<typeof selectUnitDocumentSchema>;
+export type UnitDocumentType = z.infer<typeof selectUnitDocumentSchema>;
 
 export const insertUnitDocumentSchema = createInsertSchema(unitDocument);
-export type InsertUnitDocument = z.infer<typeof insertUnitDocumentSchema>;
+export type InsertUnitDocumentType = z.infer<typeof insertUnitDocumentSchema>;
 
 export const updateUnitDocumentSchema = createUpdateSchema(unitDocument);
-export type UpdateUnitDocument = z.infer<typeof updateUnitDocumentSchema>;
+export type UpdateUnitDocumentType = z.infer<typeof updateUnitDocumentSchema>;
 
 // tenant document schemas
 export const selectTenantDocumentSchema = createSelectSchema(tenantDocument);
-export type TenantDocument = z.infer<typeof selectTenantDocumentSchema>;
+export type TenantDocumentType = z.infer<typeof selectTenantDocumentSchema>;
 
 export const insertTenantDocumentSchema = createInsertSchema(tenantDocument);
-export type InsertTenantDocument = z.infer<typeof insertTenantDocumentSchema>;
+export type InsertTenantDocumentType = z.infer<typeof insertTenantDocumentSchema>;
 
 export const updateTenantDocumentSchema = createUpdateSchema(tenantDocument);
-export type UpdateTenantDocument = z.infer<typeof updateTenantDocumentSchema>;
+export type UpdateTenantDocumentType = z.infer<typeof updateTenantDocumentSchema>;
 
 // lease document schemas
 export const selectLeaseDocumentSchema = createSelectSchema(leaseDocument);
-export type LeaseDocument = z.infer<typeof selectLeaseDocumentSchema>;
+export type LeaseDocumentType = z.infer<typeof selectLeaseDocumentSchema>;
 
 export const insertLeaseDocumentSchema = createInsertSchema(leaseDocument);
-export type InsertLeaseDocument = z.infer<typeof insertLeaseDocumentSchema>;
+export type InsertLeaseDocumentType = z.infer<typeof insertLeaseDocumentSchema>;
 
 export const updateLeaseDocumentSchema = createUpdateSchema(leaseDocument);
-export type UpdateLeaseDocument = z.infer<typeof updateLeaseDocumentSchema>;
+export type UpdateLeaseDocumentType = z.infer<typeof updateLeaseDocumentSchema>;
 
 // ============================================================
 // RELATIONS

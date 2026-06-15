@@ -49,13 +49,13 @@ export const inspection = pgTable(
 );
 
 export const selectInspectionSchema = createSelectSchema(inspection);
-export type Inspection = z.infer<typeof selectInspectionSchema>;
+export type InspectionType = z.infer<typeof selectInspectionSchema>;
 
 export const insertInspectionSchema = createInsertSchema(inspection);
-export type InsertInspection = z.infer<typeof insertInspectionSchema>;
+export type InsertInspectionType = z.infer<typeof insertInspectionSchema>;
 
 export const updateInspectionSchema = createUpdateSchema(inspection);
-export type UpdateInspection = z.infer<typeof updateInspectionSchema>;
+export type UpdateInspectionType = z.infer<typeof updateInspectionSchema>;
 
 // ============================================================
 // RELATIONS

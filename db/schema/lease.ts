@@ -91,24 +91,24 @@ export const leaseRent = pgTable(
 // lease schema
 
 export const selectLeaseSchema = createSelectSchema(lease);
-export type Lease = z.infer<typeof selectLeaseSchema>;
+export type LeaseType = z.infer<typeof selectLeaseSchema>;
 
 export const insertLeaseSchema = createInsertSchema(lease);
-export type InsertLease = z.infer<typeof insertLeaseSchema>;
+export type InsertLeaseType = z.infer<typeof insertLeaseSchema>;
 
 export const updateLeaseSchema = createUpdateSchema(lease);
-export type UpdateLease = z.infer<typeof updateLeaseSchema>;
+export type UpdateLeaseType = z.infer<typeof updateLeaseSchema>;
 
 // lease rent schemas
 
 export const selectLeaseRentSchema = createSelectSchema(leaseRent);
-export type LeaseRent = z.infer<typeof selectLeaseRentSchema>;
+export type LeaseRentType = z.infer<typeof selectLeaseRentSchema>;
 
 export const insertLeaseRentSchema = createInsertSchema(leaseRent);
-export type InsertLeaseRent = z.infer<typeof insertLeaseRentSchema>;
+export type InsertLeaseRentType = z.infer<typeof insertLeaseRentSchema>;
 
 export const updateLeaseRentSchema = createUpdateSchema(leaseRent);
-export type UpdateLeaseRent = z.infer<typeof updateLeaseRentSchema>;
+export type UpdateLeaseRentType = z.infer<typeof updateLeaseRentSchema>;
 
 // ============================================================
 // RELATIONS

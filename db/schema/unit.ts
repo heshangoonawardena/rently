@@ -36,13 +36,13 @@ export const unit = pgTable(
 );
 
 export const selectUnitSchema = createSelectSchema(unit);
-export type Unit = z.infer<typeof selectUnitSchema>;
+export type UnitType = z.infer<typeof selectUnitSchema>;
 
 export const insertUnitSchema = createInsertSchema(unit);
-export type InsertUnit = z.infer<typeof insertUnitSchema>;
+export type InsertUnitType = z.infer<typeof insertUnitSchema>;
 
 export const updateUnitSchema = createUpdateSchema(unit);
-export type UpdateUnit = z.infer<typeof updateUnitSchema>;
+export type UpdateUnitType = z.infer<typeof updateUnitSchema>;
 
 // ============================================================
 // RELATIONS

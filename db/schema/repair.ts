@@ -80,23 +80,23 @@ export const repairUpdate = pgTable(
 
 // repair request schema
 export const selectRepairRequestSchema = createSelectSchema(repairRequest);
-export type RepairRequest = z.infer<typeof selectRepairRequestSchema>;
+export type RepairRequestType = z.infer<typeof selectRepairRequestSchema>;
 
 export const insertRepairRequestSchema = createInsertSchema(repairRequest);
-export type InsertRepairRequest = z.infer<typeof insertRepairRequestSchema>;
+export type InsertRepairRequestType = z.infer<typeof insertRepairRequestSchema>;
 
 export const updateRepairRequestSchema = createUpdateSchema(repairRequest);
-export type UpdateRepairRequest = z.infer<typeof updateRepairRequestSchema>;
+export type UpdateRepairRequestType = z.infer<typeof updateRepairRequestSchema>;
 
 // repair update schema
 export const selectRepairUpdateSchema = createSelectSchema(repairUpdate);
-export type RepairUpdate = z.infer<typeof selectRepairUpdateSchema>;
+export type RepairUpdateType = z.infer<typeof selectRepairUpdateSchema>;
 
 export const insertRepairUpdateSchema = createInsertSchema(repairUpdate);
-export type InsertRepairUpdate = z.infer<typeof insertRepairUpdateSchema>;
+export type InsertRepairUpdateType = z.infer<typeof insertRepairUpdateSchema>;
 
 export const updateRepairUpdateSchema = createUpdateSchema(repairUpdate);
-export type UpdateRepairUpdate = z.infer<typeof updateRepairUpdateSchema>;
+export type UpdateRepairUpdateType = z.infer<typeof updateRepairUpdateSchema>;
 
 // ============================================================
 // RELATIONS

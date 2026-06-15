@@ -81,29 +81,29 @@ export const notificationLog = pgTable(
 export const selectNotificationPreferenceSchema = createSelectSchema(
 	notificationPreference,
 );
-export type NotificationPreference = z.infer<
+export type NotificationPreferenceType = z.infer<
 	typeof selectNotificationPreferenceSchema
 >;
 
 export const insertNotificationPreferenceSchema = createInsertSchema(
 	notificationPreference,
 );
-export type InsertNotificationPreference = z.infer<
+export type InsertNotificationPreferenceType = z.infer<
 	typeof insertNotificationPreferenceSchema
 >;
 
 export const updateNotificationPreferenceSchema = createUpdateSchema(
 	notificationPreference,
 );
-export type UpdateNotificationPreference = z.infer<
+export type UpdateNotificationPreferenceType = z.infer<
 	typeof updateNotificationPreferenceSchema
 >;
 
 export const selectNotificationLogSchema = createSelectSchema(notificationLog);
-export type NotificationLog = z.infer<typeof selectNotificationLogSchema>;
+export type NotificationLogType = z.infer<typeof selectNotificationLogSchema>;
 
 export const insertNotificationLogSchema = createInsertSchema(notificationLog);
-export type InsertNotificationLog = z.infer<typeof insertNotificationLogSchema>;
+export type InsertNotificationLogType = z.infer<typeof insertNotificationLogSchema>;
 
 export const updateNotificationLogSchema = createUpdateSchema(notificationLog);
-export type UpdateNotificationLog = z.infer<typeof updateNotificationLogSchema>;
+export type UpdateNotificationLogType = z.infer<typeof updateNotificationLogSchema>;

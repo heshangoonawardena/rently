@@ -89,23 +89,23 @@ export const paymentReceipt = pgTable(
 
 // payment schema
 export const selectPaymentSchema = createSelectSchema(payment);
-export type Payment = z.infer<typeof selectPaymentSchema>;
+export type PaymentType = z.infer<typeof selectPaymentSchema>;
 
 export const insertPaymentSchema = createInsertSchema(payment);
-export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type InsertPaymentType = z.infer<typeof insertPaymentSchema>;
 
 export const updatePaymentSchema = createUpdateSchema(payment);
-export type UpdatePayment = z.infer<typeof updatePaymentSchema>;
+export type UpdatePaymentType = z.infer<typeof updatePaymentSchema>;
 
 // payment receipt schema
 export const selectPaymentReceiptSchema = createSelectSchema(paymentReceipt);
-export type PaymentReceipt = z.infer<typeof selectPaymentReceiptSchema>;
+export type PaymentReceiptType = z.infer<typeof selectPaymentReceiptSchema>;
 
 export const insertPaymentReceiptSchema = createInsertSchema(paymentReceipt);
-export type InsertPaymentReceipt = z.infer<typeof insertPaymentReceiptSchema>;
+export type InsertPaymentReceiptType = z.infer<typeof insertPaymentReceiptSchema>;
 
 export const updatePaymentReceiptSchema = createUpdateSchema(paymentReceipt);
-export type UpdatePaymentReceipt = z.infer<typeof updatePaymentReceiptSchema>;
+export type UpdatePaymentReceiptType = z.infer<typeof updatePaymentReceiptSchema>;
 
 // ============================================================
 // RELATIONS
