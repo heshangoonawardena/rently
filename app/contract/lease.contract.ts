@@ -1,23 +1,23 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-	CreateLease,
-	DeleteLease,
-	LeaseInput,
-	LeaseOutput,
-	ListLeaseInput,
-	ListLeaseOutput,
-	RenewLease,
-	UpdateLease,
-} from "../schemas/lease.schema";
-import {
-	CreateLeaseRent,
-	DeleteLeaseRent,
-	LeaseRentOutput,
-	ListLeaseRentInput,
-	ListLeaseRentOutput,
-	UpdateLeaseRent,
+	createLeaseRent,
+	deleteLeaseRent,
+	leaseRentOutput,
+	listLeaseRentInput,
+	listLeaseRentOutput,
+	updateLeaseRent,
 } from "../schemas/lease.rent.schema";
+import {
+	createLease,
+	deleteLease,
+	leaseInput,
+	leaseOutput,
+	listLeaseInput,
+	listLeaseOutput,
+	renewLease,
+	updateLease,
+} from "../schemas/lease.schema";
 
 export const base = oc.errors({
 	UNAUTHORIZED: {
@@ -65,8 +65,8 @@ export const createLeaseContract = base
 			"Creates a new active lease, linking a tenant to a unit. A unit can only have one active lease at a time (enforced at DB level). The first rent row is created automatically from the provided initialRentAmount.",
 		tags: ["Leases"],
 	})
-	.input(CreateLease)
-	.output(LeaseOutput);
+	.input(createLease)
+	.output(leaseOutput);
 
 export const updateLeaseContract = base
 	.route({
@@ -77,8 +77,8 @@ export const updateLeaseContract = base
 			"Updates mutable lease fields such as endDate or status. To change rent, use the rent schedule endpoint instead.",
 		tags: ["Leases"],
 	})
-	.input(UpdateLease)
-	.output(LeaseOutput);
+	.input(updateLease)
+	.output(leaseOutput);
 
 export const renewLeaseContract = base
 	.route({
@@ -90,8 +90,8 @@ export const renewLeaseContract = base
 			"Extends an active lease by updating the end date and optionally adding a new rent revision. Sets status to 'extended'.",
 		tags: ["Leases"],
 	})
-	.input(RenewLease)
-	.output(LeaseOutput);
+	.input(renewLease)
+	.output(leaseOutput);
 
 export const deleteLeaseContract = base
 	.route({
@@ -102,8 +102,8 @@ export const deleteLeaseContract = base
 			"Sets lease status to 'terminated' and records an end date. The unit status is updated to 'available' automatically.",
 		tags: ["Leases"],
 	})
-	.input(DeleteLease)
-	.output(LeaseOutput);
+	.input(deleteLease)
+	.output(leaseOutput);
 
 export const getLeaseContract = base
 	.route({
@@ -113,8 +113,8 @@ export const getLeaseContract = base
 		description: "Retrieves a single lease by ID.",
 		tags: ["Leases"],
 	})
-	.input(LeaseInput)
-	.output(LeaseOutput);
+	.input(leaseInput)
+	.output(leaseOutput);
 
 export const listLeaseContract = base
 	.route({
@@ -122,11 +122,11 @@ export const listLeaseContract = base
 		path: "/leases",
 		summary: "List leases",
 		description:
-			"Returns a cursor-paginated list of leases. Filter by status, unit, or tenant.",
+			"Returns a cursor-paginated list of leases with unit details, tenant details and current rent. Filter by status, unit, or tenant.",
 		tags: ["Leases"],
 	})
-	.input(ListLeaseInput)
-	.output(ListLeaseOutput);
+	.input(listLeaseInput)
+	.output(listLeaseOutput);
 
 // ── Lease Rent contracts ──
 
@@ -140,8 +140,8 @@ export const createLeaseRentContract = base
 			"Appends a new rent amount row effective from the given date. The most recent row with effectiveDate ≤ today is the current rent.",
 		tags: ["Lease Rents"],
 	})
-	.input(CreateLeaseRent)
-	.output(LeaseRentOutput);
+	.input(createLeaseRent)
+	.output(leaseRentOutput);
 
 export const updateLeaseRentContract = base
 	.route({
@@ -152,8 +152,8 @@ export const updateLeaseRentContract = base
 			"Allows correcting a future rent row before it takes effect. Past rows should not be modified.",
 		tags: ["Lease Rents"],
 	})
-	.input(UpdateLeaseRent)
-	.output(LeaseRentOutput);
+	.input(updateLeaseRent)
+	.output(leaseRentOutput);
 
 export const deleteLeaseRentContract = base
 	.route({
@@ -164,8 +164,8 @@ export const deleteLeaseRentContract = base
 			"Removes a future rent row. The initial rent row (seeded at lease creation) cannot be deleted.",
 		tags: ["Lease Rents"],
 	})
-	.input(DeleteLeaseRent)
-	.output(LeaseRentOutput);
+	.input(deleteLeaseRent)
+	.output(leaseRentOutput);
 
 export const listLeaseRentContract = base
 	.route({
@@ -176,5 +176,5 @@ export const listLeaseRentContract = base
 			"Returns the full rent schedule for a lease, ordered by effectiveDate ascending.",
 		tags: ["Lease Rents"],
 	})
-	.input(ListLeaseRentInput)
-	.output(ListLeaseRentOutput);
+	.input(listLeaseRentInput)
+	.output(listLeaseRentOutput);

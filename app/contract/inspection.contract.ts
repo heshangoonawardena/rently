@@ -1,13 +1,13 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-	CreateInspection,
-	DeleteInspection,
-	InspectionInput,
-	InspectionOutput,
-	ListInspectionInput,
-	ListInspectionOutput,
-	UpdateInspection,
+	createInspection,
+	deleteInspection,
+	inspectionInput,
+	inspectionOutput,
+	listInspectionInput,
+	listInspectionOutput,
+	updateInspection,
 } from "../schemas/inspection.schema";
 
 export const base = oc.errors({
@@ -54,8 +54,8 @@ export const createInspectionContract = base
 			"Schedules a new inspection for a unit. Common use cases: move-in, move-out, routine, and repair-follow-up inspections.",
 		tags: ["Inspections"],
 	})
-	.input(CreateInspection)
-	.output(InspectionOutput);
+	.input(createInspection)
+	.output(inspectionOutput);
 
 export const updateInspectionContract = base
 	.route({
@@ -66,8 +66,8 @@ export const updateInspectionContract = base
 			"Updates inspection details. Use this to reschedule or add notes before completion.",
 		tags: ["Inspections"],
 	})
-	.input(UpdateInspection)
-	.output(InspectionOutput);
+	.input(updateInspection)
+	.output(inspectionOutput);
 
 export const completeInspectionContract = base
 	.route({
@@ -78,8 +78,8 @@ export const completeInspectionContract = base
 			"Transitions a scheduled inspection to 'completed'. Records the actual completion date.",
 		tags: ["Inspections"],
 	})
-	.input(UpdateInspection)
-	.output(InspectionOutput);
+	.input(updateInspection)
+	.output(inspectionOutput);
 
 export const skipInspectionContract = base
 	.route({
@@ -90,8 +90,8 @@ export const skipInspectionContract = base
 			"Marks a scheduled inspection as skipped with an optional reason.",
 		tags: ["Inspections"],
 	})
-	.input(UpdateInspection)
-	.output(InspectionOutput);
+	.input(updateInspection)
+	.output(inspectionOutput);
 
 export const deleteInspectionContract = base
 	.route({
@@ -102,8 +102,8 @@ export const deleteInspectionContract = base
 			"Soft-deletes a scheduled inspection. Completed or skipped inspections cannot be deleted.",
 		tags: ["Inspections"],
 	})
-	.input(DeleteInspection)
-	.output(InspectionOutput);
+	.input(deleteInspection)
+	.output(inspectionOutput);
 
 export const getInspectionContract = base
 	.route({
@@ -113,8 +113,8 @@ export const getInspectionContract = base
 		description: "Retrieves a single inspection by ID.",
 		tags: ["Inspections"],
 	})
-	.input(InspectionInput)
-	.output(InspectionOutput);
+	.input(inspectionInput)
+	.output(inspectionOutput);
 
 export const listInspectionContract = base
 	.route({
@@ -125,5 +125,5 @@ export const listInspectionContract = base
 			"Returns paginated inspections ordered by scheduledDate descending.",
 		tags: ["Inspections"],
 	})
-	.input(ListInspectionInput)
-	.output(ListInspectionOutput);
+	.input(listInspectionInput)
+	.output(listInspectionOutput);

@@ -1,31 +1,31 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-	CreateUnitDocument,
-	DeleteUnitDocument,
-	ListUnitDocumentInput,
-	ListUnitDocumentOutput,
-	UnitDocumentInput,
-	UnitDocumentOutput,
-	UpdateUnitDocument,
+    createUnitDocument,
+    deleteUnitDocument,
+    listUnitDocumentInput,
+    listUnitDocumentOutput,
+    unitDocumentInput,
+    unitDocumentOutput,
+    updateUnitDocument,
 } from "../schemas/unit.document.schema";
 import {
-	CreateTenantDocument,
-	DeleteTenantDocument,
-	ListTenantDocumentInput,
-	ListTenantDocumentOutput,
-	TenantDocumentInput,
-	TenantDocumentOutput,
-	UpdateTenantDocument,
+    createTenantDocument,
+    deleteTenantDocument,
+    listTenantDocumentInput,
+    listTenantDocumentOutput,
+    tenantDocumentInput,
+    tenantDocumentOutput,
+    updateTenantDocument
 } from "../schemas/tenant.document.schema";
 import {
-	CreateLeaseDocument,
-	DeleteLeaseDocument,
-	LeaseDocumentInput,
-	LeaseDocumentOutput,
-	ListLeaseDocumentInput,
-	ListLeaseDocumentOutput,
-	UpdateLeaseDocument,
+    createLeaseDocument,
+    deleteLeaseDocument,
+    leaseDocumentInput,
+    leaseDocumentOutput,
+    listLeaseDocumentInput,
+    listLeaseDocumentOutput,
+    updateLeaseDocument
 } from "../schemas/lease.document.schema";
 
 export const base = oc.errors({
@@ -74,8 +74,8 @@ export const createUnitDocumentContract = base
 			"Attaches a document (title deed, insurance, council permit, etc.) to a unit. The storageKey references the file in your object storage bucket.",
 		tags: ["Unit Documents"],
 	})
-	.input(CreateUnitDocument)
-	.output(UnitDocumentOutput);
+	.input(createUnitDocument)
+	.output(unitDocumentOutput);
 
 export const updateUnitDocumentContract = base
 	.route({
@@ -86,8 +86,8 @@ export const updateUnitDocumentContract = base
 			"Updates label, description, dates, or status of a unit document.",
 		tags: ["Unit Documents"],
 	})
-	.input(UpdateUnitDocument)
-	.output(UnitDocumentOutput);
+	.input(updateUnitDocument)
+	.output(unitDocumentOutput);
 
 export const supersededUnitDocumentContract = base
 	.route({
@@ -98,8 +98,8 @@ export const supersededUnitDocumentContract = base
 			"Marks a document as superseded (replaced by a newer version). Commonly used when an insurance or permit is renewed.",
 		tags: ["Unit Documents"],
 	})
-	.input(UpdateUnitDocument)
-	.output(UnitDocumentOutput);
+	.input(updateUnitDocument)
+	.output(unitDocumentOutput);
 
 export const getUnitDocumentContract = base
 	.route({
@@ -109,8 +109,8 @@ export const getUnitDocumentContract = base
 		description: "Retrieves a single unit document by ID.",
 		tags: ["Unit Documents"],
 	})
-	.input(UnitDocumentInput)
-	.output(UnitDocumentOutput);
+	.input(unitDocumentInput)
+	.output(unitDocumentOutput);
 
 export const deleteUnitDocumentContract = base
 	.route({
@@ -121,8 +121,8 @@ export const deleteUnitDocumentContract = base
 			"Soft-deletes a unit document record. Does not delete the file from storage.",
 		tags: ["Unit Documents"],
 	})
-	.input(DeleteUnitDocument)
-	.output(UnitDocumentOutput);
+	.input(deleteUnitDocument)
+	.output(unitDocumentOutput);
 
 export const listUnitDocumentContract = base
 	.route({
@@ -133,8 +133,8 @@ export const listUnitDocumentContract = base
 			"Returns all documents attached to a unit. Filter by status to find active, expired, or superseded documents.",
 		tags: ["Unit Documents"],
 	})
-	.input(ListUnitDocumentInput)
-	.output(ListUnitDocumentOutput);
+	.input(listUnitDocumentInput)
+	.output(listUnitDocumentOutput);
 
 // ── Tenant Document contracts ──
 
@@ -148,8 +148,8 @@ export const createTenantDocumentContract = base
 			"Attaches an identity document (NIC, passport, etc.) to a tenant or one of their occupants. Pass tenantOccupantId to associate with an occupant.",
 		tags: ["Tenant Documents"],
 	})
-	.input(CreateTenantDocument)
-	.output(TenantDocumentOutput);
+	.input(createTenantDocument)
+	.output(tenantDocumentOutput);
 
 export const updateTenantDocumentContract = base
 	.route({
@@ -159,8 +159,8 @@ export const updateTenantDocumentContract = base
 		description: "Updates label, description, or status of a tenant document.",
 		tags: ["Tenant Documents"],
 	})
-	.input(UpdateTenantDocument)
-	.output(TenantDocumentOutput);
+	.input(updateTenantDocument)
+	.output(tenantDocumentOutput);
 
 export const getTenantDocumentContract = base
 	.route({
@@ -170,8 +170,8 @@ export const getTenantDocumentContract = base
 		description: "Retrieves a single tenant document by ID.",
 		tags: ["Tenant Documents"],
 	})
-	.input(TenantDocumentInput)
-	.output(TenantDocumentOutput);
+	.input(tenantDocumentInput)
+	.output(tenantDocumentOutput);
 
 export const deleteTenantDocumentContract = base
 	.route({
@@ -181,8 +181,8 @@ export const deleteTenantDocumentContract = base
 		description: "Deletes a tenant document record.",
 		tags: ["Tenant Documents"],
 	})
-	.input(DeleteTenantDocument)
-	.output(TenantDocumentOutput);
+	.input(deleteTenantDocument)
+	.output(tenantDocumentOutput);
 
 export const listTenantDocumentContract = base
 	.route({
@@ -193,8 +193,8 @@ export const listTenantDocumentContract = base
 			"Returns all documents (including occupant documents) under a tenant.",
 		tags: ["Tenant Documents"],
 	})
-	.input(ListTenantDocumentInput)
-	.output(ListTenantDocumentOutput);
+	.input(listTenantDocumentInput)
+	.output(listTenantDocumentOutput);
 
 // ── Lease Document contracts ──
 
@@ -210,8 +210,8 @@ export const createLeaseDocumentContract = base
 			"A lease can have multiple documents; use status to track which is current.",
 		tags: ["Lease Documents"],
 	})
-	.input(CreateLeaseDocument)
-	.output(LeaseDocumentOutput);
+	.input(createLeaseDocument)
+	.output(leaseDocumentOutput);
 
 export const updateLeaseDocumentContract = base
 	.route({
@@ -222,8 +222,8 @@ export const updateLeaseDocumentContract = base
 			"Updates label, description, documentDate, or status of a lease document.",
 		tags: ["Lease Documents"],
 	})
-	.input(UpdateLeaseDocument)
-	.output(LeaseDocumentOutput);
+	.input(updateLeaseDocument)
+	.output(leaseDocumentOutput);
 
 export const supersededLeaseDocumentContract = base
 	.route({
@@ -235,8 +235,8 @@ export const supersededLeaseDocumentContract = base
 			"or addendum is uploaded. Only active documents can be superseded.",
 		tags: ["Lease Documents"],
 	})
-	.input(UpdateLeaseDocument)
-	.output(LeaseDocumentOutput);
+	.input(updateLeaseDocument)
+	.output(leaseDocumentOutput);
 
 export const deleteLeaseDocumentContract = base
 	.route({
@@ -248,8 +248,8 @@ export const deleteLeaseDocumentContract = base
 			"Does not delete the file from storage.",
 		tags: ["Lease Documents"],
 	})
-	.input(DeleteLeaseDocument)
-	.output(LeaseDocumentOutput);
+	.input(deleteLeaseDocument)
+	.output(leaseDocumentOutput);
 
 export const getLeaseDocumentContract = base
 	.route({
@@ -259,8 +259,8 @@ export const getLeaseDocumentContract = base
 		description: "Retrieves a single lease document by ID.",
 		tags: ["Lease Documents"],
 	})
-	.input(LeaseDocumentInput)
-	.output(LeaseDocumentOutput);
+	.input(leaseDocumentInput)
+	.output(leaseDocumentOutput);
 
 export const listLeaseDocumentContract = base
 	.route({
@@ -272,5 +272,5 @@ export const listLeaseDocumentContract = base
 			"active, expired, superseded, or cancelled documents.",
 		tags: ["Lease Documents"],
 	})
-	.input(ListLeaseDocumentInput)
-	.output(ListLeaseDocumentOutput);
+	.input(listLeaseDocumentInput)
+	.output(listLeaseDocumentOutput);

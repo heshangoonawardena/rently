@@ -1,19 +1,19 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-	CreateRepairRequest,
-	DeleteRepairRequest,
-	ListRepairRequestInput,
-	ListRepairRequestOutput,
-	RepairRequestInput,
-	RepairRequestOutput,
-	UpdateRepairRequest,
+    createRepairRequest,
+    deleteRepairRequest,
+    listRepairRequestInput,
+    listRepairRequestOutput,
+    repairRequestInput,
+    repairRequestOutput,
+    updateRepairRequest
 } from "../schemas/repair.request.schema";
 import {
-	CreateRepairUpdate,
-	ListRepairUpdateInput,
-	ListRepairUpdateOutput,
-	RepairUpdateOutput,
+    createRepairUpdate,
+    listRepairUpdateInput,
+    listRepairUpdateOutput,
+    repairUpdateOutput
 } from "../schemas/repair.update.schema";
 
 export const base = oc.errors({
@@ -62,8 +62,8 @@ export const createRepairRequestContract = base
 			"Opens a new repair request for a unit. Can be raised by a tenant, manager, or owner. Status defaults to 'open'.",
 		tags: ["Repair Requests"],
 	})
-	.input(CreateRepairRequest)
-	.output(RepairRequestOutput);
+	.input(createRepairRequest)
+	.output(repairRequestOutput);
 
 export const updateRepairRequestContract = base
 	.route({
@@ -74,8 +74,8 @@ export const updateRepairRequestContract = base
 			"Updates metadata (title, description, priority) on an open repair request.",
 		tags: ["Repair Requests"],
 	})
-	.input(UpdateRepairRequest)
-	.output(RepairRequestOutput);
+	.input(updateRepairRequest)
+	.output(repairRequestOutput);
 
 export const deleteRepairRequestContract = base
 	.route({
@@ -86,8 +86,8 @@ export const deleteRepairRequestContract = base
 			"Deletes an open repair request. Resolved requests cannot be deleted.",
 		tags: ["Repair Requests"],
 	})
-	.input(DeleteRepairRequest)
-	.output(RepairRequestOutput);
+	.input(deleteRepairRequest)
+	.output(repairRequestOutput);
 
 export const getRepairRequestContract = base
 	.route({
@@ -97,8 +97,8 @@ export const getRepairRequestContract = base
 		description: "Returns a single repair request with its update history.",
 		tags: ["Repair Requests"],
 	})
-	.input(RepairRequestInput)
-	.output(RepairRequestOutput);
+	.input(repairRequestInput)
+	.output(repairRequestOutput);
 
 export const listRepairRequestContract = base
 	.route({
@@ -109,8 +109,8 @@ export const listRepairRequestContract = base
 			"Returns a cursor-paginated list of repair requests. Filter by status or priority.",
 		tags: ["Repair Requests"],
 	})
-	.input(ListRepairRequestInput)
-	.output(ListRepairRequestOutput);
+	.input(listRepairRequestInput)
+	.output(listRepairRequestOutput);
 
 // ── Repair Update (event log) contracts ──
 
@@ -124,8 +124,8 @@ export const addRepairUpdateContract = base
 			"Appends an immutable update entry (status change or note) to the repair request log. oldStatus is captured server-side from the current request status.",
 		tags: ["Repair Updates"],
 	})
-	.input(CreateRepairUpdate)
-	.output(RepairUpdateOutput);
+	.input(createRepairUpdate)
+	.output(repairUpdateOutput);
 
 export const listRepairUpdatesContract = base
 	.route({
@@ -136,5 +136,5 @@ export const listRepairUpdatesContract = base
 			"Returns the full append-only event log for a repair request, newest first.",
 		tags: ["Repair Updates"],
 	})
-	.input(ListRepairUpdateInput)
-	.output(ListRepairUpdateOutput);
+	.input(listRepairUpdateInput)
+	.output(listRepairUpdateOutput);

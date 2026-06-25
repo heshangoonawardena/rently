@@ -1,50 +1,66 @@
 import z from "zod";
 import { documentStatusEnum } from "@/db/schema/enums";
-import {
-	insertLeaseDocumentSchema,
-	selectLeaseDocumentSchema,
-	updateLeaseDocumentSchema,
-} from "@/db/schema/document";
 
 // ── Output schemas ──
 
-export const LeaseDocumentOutput = selectLeaseDocumentSchema;
+export const leaseDocumentOutput = z.object({
+	id: z.number().min(1, "Id is required"),
+	leaseId: z.number().min(1, "Lease id is required"),
+	documentType: z.string().min(1, "Document type is required"),
+	label: z.string().min(1, "Label is required"),
+	description: z
+		.string()
+		.trim()
+		.max(500, "Description must not exceed 500 characters")
+		.nullish(),
+	storageKey: z.string().min(1, "Storage key is required"),
+	documentDate: z.string().nullish(),
+	status: z.enum(documentStatusEnum.enumValues).optional(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+});
 
-export const ListLeaseDocumentOutput = z.object({
+export const listLeaseDocumentOutput = z.object({
 	nextCursor: z.number().nullable(),
-	items: z.array(LeaseDocumentOutput),
+	items: z.array(leaseDocumentOutput),
 });
 
 // ── Input schemas ──
 
-export const CreateLeaseDocument = insertLeaseDocumentSchema.omit({
-	id: true,
-	status: true,
-	createdAt: true,
-	updatedAt: true,
+export const leaseDocumentSchema = z.object({
+	leaseId: z.number().min(1, "Lease id is required"),
+	documentType: z.string().min(1, "Document type is required"),
+	label: z.string().min(1, "Label is required"),
+	description: z
+		.string()
+		.trim()
+		.max(500, "Description must not exceed 500 characters")
+		.nullish(),
+	storageKey: z.string().min(1, "Storage key is required"),
+	documentDate: z
+		.date()
+		.transform((val) => String(val))
+		.nullish(),
+	status: z.enum(documentStatusEnum.enumValues).optional(),
 });
 
-export const UpdateLeaseDocument = updateLeaseDocumentSchema
-	.omit({
-		createdAt: true,
-		updatedAt: true,
-	})
-	.extend({
-		leaseId: z.number(),
-		id: z.number().int(),
-	});
+export const createLeaseDocument = leaseDocumentSchema;
 
-export const DeleteLeaseDocument = z.object({
+export const updateLeaseDocument = leaseDocumentSchema.extend({
+	id: z.number().min(1, "Id is required"),
+});
+
+export const deleteLeaseDocument = z.object({
 	leaseId: z.number(),
 	id: z.number().int(),
 });
 
-export const LeaseDocumentInput = z.object({
+export const leaseDocumentInput = z.object({
 	leaseId: z.number(),
 	id: z.number(),
 });
 
-export const ListLeaseDocumentInput = z.object({
+export const listLeaseDocumentInput = z.object({
 	leaseId: z.number(),
 	cursor: z.number().nullable(),
 	limit: z.number().int().min(1).max(100).default(20),

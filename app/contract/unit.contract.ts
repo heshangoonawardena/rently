@@ -1,13 +1,13 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-	CreateUnit,
-	DeleteUnit,
-	ListUnitInput,
-	ListUnitOutput,
-	UnitInput,
-	UnitOutput,
-	UpdateUnit,
+	createUnit,
+	deleteUnit,
+	listUnitInput,
+	listUnitOutput,
+	unitInput,
+	unitOutput,
+	updateUnit,
 } from "../schemas/unit.schema";
 
 export const base = oc.errors({
@@ -54,8 +54,8 @@ export const createUnitContract = base
 			"Creates a new unit with the provided details. Requires authentication.",
 		tags: ["Units"],
 	})
-	.input(CreateUnit)
-	.output(UnitOutput);
+	.input(createUnit)
+	.output(unitOutput);
 
 export const updateUnitContract = base
 	.route({
@@ -66,8 +66,8 @@ export const updateUnitContract = base
 			"Updates the details of an existing unit. Requires authentication.",
 		tags: ["Units"],
 	})
-	.input(UpdateUnit)
-	.output(UnitOutput);
+	.input(updateUnit)
+	.output(unitOutput);
 
 export const deleteUnitContract = base
 	.route({
@@ -77,8 +77,8 @@ export const deleteUnitContract = base
 		description: "Soft deletes a unit by setting its status to inactive",
 		tags: ["Units"],
 	})
-	.input(DeleteUnit)
-	.output(UnitOutput);
+	.input(deleteUnit)
+	.output(unitOutput);
 
 export const getUnitContract = base
 	.route({
@@ -88,8 +88,8 @@ export const getUnitContract = base
 		description: "Retrieves a single unit by ID.",
 		tags: ["Units"],
 	})
-	.input(UnitInput)
-	.output(UnitOutput);
+	.input(unitInput)
+	.output(unitOutput);
 
 export const listUnitContract = base
 	.route({
@@ -97,8 +97,8 @@ export const listUnitContract = base
 		path: "/units",
 		summary: "List units",
 		description:
-			"Lists units with cursor-based pagination and optional status filtering.",
+			"Returns a cursor-paginated list of units with active lease, current rent, and tenant details. activeLease is null if no active or extended lease exists for the unit.",
 		tags: ["Units"],
 	})
-	.input(ListUnitInput)
-	.output(ListUnitOutput);
+	.input(listUnitInput)
+	.output(listUnitOutput);

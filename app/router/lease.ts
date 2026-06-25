@@ -1,7 +1,7 @@
 import { implement } from "@orpc/server";
 import { contract } from "../contract";
 import { db } from "@/db/db";
-import { and, asc, desc, eq, gt, or } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, or } from "drizzle-orm";
 import {
 	authMiddleware,
 	BaseContext,
@@ -155,7 +155,6 @@ export const renewLease = os.lease.renew
 
 		// Insert a new rent revision if the rent is changing on renewal
 		if (rentAmount) {
-
 			await db.insert(leaseRent).values({
 				leaseId: id,
 				rentAmount,
@@ -267,7 +266,6 @@ export const listLease = os.lease.list
 		const { cursor, limit, status, unitId, tenantId } = input;
 		const { role, userId } = context.user;
 
-		// Tenants can only see their own leases regardless of what they pass in
 		let scopedTenantId = tenantId;
 		if (role === "tenant") {
 			const [self] = await db
@@ -294,11 +292,56 @@ export const listLease = os.lease.list
 			.limit(limit + 1);
 
 		const hasMore = rows.length > limit;
-		const items = hasMore ? rows.slice(0, limit) : rows;
+		const leaseRows = hasMore ? rows.slice(0, limit) : rows;
+
+		if (leaseRows.length === 0) {
+			return { items: [], nextCursor: null };
+		}
+
+		const unitIds = [...new Set(leaseRows.map((l) => l.unitId))];
+		const leaseIds = leaseRows.map((l) => l.id);
+
+		// Fetch units and all active rent rows in parallel
+		const [unitRows, rentRows, tenantRows] = await Promise.all([
+			db.select().from(unit).where(inArray(unit.id, unitIds)),
+			db
+				.select()
+				.from(leaseRent)
+				.where(
+					and(
+						inArray(leaseRent.leaseId, leaseIds),
+						eq(leaseRent.status, "active"),
+					),
+				)
+				.orderBy(desc(leaseRent.effectiveDate)),
+			db
+				.select()
+				.from(tenant)
+				.where(
+					inArray(tenant.id, [...new Set(leaseRows.map((l) => l.tenantId))]),
+				),
+		]);
+
+		const unitById = new Map(unitRows.map((u) => [u.id, u]));
+		const tenantById = new Map(tenantRows.map((t) => [t.id, t]));
+
+		const currentRentByLease = new Map<number, (typeof rentRows)[number]>();
+		for (const r of rentRows) {
+			if (!currentRentByLease.has(r.leaseId)) {
+				currentRentByLease.set(r.leaseId, r);
+			}
+		}
+
+		const items = leaseRows.map((l) => ({
+			...l,
+			unit: unitById.get(l.unitId)!,
+			tenant: tenantById.get(l.tenantId)!,
+			currentRent: currentRentByLease.get(l.id) ?? null,
+		}));
 
 		return {
 			items,
-			nextCursor: hasMore ? items[items.length - 1].id : null,
+			nextCursor: hasMore ? leaseRows[leaseRows.length - 1].id : null,
 		};
 	});
 

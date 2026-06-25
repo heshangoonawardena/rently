@@ -1,51 +1,32 @@
-import {
-	insertPaymentReceiptSchema,
-	selectPaymentReceiptSchema,
-	updatePaymentReceiptSchema,
-} from "@/db/schema/payment";
 import z from "zod";
 
 // ── Output schemas ──
 
-export const PaymentReceiptOutput = selectPaymentReceiptSchema;
+export const paymentReceiptOutput = z.object({
+	id: z.number().min(1, "Id is required"),
+	paymentId: z.number().min(1, "Unit id is required"),
+	receiptNumber: z.string().trim().min(3, "Receipt number is required"),
+	issuedDate: z.string(),
+	amountPaid: z.string(),
+	balanceAfter: z.string(),
+	period: z.string().nullable(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+});
 
-export const ListPaymentReceiptOutput = z.object({
+export const listPaymentReceiptOutput = z.object({
 	nextCursor: z.number().positive().nullable(),
-	items: z.array(PaymentReceiptOutput),
+	items: z.array(paymentReceiptOutput),
 });
 
 // ── Input schemas ──
 
-export const CreatePaymentReceipt = insertPaymentReceiptSchema.omit({
-	id: true,
-	paymentId: true,
-	receiptNumber: true,
-	createdAt: true,
-	updatedAt: true,
+export const receiptInput = z.object({
+	id: z.number().min(1, "Id is required"),
 });
 
-export const UpdatePaymentReceipt = updatePaymentReceiptSchema
-	.omit({
-		paymentId: true,
-		receiptNumber: true,
-		createdAt: true,
-		updatedAt: true,
-	})
-	.extend({
-		id: z.number().int().positive(),
-	});
-
-export const DeletePaymentReceipt = z.object({
-	id: z.number().int().positive(),
-});
-
-export const ReceiptInput = z.object({
-	id: z.number(),
-});
-
-
-export const ListPaymentReceiptInput = z.object({
-	leaseId: z.number(),
-	cursor: z.number().positive().nullable(),
+export const listPaymentReceiptInput = z.object({
+	leaseId: z.number().min(1, "Lease id is required"),
+	cursor: z.number().positive().optional(),
 	limit: z.number().int().min(1).max(100).default(20),
 });

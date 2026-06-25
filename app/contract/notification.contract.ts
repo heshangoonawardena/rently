@@ -1,17 +1,17 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-	BulkUpsertNotificationPreferences,
-	DeleteNotificationPreference,
-	ListNotificationLogInput,
-	ListNotificationLogOutput,
-	ListNotificationPreferenceInput,
-	ListNotificationPreferenceOutput,
-	MarkAllNotificationsRead,
-	MarkNotificationRead,
-	NotificationLogOutput,
-	NotificationPreferenceOutput,
-	UpsertNotificationPreference,
+	bulkUpsertNotificationPreferences,
+	deleteNotificationPreference,
+	listNotificationLogInput,
+	listNotificationLogOutput,
+	listNotificationPreferenceInput,
+	listNotificationPreferenceOutput,
+	markAllNotificationsRead,
+	markNotificationRead,
+	notificationLogOutput,
+	notificationPreferenceOutput,
+	upsertNotificationPreference,
 } from "../schemas/notification.schema";
 
 export const base = oc.errors({
@@ -54,8 +54,8 @@ export const upsertNotificationPreferenceContract = base
 			"specific channel for a specific event, or to adjust the daysBeforeThreshold.",
 		tags: ["Notification Preferences"],
 	})
-	.input(UpsertNotificationPreference)
-	.output(NotificationPreferenceOutput);
+	.input(upsertNotificationPreference)
+	.output(notificationPreferenceOutput);
 
 export const bulkUpsertNotificationPreferencesContract = base
 	.route({
@@ -69,8 +69,8 @@ export const bulkUpsertNotificationPreferencesContract = base
 			"Accepts up to 50 preferences per request.",
 		tags: ["Notification Preferences"],
 	})
-	.input(BulkUpsertNotificationPreferences)
-	.output(ListNotificationPreferenceOutput);
+	.input(bulkUpsertNotificationPreferences)
+	.output(listNotificationPreferenceOutput);
 
 export const deleteNotificationPreferenceContract = base
 	.route({
@@ -82,8 +82,8 @@ export const deleteNotificationPreferenceContract = base
 			"behaviour (no notification sent) for that channel/event combination.",
 		tags: ["Notification Preferences"],
 	})
-	.input(DeleteNotificationPreference)
-	.output(NotificationPreferenceOutput);
+	.input(deleteNotificationPreference)
+	.output(notificationPreferenceOutput);
 
 export const listNotificationPreferencesContract = base
 	.route({
@@ -95,8 +95,8 @@ export const listNotificationPreferencesContract = base
 			"organization. Optionally filter by channel or event type.",
 		tags: ["Notification Preferences"],
 	})
-	.input(ListNotificationPreferenceInput)
-	.output(ListNotificationPreferenceOutput);
+	.input(listNotificationPreferenceInput)
+	.output(listNotificationPreferenceOutput);
 
 // ── Notification Log contracts ──
 
@@ -111,8 +111,8 @@ export const listNotificationLogsContract = base
 			"e.g. all rent-due alerts.",
 		tags: ["Notification Log"],
 	})
-	.input(ListNotificationLogInput)
-	.output(ListNotificationLogOutput);
+	.input(listNotificationLogInput)
+	.output(listNotificationLogOutput);
 
 export const markNotificationReadContract = base
 	.route({
@@ -124,8 +124,8 @@ export const markNotificationReadContract = base
 			"Sets a single notification log entry to 'read' status and records readAt timestamp.",
 		tags: ["Notification Log"],
 	})
-	.input(MarkNotificationRead)
-	.output(NotificationLogOutput);
+	.input(markNotificationRead)
+	.output(notificationLogOutput);
 
 export const markAllNotificationsReadContract = base
 	.route({
@@ -138,7 +138,7 @@ export const markAllNotificationsReadContract = base
 			"Useful for a 'clear all' button in the notification centre.",
 		tags: ["Notification Log"],
 	})
-	.input(MarkAllNotificationsRead)
+	.input(markAllNotificationsRead)
 	.output(
 		z.object({
 			updatedCount: z.number().int().nonnegative(),

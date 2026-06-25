@@ -19,7 +19,7 @@ export const units = async (db: DB) => {
 			type: "warehouse",
 			address: "789 Industrial Blvd, Springfield, IL 62703",
 			utilityBillingMode: "metered",
-			status: "available",
+			status: "occupied",
 		},
 		{
 			organizationId: organizationData[0].id,

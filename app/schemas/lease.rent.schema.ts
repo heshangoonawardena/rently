@@ -1,44 +1,60 @@
 import z from "zod";
-import {
-	insertLeaseRentSchema,
-	selectLeaseRentSchema,
-	updateLeaseRentSchema,
-} from "@/db/schema/lease";
+import { leaseRentStatusEnum } from "@/db/schema/enums";
 
 // ── Output schemas ──
 
-export const LeaseRentOutput = selectLeaseRentSchema;
+export const leaseRentOutput = z.object({
+	id: z.number().min(1, "Id is required"),
+	leaseId: z.number().min(1, "Lease id is required"),
+	rentAmount: z.string(),
+	effectiveDate: z.string(),
+	description: z
+		.string()
+		.trim()
+		.max(500, "Description must not exceed 500 characters")
+		.nullable(),
+	status: z.enum(leaseRentStatusEnum.enumValues),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+});
 
-export const ListLeaseRentOutput = z.object({
+export const listLeaseRentOutput = z.object({
 	nextCursor: z.number().positive().nullable(),
-	items: z.array(LeaseRentOutput),
+	items: z.array(leaseRentOutput),
 });
 
 // ── Input schemas ──
 
-export const CreateLeaseRent = insertLeaseRentSchema.omit({
-	id: true,
-	createdAt: true,
-	updatedAt: true,
+export const leaseRentSchema = z.object({
+	leaseId: z.number().min(1, "Lease id is required"),
+	rentAmount: z
+		.number()
+		.int()
+		.nonnegative()
+		.transform((val) => String(val)),
+	effectiveDate: z.date().transform((val) => String(val)),
+	description: z
+		.string()
+		.trim()
+		.max(500, "Description must not exceed 500 characters")
+		.nullable(),
 });
 
-export const UpdateLeaseRent = updateLeaseRentSchema
-	.omit({
-		createdAt: true,
-		updatedAt: true,
-	})
-	.extend({
-		id: z.number().int().positive(),
-		leaseId: z.number(),
-	});
+export const createLeaseRent = leaseRentSchema;
 
-export const DeleteLeaseRent = z.object({
+export const updateLeaseRent = leaseRentSchema.extend({
+	id: z.number().min(1, "Id is required"),
 	leaseId: z.number(),
-	id: z.number().int().positive(),
+	status: z.enum(leaseRentStatusEnum.enumValues),
 });
 
-export const ListLeaseRentInput = z.object({
+export const deleteLeaseRent = z.object({
 	leaseId: z.number(),
-	cursor: z.number().positive().nullable(),
+	id: z.number().min(1, "Id is required"),
+});
+
+export const listLeaseRentInput = z.object({
+	leaseId: z.number(),
+	cursor: z.number().positive().optional(),
 	limit: z.number().int().min(1).max(100).default(20),
 });

@@ -1,5 +1,6 @@
 import { DB } from "@/db/db";
 import { inspection } from "@/db/schema/inspection";
+import { getFutureDate, getPastDate } from "@/lib/utils";
 
 export const inspections = async (db: DB) => {
 	const [userData, unitData] = await Promise.all([
@@ -12,15 +13,15 @@ export const inspections = async (db: DB) => {
 			unitId: unitData[0].id,
 			userId: userData[1].id,
 			title: "Move-in Inspection",
-			scheduledDate: "2024-01-01",
-			completedDate: "2024-01-01",
+			scheduledDate: getPastDate(30),
+			completedDate: getPastDate(20),
 			status: "completed",
 		},
 		{
 			unitId: unitData[1].id,
 			userId: userData[2].id,
 			title: "Move-out Inspection",
-			scheduledDate: "2024-01-01",
+			scheduledDate: getFutureDate(17),
 			status: "scheduled",
 		},
 	]);

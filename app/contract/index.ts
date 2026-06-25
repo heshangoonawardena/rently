@@ -70,6 +70,7 @@ import {
 	expiringLeasesContract,
 	occupancySummaryContract,
 	overdueUtilityBillsContract,
+	paymentOverviewContract,
 	rentCollectionContract,
 	repairSummaryContract,
 	upcomingInspectionsContract,
@@ -197,6 +198,7 @@ export const contract = {
 	report: {
 		occupancySummary: occupancySummaryContract,
 		rentCollection: rentCollectionContract,
+		paymentOverview: paymentOverviewContract,
 		arrearsOverview: arrearsOverviewContract,
 		upcomingRentDue: upcomingRentDueContract,
 		expiringDocuments: expiringDocumentsContract,

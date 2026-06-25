@@ -1,20 +1,20 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-	CreateUtility,
-	DeleteUtility,
-	ListUtilityInput,
-	ListUtilityOutput,
-	UpdateUtility,
-	UtilityOutput,
+	createUtility,
+	deleteUtility,
+	listUtilityInput,
+	listUtilityOutput,
+	updateUtility,
+	utilityOutput,
 } from "../schemas/utility.schema";
 import {
-	CreateUtilityBill,
-	DeleteUtilityBill,
-	ListUtilityBillInput,
-	ListUtilityBillOutput,
-	UpdateUtilityBill,
-	UtilityBillOutput,
+	createUtilityBill,
+	deleteUtilityBill,
+	listUtilityBillInput,
+	listUtilityBillOutput,
+	updateUtilityBill,
+	utilityBillOutput,
 } from "../schemas/utility.bill.schema";
 
 export const base = oc.errors({
@@ -63,8 +63,8 @@ export const createUtilityContract = base
 			"Links a utility account (electricity, water, etc.) to a unit. When a tenant changes and the account holder changes, mark the old one inactive and create a new record.",
 		tags: ["Utilities"],
 	})
-	.input(CreateUtility)
-	.output(UtilityOutput);
+	.input(createUtility)
+	.output(utilityOutput);
 
 export const updateUtilityContract = base
 	.route({
@@ -74,8 +74,8 @@ export const updateUtilityContract = base
 		description: "Updates holder name, account number, or description.",
 		tags: ["Utilities"],
 	})
-	.input(UpdateUtility)
-	.output(UtilityOutput);
+	.input(updateUtility)
+	.output(utilityOutput);
 
 export const deactivateUtilityContract = base
 	.route({
@@ -86,8 +86,8 @@ export const deactivateUtilityContract = base
 			"Marks a utility account as inactive. Use when a tenant changes and the utility account changes hands.",
 		tags: ["Utilities"],
 	})
-	.input(DeleteUtility)
-	.output(UtilityOutput);
+	.input(deleteUtility)
+	.output(utilityOutput);
 
 export const deleteUtilityContract = base
 	.route({
@@ -98,8 +98,8 @@ export const deleteUtilityContract = base
 			"Soft-deletes a utility account. Only allowed if no bills are attached.",
 		tags: ["Utilities"],
 	})
-	.input(DeleteUtility)
-	.output(UtilityOutput);
+	.input(deleteUtility)
+	.output(utilityOutput);
 
 export const listUtilityContract = base
 	.route({
@@ -109,8 +109,8 @@ export const listUtilityContract = base
 		description: "Returns all utility accounts linked to a unit.",
 		tags: ["Utilities"],
 	})
-	.input(ListUtilityInput)
-	.output(ListUtilityOutput);
+	.input(listUtilityInput)
+	.output(listUtilityOutput);
 
 // ── Utility Bill contracts ──
 
@@ -123,8 +123,8 @@ export const createUtilityBillContract = base
 		description: "Records a new utility bill in 'issued' status",
 		tags: ["Utility Bills"],
 	})
-	.input(CreateUtilityBill)
-	.output(UtilityBillOutput);
+	.input(createUtilityBill)
+	.output(utilityBillOutput);
 
 export const updateUtilityBillContract = base
 	.route({
@@ -134,8 +134,8 @@ export const updateUtilityBillContract = base
 		description: "Updates bill details.",
 		tags: ["Utility Bills"],
 	})
-	.input(UpdateUtilityBill)
-	.output(UtilityBillOutput);
+	.input(updateUtilityBill)
+	.output(utilityBillOutput);
 
 export const markUtilityBillPaidContract = base
 	.route({
@@ -145,8 +145,8 @@ export const markUtilityBillPaidContract = base
 		description: "Transitions an issued bill to 'paid' status.",
 		tags: ["Utility Bills"],
 	})
-	.input(UpdateUtilityBill)
-	.output(UtilityBillOutput);
+	.input(updateUtilityBill)
+	.output(utilityBillOutput);
 
 export const deleteUtilityBillContract = base
 	.route({
@@ -156,8 +156,8 @@ export const deleteUtilityBillContract = base
 		description: "Deletes an issued utility bill.",
 		tags: ["Utility Bills"],
 	})
-	.input(DeleteUtilityBill)
-	.output(UtilityBillOutput);
+	.input(deleteUtilityBill)
+	.output(utilityBillOutput);
 
 export const listUtilityBillContract = base
 	.route({
@@ -168,5 +168,5 @@ export const listUtilityBillContract = base
 			"Returns paginated bills. Filter by status to e.g. find all overdue bills.",
 		tags: ["Utility Bills"],
 	})
-	.input(ListUtilityBillInput)
-	.output(ListUtilityBillOutput);
+	.input(listUtilityBillInput)
+	.output(listUtilityBillOutput);

@@ -4,7 +4,7 @@ import { db } from "@/db/db";
 import { unit } from "@/db/schema/unit";
 import { lease, leaseRent } from "@/db/schema/lease";
 import { tenant } from "@/db/schema/tenant";
-import { payment } from "@/db/schema/payment";
+import { payment, paymentReceipt } from "@/db/schema/payment";
 import {
 	unitDocument,
 	tenantDocument,
@@ -19,6 +19,7 @@ import {
 	asc,
 	desc,
 	eq,
+	gt,
 	gte,
 	inArray,
 	isNotNull,
@@ -74,8 +75,6 @@ export const occupancySummary = os.report.occupancySummary
 	.handler(async ({ context, errors }) => {
 		const { organizationId, role } = context.user;
 
-		if (role === "tenant") throw errors.FORBIDDEN();
-
 		const rows = await db
 			.select({ status: unit.status, count: sql<number>`count(*)::int` })
 			.from(unit)
@@ -104,10 +103,8 @@ export const rentCollection = os.report.rentCollection
 	.handler(async ({ input, errors, context }) => {
 		const { organizationId, role } = context.user;
 
-		if (role === "tenant") throw errors.FORBIDDEN();
-
 		const period =
-			input.from && input.to
+			input?.from && input?.to
 				? { from: input.from, to: input.to }
 				: currentMonthRange();
 
@@ -124,7 +121,7 @@ export const rentCollection = os.report.rentCollection
 				and(
 					eq(unit.organizationId, organizationId),
 					or(eq(lease.status, "active"), eq(lease.status, "extended")),
-					input.unitId ? eq(lease.unitId, input.unitId) : undefined,
+					input?.unitId ? eq(lease.unitId, input.unitId) : undefined,
 				),
 			);
 
@@ -184,7 +181,7 @@ export const rentCollection = os.report.rentCollection
 		const collectedByLease = new Map<number, number>();
 		for (const p of paymentRows) {
 			const prev = collectedByLease.get(p.leaseId) ?? 0;
-			collectedByLease.set(p.leaseId, prev + parseFloat(p.paymentAmount));
+			collectedByLease.set(p.leaseId, prev + Number(p.paymentAmount));
 		}
 
 		// Unit and tenant names
@@ -224,7 +221,7 @@ export const rentCollection = os.report.rentCollection
 		let totalCollected = 0;
 
 		const rows = leaseRows.map((l) => {
-			const rentDue = parseFloat(currentRentByLease.get(l.id) ?? "0");
+			const rentDue = Number(currentRentByLease.get(l.id) ?? "0");
 			const collected = collectedByLease.get(l.id) ?? 0;
 			const outstanding = rentDue - collected;
 
@@ -252,13 +249,122 @@ export const rentCollection = os.report.rentCollection
 		};
 	});
 
+export const paymentOverview = os.report.paymentOverview
+	.use(authMiddleware)
+	.use(permissionMiddleware({ payment: ["read"] }))
+	.handler(async ({ input, errors, context }) => {
+		const { organizationId, role } = context.user;
+
+		const { cursor, limit, from, to, unitId, paymentType, paymentMethod } =
+			input;
+
+		// Resolve all lease IDs that belong to this org,
+		// optionally filtered to a specific unit.
+		const leaseRows = await db
+			.select({ id: lease.id, unitId: lease.unitId, tenantId: lease.tenantId })
+			.from(lease)
+			.innerJoin(unit, eq(unit.id, lease.unitId))
+			.where(
+				and(
+					eq(unit.organizationId, organizationId),
+					unitId ? eq(lease.unitId, unitId) : undefined,
+				),
+			);
+
+		if (leaseRows.length === 0) {
+			return { items: [], nextCursor: null };
+		}
+
+		const leaseIds = leaseRows.map((l) => l.id);
+
+		// Build a lookup map: leaseId → { unitId, tenantId }
+		const leaseMetaById = new Map(
+			leaseRows.map((l) => [l.id, { unitId: l.unitId, tenantId: l.tenantId }]),
+		);
+
+		// Fetch payments with filters applied
+		const rows = await db
+			.select({
+				payment: payment,
+				receiptNumber: paymentReceipt.receiptNumber,
+			})
+			.from(payment)
+			.leftJoin(paymentReceipt, eq(paymentReceipt.paymentId, payment.id))
+			.where(
+				and(
+					inArray(payment.leaseId, leaseIds),
+					from ? gte(payment.paymentDate, from) : undefined,
+					to ? lte(payment.paymentDate, to) : undefined,
+					paymentType ? eq(payment.paymentType, paymentType) : undefined,
+					paymentMethod ? eq(payment.paymentMethod, paymentMethod) : undefined,
+					cursor ? gt(payment.id, cursor) : undefined,
+				),
+			)
+			.orderBy(desc(payment.paymentDate), desc(payment.id))
+			.limit(limit + 1);
+
+		const hasMore = rows.length > limit;
+		const pageRows = hasMore ? rows.slice(0, limit) : rows;
+
+		if (pageRows.length === 0) {
+			return { items: [], nextCursor: null };
+		}
+
+		// Resolve unit names
+		const unitIds = [...new Set(leaseRows.map((l) => l.unitId))];
+		const unitRows = await db
+			.select({ id: unit.id, name: unit.name })
+			.from(unit)
+			.where(inArray(unit.id, unitIds));
+		const unitNameById = new Map(unitRows.map((u) => [u.id, u.name]));
+
+		// Resolve tenant names
+		const tenantIds = [...new Set(leaseRows.map((l) => l.tenantId))];
+		const tenantRows = await db
+			.select({
+				id: tenant.id,
+				firstName: tenant.firstName,
+				lastName: tenant.lastName,
+			})
+			.from(tenant)
+			.where(inArray(tenant.id, tenantIds));
+		const tenantNameById = new Map(
+			tenantRows.map((t) => [
+				t.id,
+				[t.firstName, t.lastName].filter(Boolean).join(" "),
+			]),
+		);
+
+		const items = pageRows.map(({ payment: p, receiptNumber }) => {
+			const meta = leaseMetaById.get(p.leaseId)!;
+			return {
+				paymentId: p.id,
+				leaseId: p.leaseId,
+				unitId: meta.unitId,
+				unitName: unitNameById.get(meta.unitId) ?? "",
+				tenantId: meta.tenantId,
+				tenantName: tenantNameById.get(meta.tenantId) ?? "",
+				paymentAmount: p.paymentAmount,
+				paymentType: p.paymentType,
+				paymentMethod: p.paymentMethod,
+				paymentDate: p.paymentDate,
+				balanceAfter: p.balanceAfter,
+				receiptNumber: receiptNumber ?? null,
+				description: p.description ?? null,
+			};
+		});
+
+		return {
+			items,
+			nextCursor: hasMore ? items[items.length - 1].paymentId : null,
+		};
+	});
+
 export const arrearsOverview = os.report.arrearsOverview
 	.use(authMiddleware)
 	.use(permissionMiddleware({ payment: ["read"] }))
 	.handler(async ({ errors, context }) => {
 		const { organizationId, role } = context.user;
-
-		if (role === "tenant") throw errors.FORBIDDEN();
 
 		const leaseRows = await db
 			.select({
@@ -276,7 +382,12 @@ export const arrearsOverview = os.report.arrearsOverview
 			);
 
 		if (leaseRows.length === 0) {
-			return { totalArrears: "0.00", tenantsInArrears: 0, rows: [] };
+			return {
+				totalArrears: "0.00",
+				tenantsInArrears: 0,
+				tenantsInTotal: 0,
+				rows: [],
+			};
 		}
 
 		const leaseIds = leaseRows.map((l) => l.id);
@@ -289,10 +400,10 @@ export const arrearsOverview = os.report.arrearsOverview
 			})
 			.from(payment)
 			.where(inArray(payment.leaseId, leaseIds))
-			.orderBy(payment.leaseId, desc(payment.createdAt));
+			.orderBy(payment.leaseId, desc(payment.createdAt), desc(payment.id));
 
 		const balanceByLease = new Map(
-			latestPayments.map((p) => [p.leaseId, parseFloat(p.balanceAfter)]),
+			latestPayments.map((p) => [p.leaseId, Number(p.balanceAfter)]),
 		);
 
 		// Current rent per lease (for estimating months overdue)
@@ -312,7 +423,7 @@ export const arrearsOverview = os.report.arrearsOverview
 		const currentRentByLease = new Map<number, number>();
 		for (const r of rentRows) {
 			if (!currentRentByLease.has(r.leaseId)) {
-				currentRentByLease.set(r.leaseId, parseFloat(r.rentAmount));
+				currentRentByLease.set(r.leaseId, Number(r.rentAmount));
 			}
 		}
 
@@ -349,9 +460,9 @@ export const arrearsOverview = os.report.arrearsOverview
 
 		for (const l of leaseRows) {
 			const balance = balanceByLease.get(l.id) ?? 0;
-			if (balance >= 0) continue; // not in arrears
+			if (balance <= 0) continue; // not in arrears
 
-			const arrears = Math.abs(balance);
+			const arrears = balance;
 			const rent = currentRentByLease.get(l.id) ?? 1;
 			const monthsOverdue = Math.floor(arrears / rent);
 			const t = tenantById.get(l.tenantId);
@@ -375,6 +486,7 @@ export const arrearsOverview = os.report.arrearsOverview
 		return {
 			totalArrears: totalArrears.toFixed(2),
 			tenantsInArrears: arrearsRows.length,
+			tenantsInTotal: leaseRows.length,
 			rows: arrearsRows,
 		};
 	});
@@ -384,8 +496,6 @@ export const upcomingRentDue = os.report.upcomingRentDue
 	.use(permissionMiddleware({ lease: ["read"] }))
 	.handler(async ({ input, errors, context }) => {
 		const { organizationId, role } = context.user;
-
-		if (role === "tenant") throw errors.FORBIDDEN();
 
 		const { daysAhead } = input;
 		const todayStr = today();
@@ -504,8 +614,6 @@ export const expiringDocuments = os.report.expiringDocuments
 	.handler(async ({ input, errors, context }) => {
 		const { organizationId, role } = context.user;
 
-		if (role === "tenant") throw errors.FORBIDDEN();
-
 		const { daysAhead } = input;
 		const todayStr = today();
 		const futureDate = new Date();
@@ -606,8 +714,6 @@ export const upcomingInspections = os.report.upcomingInspections
 	.handler(async ({ input, errors, context }) => {
 		const { organizationId, role } = context.user;
 
-		if (role === "tenant") throw errors.FORBIDDEN();
-
 		const { daysAhead, unitId } = input;
 		const todayStr = today();
 		const futureDate = new Date();
@@ -657,8 +763,6 @@ export const overdueUtilityBills = os.report.overdueUtilityBills
 	.handler(async ({ errors, context }) => {
 		const { organizationId, role } = context.user;
 
-		if (role === "tenant") throw errors.FORBIDDEN();
-
 		const todayStr = today();
 
 		const rows = await db
@@ -690,7 +794,7 @@ export const overdueUtilityBills = os.report.overdueUtilityBills
 		let totalOverdue = 0;
 		const resultRows = rows.map((r) => {
 			const daysPastDue = daysBetween(r.periodEnd, todayStr);
-			totalOverdue += parseFloat(r.billAmount);
+			totalOverdue += Number(r.billAmount);
 			return {
 				billId: r.billId,
 				utilityId: r.utilityId,
@@ -716,8 +820,6 @@ export const repairSummary = os.report.repairSummary
 	.use(permissionMiddleware({ repair: ["read"] }))
 	.handler(async ({ input, errors, context }) => {
 		const { organizationId, role } = context.user;
-
-		if (role === "tenant") throw errors.FORBIDDEN();
 
 		const rows = await db
 			.select({
@@ -765,8 +867,6 @@ export const expiringLeases = os.report.expiringLeases
 	.use(permissionMiddleware({ lease: ["read"] }))
 	.handler(async ({ input, errors, context }) => {
 		const { organizationId, role } = context.user;
-
-		if (role === "tenant") throw errors.FORBIDDEN();
 
 		const { daysAhead } = input;
 		const todayStr = today();

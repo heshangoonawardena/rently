@@ -39,6 +39,7 @@ export const auth = async (db: DB) => {
 			id: "vGWDliHktzvXUcAb9kiNoWXj2QV9mdnO",
 			expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days from now
 			token: "x8zoEsWV0UNeH07UEEPRxyf8OOxk6FvI",
+			activeOrganizationId: "org_1",
 			createdAt: new Date(),
 			updatedAt: new Date(),
 			userId: users[0].id,
@@ -47,6 +48,7 @@ export const auth = async (db: DB) => {
 			id: "glB404Fehyj2IK2Y3TRtn0xaDyYWAYs5",
 			expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days from now
 			token: "xQLZM0Oi5SBKI43oVpFo6pPfQloDoTZF",
+			activeOrganizationId: "org_1",
 			createdAt: new Date(),
 			updatedAt: new Date(),
 			userId: users[1].id,
@@ -55,6 +57,7 @@ export const auth = async (db: DB) => {
 			id: "5ONSttp4imp98et8tyChyAT6F3xtL9K5",
 			expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days from now
 			token: "xPm0J4TxadiwN8sLUL6RqVaydESpP6Ol",
+			activeOrganizationId: "org_1",
 			createdAt: new Date(),
 			updatedAt: new Date(),
 			userId: users[2].id,

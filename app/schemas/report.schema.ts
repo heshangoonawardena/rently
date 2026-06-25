@@ -1,16 +1,17 @@
+import { paymentMethodEnum, paymentTypeEnum } from "@/db/schema/enums";
 import z from "zod";
 
 // ── Shared primitives ──
 
 // Used by any endpoint that accepts a date-range filter
-export const DateRangeInput = z.object({
+export const dateRangeInput = z.object({
 	from: z.iso.date("from must be a valid ISO date (YYYY-MM-DD)").optional(),
 	to: z.iso.date("to must be a valid ISO date (YYYY-MM-DD)").optional(),
 });
 
 // ── Occupancy ──
 
-export const OccupancySummaryOutput = z.object({
+export const occupancySummaryOutput = z.object({
 	total: z.number().int(),
 	occupied: z.number().int(),
 	available: z.number().int(),
@@ -24,7 +25,7 @@ export const OccupancySummaryOutput = z.object({
 // ── Rent collection ──
 
 // A single lease-level row inside the rent collection report
-export const RentCollectionRow = z.object({
+export const rentCollectionRow = z.object({
 	leaseId: z.number().int(),
 	unitId: z.number().int(),
 	unitName: z.string(),
@@ -37,12 +38,12 @@ export const RentCollectionRow = z.object({
 		.describe("Numeric string — positive = arrears owed, negative = overpaid"),
 });
 
-export const RentCollectionInput = DateRangeInput.extend({
+export const rentCollectionInput = dateRangeInput.extend({
 	// If omitted the report covers the current calendar month
 	unitId: z.number().int().positive().optional(),
 });
 
-export const RentCollectionOutput = z.object({
+export const rentCollectionOutput = z.object({
 	period: z.object({
 		from: z.iso.date(),
 		to: z.iso.date(),
@@ -50,12 +51,48 @@ export const RentCollectionOutput = z.object({
 	totalExpected: z.string(),
 	totalCollected: z.string(),
 	totalOutstanding: z.string(),
-	rows: z.array(RentCollectionRow),
+	rows: z.array(rentCollectionRow),
+});
+
+// -- Payments --
+
+export const paymentOverviewRow = z.object({
+	paymentId: z.number().int(),
+	leaseId: z.number().int(),
+	unitId: z.number().int(),
+	unitName: z.string(),
+	tenantId: z.number().int(),
+	tenantName: z.string(),
+	paymentAmount: z.string(),
+	paymentType: z.enum(paymentTypeEnum.enumValues),
+	paymentMethod: z.enum(paymentMethodEnum.enumValues),
+	paymentDate: z.string(),
+	balanceAfter: z.string(),
+	receiptNumber: z.string().nullable(),
+	description: z.string().nullable(),
+});
+
+export const paymentOverviewInput = z.object({
+	// Pagination
+	cursor: z.number().positive().optional(),
+	limit: z.number().int().min(1).max(100).default(5),
+
+	// Filters — all optional, omit for dashboard defaults
+	from: z.iso.date("from must be a valid ISO date (YYYY-MM-DD)").optional(),
+	to: z.iso.date("to must be a valid ISO date (YYYY-MM-DD)").optional(),
+	unitId: z.number().int().positive().optional(),
+	paymentType: z.enum(paymentTypeEnum.enumValues).optional(),
+	paymentMethod: z.enum(paymentMethodEnum.enumValues).optional(),
+});
+
+export const paymentOverviewOutput = z.object({
+	items: z.array(paymentOverviewRow),
+	nextCursor: z.number().positive().nullable(),
 });
 
 // ── Arrears ──
 
-export const ArrearsRow = z.object({
+export const arrearsRow = z.object({
 	leaseId: z.number().int(),
 	unitId: z.number().int(),
 	unitName: z.string(),
@@ -75,15 +112,16 @@ export const ArrearsRow = z.object({
 	monthsOverdue: z.number().int().describe("Approximate months in arrears"),
 });
 
-export const ArrearsOverviewOutput = z.object({
+export const arrearsOverviewOutput = z.object({
 	totalArrears: z.string(),
 	tenantsInArrears: z.number().int(),
-	rows: z.array(ArrearsRow),
+	tenantsInTotal: z.number().int(),
+	rows: z.array(arrearsRow),
 });
 
 // ── Upcoming rent due ──
 
-export const UpcomingRentDueRow = z.object({
+export const upcomingRentDueRow = z.object({
 	leaseId: z.number().int(),
 	unitId: z.number().int(),
 	unitName: z.string(),
@@ -95,7 +133,7 @@ export const UpcomingRentDueRow = z.object({
 	daysUntilDue: z.number().int(),
 });
 
-export const UpcomingRentDueInput = z.object({
+export const upcomingRentDueInput = z.object({
 	daysAhead: z
 		.number()
 		.int()
@@ -105,13 +143,13 @@ export const UpcomingRentDueInput = z.object({
 		.describe("How many days ahead to look"),
 });
 
-export const UpcomingRentDueOutput = z.object({
-	rows: z.array(UpcomingRentDueRow),
+export const upcomingRentDueOutput = z.object({
+	rows: z.array(upcomingRentDueRow),
 });
 
 // ── Expiring documents ──
 
-export const ExpiringDocumentRow = z.object({
+export const expiringDocumentRow = z.object({
 	id: z.number().int(),
 	documentType: z.string(),
 	label: z.string(),
@@ -124,7 +162,7 @@ export const ExpiringDocumentRow = z.object({
 	resourceName: z.string(),
 });
 
-export const ExpiringDocumentsInput = z.object({
+export const expiringDocumentsInput = z.object({
 	daysAhead: z
 		.number()
 		.int()
@@ -134,13 +172,13 @@ export const ExpiringDocumentsInput = z.object({
 		.describe("How many days ahead to look for expiring documents"),
 });
 
-export const ExpiringDocumentsOutput = z.object({
-	rows: z.array(ExpiringDocumentRow),
+export const expiringDocumentsOutput = z.object({
+	rows: z.array(expiringDocumentRow),
 });
 
 // ── Upcoming inspections ──
 
-export const UpcomingInspectionRow = z.object({
+export const upcomingInspectionRow = z.object({
 	id: z.number().int(),
 	title: z.string(),
 	unitId: z.number().int(),
@@ -150,7 +188,7 @@ export const UpcomingInspectionRow = z.object({
 	assignedUserName: z.string().nullable(),
 });
 
-export const UpcomingInspectionsInput = z.object({
+export const upcomingInspectionsInput = z.object({
 	daysAhead: z
 		.number()
 		.int()
@@ -161,13 +199,13 @@ export const UpcomingInspectionsInput = z.object({
 	unitId: z.number().int().positive().optional(),
 });
 
-export const UpcomingInspectionsOutput = z.object({
-	rows: z.array(UpcomingInspectionRow),
+export const upcomingInspectionsOutput = z.object({
+	rows: z.array(upcomingInspectionRow),
 });
 
 // ── Overdue utility bills ──
 
-export const OverdueUtilityBillRow = z.object({
+export const overdueUtilityBillRow = z.object({
 	billId: z.number().int(),
 	utilityId: z.number().int(),
 	utilityType: z.string(),
@@ -180,14 +218,14 @@ export const OverdueUtilityBillRow = z.object({
 	status: z.string(),
 });
 
-export const OverdueUtilityBillsOutput = z.object({
+export const overdueUtilityBillsOutput = z.object({
 	totalOverdue: z.string(),
-	rows: z.array(OverdueUtilityBillRow),
+	rows: z.array(overdueUtilityBillRow),
 });
 
 // ── Repair summary ──
 
-export const RepairSummaryOutput = z.object({
+export const repairSummaryOutput = z.object({
 	open: z.number().int(),
 	inProgress: z.number().int(),
 	resolved: z.number().int(),
@@ -206,13 +244,13 @@ export const RepairSummaryOutput = z.object({
 	}),
 });
 
-export const RepairSummaryInput = z.object({
+export const repairSummaryInput = z.object({
 	unitId: z.number().int().positive().optional(),
 });
 
 // ── Leases expiring soon ──
 
-export const ExpiringLeaseRow = z.object({
+export const expiringLeaseRow = z.object({
 	leaseId: z.number().int(),
 	unitId: z.number().int(),
 	unitName: z.string(),
@@ -224,16 +262,16 @@ export const ExpiringLeaseRow = z.object({
 	status: z.string(),
 });
 
-export const ExpiringLeasesInput = z.object({
+export const expiringLeasesInput = z.object({
 	daysAhead: z
 		.number()
 		.int()
 		.min(1)
 		.max(180)
-		.default(60)
+		.default(45)
 		.describe("How many days ahead to look for expiring leases"),
 });
 
-export const ExpiringLeasesOutput = z.object({
-	rows: z.array(ExpiringLeaseRow),
+export const expiringLeasesOutput = z.object({
+	rows: z.array(expiringLeaseRow),
 });

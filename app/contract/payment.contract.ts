@@ -1,19 +1,19 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-	CreatePayment,
-	ListPaymentInput,
-	ListPaymentOutput,
-	PaymentInput,
-	PaymentOutput,
-	UpdatePayment,
-} from "../schemas/payment.schema";
-import {
-	ListPaymentReceiptInput,
-	ListPaymentReceiptOutput,
-	PaymentReceiptOutput,
-	ReceiptInput,
+	listPaymentReceiptInput,
+	listPaymentReceiptOutput,
+	paymentReceiptOutput,
+	receiptInput,
 } from "../schemas/payment.receipt.schema";
+import {
+	createPayment,
+	listPaymentInput,
+	listPaymentOutput,
+	paymentInput,
+	paymentOutput,
+	updatePayment,
+} from "../schemas/payment.schema";
 
 export const base = oc.errors({
 	UNAUTHORIZED: {
@@ -61,8 +61,8 @@ export const createPaymentContract = base
 			"Records a payment against a lease. balanceAfter is calculated server-side from the running balance — do not pass it from the client. A receipt is auto-generated and returned.",
 		tags: ["Payments"],
 	})
-	.input(CreatePayment)
-	.output(PaymentOutput);
+	.input(createPayment)
+	.output(paymentOutput);
 
 export const updatePaymentContract = base
 	.route({
@@ -73,8 +73,8 @@ export const updatePaymentContract = base
 			"Allows correcting metadata (description, method, date) on an existing payment. Amount corrections require creating an adjustment payment instead.",
 		tags: ["Payments"],
 	})
-	.input(UpdatePayment)
-	.output(PaymentOutput);
+	.input(updatePayment)
+	.output(paymentOutput);
 
 export const getPaymentContract = base
 	.route({
@@ -84,8 +84,8 @@ export const getPaymentContract = base
 		description: "Retrieves a payment with its attached receipt.",
 		tags: ["Payments"],
 	})
-	.input(PaymentInput)
-	.output(PaymentOutput);
+	.input(paymentInput)
+	.output(paymentOutput);
 
 export const listPaymentContract = base
 	.route({
@@ -96,8 +96,8 @@ export const listPaymentContract = base
 			"Returns a cursor-paginated list of payments. Filter by type to e.g. show only rent payments.",
 		tags: ["Payments"],
 	})
-	.input(ListPaymentInput)
-	.output(ListPaymentOutput);
+	.input(listPaymentInput)
+	.output(listPaymentOutput);
 
 // ── Receipt contracts ──
 
@@ -109,8 +109,8 @@ export const getReceiptContract = base
 		description: "Retrieves a receipt by its ID.",
 		tags: ["Payment Receipts"],
 	})
-	.input(ReceiptInput)
-	.output(PaymentReceiptOutput);
+	.input(receiptInput)
+	.output(paymentReceiptOutput);
 
 export const listReceiptsContract = base
 	.route({
@@ -120,5 +120,5 @@ export const listReceiptsContract = base
 		description: "Returns all receipts for a lease, newest first.",
 		tags: ["Payment Receipts"],
 	})
-	.input(ListPaymentReceiptInput)
-	.output(ListPaymentReceiptOutput);
+	.input(listPaymentReceiptInput)
+	.output(listPaymentReceiptOutput);

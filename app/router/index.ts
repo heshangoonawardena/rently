@@ -88,6 +88,7 @@ import {
 	expiringLeases,
 	occupancySummary,
 	overdueUtilityBills,
+	paymentOverview,
 	rentCollection,
 	repairSummary,
 	upcomingInspections,
@@ -196,6 +197,7 @@ export const router = os.router({
 	report: {
 		occupancySummary: occupancySummary,
 		rentCollection: rentCollection,
+		paymentOverview: paymentOverview,
 		arrearsOverview: arrearsOverview,
 		upcomingRentDue: upcomingRentDue,
 		expiringDocuments: expiringDocuments,

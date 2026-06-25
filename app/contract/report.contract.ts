@@ -1,21 +1,23 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-	ArrearsOverviewOutput,
-	ExpiringDocumentsInput,
-	ExpiringDocumentsOutput,
-	ExpiringLeasesInput,
-	ExpiringLeasesOutput,
-	OccupancySummaryOutput,
-	OverdueUtilityBillsOutput,
-	RentCollectionInput,
-	RentCollectionOutput,
-	RepairSummaryInput,
-	RepairSummaryOutput,
-	UpcomingInspectionsInput,
-	UpcomingInspectionsOutput,
-	UpcomingRentDueInput,
-	UpcomingRentDueOutput,
+    arrearsOverviewOutput,
+    expiringDocumentsInput,
+    expiringDocumentsOutput,
+    expiringLeasesInput,
+    expiringLeasesOutput,
+    occupancySummaryOutput,
+    overdueUtilityBillsOutput,
+    paymentOverviewInput,
+    paymentOverviewOutput,
+    rentCollectionInput,
+    rentCollectionOutput,
+    repairSummaryInput,
+    repairSummaryOutput,
+    upcomingInspectionsInput,
+    upcomingInspectionsOutput,
+    upcomingRentDueInput,
+    upcomingRentDueOutput
 } from "../schemas/report.schema";
 
 export const base = oc.errors({
@@ -44,8 +46,7 @@ export const occupancySummaryContract = base
 			"and the overall occupancy rate for the active organization.",
 		tags: ["Reports"],
 	})
-	.input(z.object({}))
-	.output(OccupancySummaryOutput);
+	.output(occupancySummaryOutput);
 
 export const rentCollectionContract = base
 	.route({
@@ -57,8 +58,24 @@ export const rentCollectionContract = base
 			"Defaults to the current calendar month. Filter by unitId to drill into a single unit.",
 		tags: ["Reports"],
 	})
-	.input(RentCollectionInput)
-	.output(RentCollectionOutput);
+	.input(rentCollectionInput)
+	.output(rentCollectionOutput);
+
+export const paymentOverviewContract = base
+	.route({
+		method: "GET",
+		path: "/reports/payments",
+		summary: "Payment activity report",
+		description:
+			"Returns a cursor-paginated list of payments across all leases in the active organization. " +
+			"Includes unit name, tenant name, and receipt number. " +
+			"Default limit is 5 — use as-is for the dashboard widget. " +
+			"Add filters (date range, unitId, paymentType, paymentMethod) and increase limit for the full breakdown view. " +
+			"Tenant-role callers are blocked; use the lease payments endpoint instead.",
+		tags: ["Reports"],
+	})
+	.input(paymentOverviewInput)
+	.output(paymentOverviewOutput);
 
 export const arrearsOverviewContract = base
 	.route({
@@ -70,8 +87,7 @@ export const arrearsOverviewContract = base
 			"Includes tenant contact details and approximate months overdue.",
 		tags: ["Reports"],
 	})
-	.input(z.object({}))
-	.output(ArrearsOverviewOutput);
+	.output(arrearsOverviewOutput);
 
 export const upcomingRentDueContract = base
 	.route({
@@ -83,8 +99,8 @@ export const upcomingRentDueContract = base
 			"Useful for proactive collection and reminder workflows.",
 		tags: ["Reports"],
 	})
-	.input(UpcomingRentDueInput)
-	.output(UpcomingRentDueOutput);
+	.input(upcomingRentDueInput)
+	.output(upcomingRentDueOutput);
 
 export const expiringDocumentsContract = base
 	.route({
@@ -96,8 +112,8 @@ export const expiringDocumentsContract = base
 			"Covers all resource types in a single response.",
 		tags: ["Reports"],
 	})
-	.input(ExpiringDocumentsInput)
-	.output(ExpiringDocumentsOutput);
+	.input(expiringDocumentsInput)
+	.output(expiringDocumentsOutput);
 
 export const upcomingInspectionsContract = base
 	.route({
@@ -109,8 +125,8 @@ export const upcomingInspectionsContract = base
 			"Filter by unitId to narrow to a specific unit.",
 		tags: ["Reports"],
 	})
-	.input(UpcomingInspectionsInput)
-	.output(UpcomingInspectionsOutput);
+	.input(upcomingInspectionsInput)
+	.output(upcomingInspectionsOutput);
 
 export const overdueUtilityBillsContract = base
 	.route({
@@ -123,7 +139,7 @@ export const overdueUtilityBillsContract = base
 		tags: ["Reports"],
 	})
 	.input(z.object({}))
-	.output(OverdueUtilityBillsOutput);
+	.output(overdueUtilityBillsOutput);
 
 export const repairSummaryContract = base
 	.route({
@@ -135,8 +151,8 @@ export const repairSummaryContract = base
 			"Filter by unitId to drill into a single unit.",
 		tags: ["Reports"],
 	})
-	.input(RepairSummaryInput)
-	.output(RepairSummaryOutput);
+	.input(repairSummaryInput)
+	.output(repairSummaryOutput);
 
 export const expiringLeasesContract = base
 	.route({
@@ -148,5 +164,5 @@ export const expiringLeasesContract = base
 			"Use this to trigger renewal conversations before leases lapse.",
 		tags: ["Reports"],
 	})
-	.input(ExpiringLeasesInput)
-	.output(ExpiringLeasesOutput);
+	.input(expiringLeasesInput)
+	.output(expiringLeasesOutput);

@@ -1,21 +1,21 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-	CreateTenant,
-	DeleteTenant,
-	ListTenantInput,
-	TenantInput,
-	ListTenantOutput,
-	TenantOutput,
-	UpdateTenant,
+    createTenant,
+    tenantOutput,
+    updateTenant,
+    deleteTenant,
+    tenantInput,
+    listTenantInput,
+    listTenantOutput
 } from "../schemas/tenant.schema";
 import {
-	CreateTenantOccupant,
-	DeleteTenantOccupant,
-	ListTenantOccupantInput,
-	ListTenantOccupantOutput,
-	TenantOccupantOutput,
-	UpdateTenantOccupant,
+    createTenantOccupant,
+    deleteTenantOccupant,
+    listTenantOccupantInput,
+    listTenantOccupantOutput,
+    tenantOccupantOutput,
+    updateTenantOccupant
 } from "../schemas/tenant.occupant.schema";
 
 export const base = oc.errors({
@@ -64,8 +64,8 @@ export const createTenantContract = base
 			"Registers a new tenant under the active organization. NIC and phone number must be unique across the organization.",
 		tags: ["Tenants"],
 	})
-	.input(CreateTenant)
-	.output(TenantOutput);
+	.input(createTenant)
+	.output(tenantOutput);
 
 export const updateTenantContract = base
 	.route({
@@ -75,8 +75,8 @@ export const updateTenantContract = base
 		description: "Updates mutable fields on a tenant record.",
 		tags: ["Tenants"],
 	})
-	.input(UpdateTenant)
-	.output(TenantOutput);
+	.input(updateTenant)
+	.output(tenantOutput);
 
 export const deleteTenantContract = base
 	.route({
@@ -86,8 +86,8 @@ export const deleteTenantContract = base
 		description: "Soft deletes a tenant by setting its status to inactive",
 		tags: ["Tenants"],
 	})
-	.input(DeleteTenant)
-	.output(TenantOutput);
+	.input(deleteTenant)
+	.output(tenantOutput);
 
 export const getTenantContract = base
 	.route({
@@ -97,8 +97,8 @@ export const getTenantContract = base
 		description: "Retrieves a single tenant by ID.",
 		tags: ["Tenants"],
 	})
-	.input(TenantInput)
-	.output(TenantOutput);
+	.input(tenantInput)
+	.output(tenantOutput);
 
 export const listTenantContract = base
 	.route({
@@ -109,8 +109,8 @@ export const listTenantContract = base
 			"Returns a cursor-paginated list of tenants for the active organization.",
 		tags: ["Tenants"],
 	})
-	.input(ListTenantInput)
-	.output(ListTenantOutput);
+	.input(listTenantInput)
+	.output(listTenantOutput);
 
 // ── Tenant Occupant contracts ──
 
@@ -124,8 +124,8 @@ export const createTenantOccupantContract = base
 			"Registers an additional occupant (family member, employee, etc.) under a tenant.",
 		tags: ["Tenant Occupants"],
 	})
-	.input(CreateTenantOccupant)
-	.output(TenantOccupantOutput);
+	.input(createTenantOccupant)
+	.output(tenantOccupantOutput);
 
 export const updateTenantOccupantContract = base
 	.route({
@@ -135,8 +135,8 @@ export const updateTenantOccupantContract = base
 		description: "Updates an occupant record.",
 		tags: ["Tenant Occupants"],
 	})
-	.input(UpdateTenantOccupant)
-	.output(TenantOccupantOutput);
+	.input(updateTenantOccupant)
+	.output(tenantOccupantOutput);
 
 export const deleteTenantOccupantContract = base
 	.route({
@@ -147,8 +147,8 @@ export const deleteTenantOccupantContract = base
 			"Soft deletes an occupant from a tenant by setting its status to inactive.",
 		tags: ["Tenant Occupants"],
 	})
-	.input(DeleteTenantOccupant)
-	.output(TenantOccupantOutput);
+	.input(deleteTenantOccupant)
+	.output(tenantOccupantOutput);
 
 export const listTenantOccupantContract = base
 	.route({
@@ -158,5 +158,5 @@ export const listTenantOccupantContract = base
 		description: "Returns all occupants registered under a tenant.",
 		tags: ["Tenant Occupants"],
 	})
-	.input(ListTenantOccupantInput)
-	.output(ListTenantOccupantOutput);
+	.input(listTenantOccupantInput)
+	.output(listTenantOccupantOutput);

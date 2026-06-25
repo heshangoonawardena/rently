@@ -1,5 +1,6 @@
 import { DB } from "@/db/db";
 import { payment, paymentReceipt } from "@/db/schema/payment";
+import { getFutureDate, getPastDate } from "@/lib/utils";
 
 export const payments = async (db: DB) => {
 	const leaseData = await db.query.lease.findMany();
@@ -11,7 +12,7 @@ export const payments = async (db: DB) => {
 				leaseId: leaseData[0].id,
 				paymentType: "deposit",
 				paymentMethod: "bank_transfer",
-				paymentDate: new Date().toISOString().split("T")[0],
+				paymentDate: getPastDate(60),
 				paymentAmount: "1000",
 				balanceAfter: "0",
 			},
@@ -19,25 +20,25 @@ export const payments = async (db: DB) => {
 				leaseId: leaseData[1].id,
 				paymentType: "deposit",
 				paymentMethod: "online",
-				paymentDate: new Date().toISOString().split("T")[0],
+				paymentDate: getPastDate(60),
+				paymentAmount: "4000",
+				balanceAfter: "0",
+			},
+			{
+				leaseId: leaseData[1].id,
+				paymentType: "partial_rent",
+				paymentMethod: "cheque",
+				paymentDate: getPastDate(30),
 				paymentAmount: "2000",
 				balanceAfter: "0",
 			},
 			{
 				leaseId: leaseData[1].id,
-				paymentType: "rent",
-				paymentMethod: "cash",
-				paymentDate: new Date().toISOString().split("T")[0],
-				paymentAmount: "1000",
+				paymentType: "partial_rent",
+				paymentMethod: "cheque",
+				paymentDate: getFutureDate(0),
+				paymentAmount: "1500",
 				balanceAfter: "500",
-			},
-			{
-				leaseId: leaseData[1].id,
-				paymentType: "arrear",
-				paymentMethod: "cash",
-				paymentDate: new Date().toISOString().split("T")[0],
-				paymentAmount: "500",
-				balanceAfter: "0",
 			},
 		])
 		.returning();
@@ -46,30 +47,30 @@ export const payments = async (db: DB) => {
 		{
 			paymentId: paymentData[0].id,
 			receiptNumber: "RCPT-001",
-			issuedDate: new Date().toISOString().split("T")[0],
+			issuedDate: getPastDate(60),
 			amountPaid: "1000",
 			balanceAfter: "0",
 		},
 		{
 			paymentId: paymentData[1].id,
 			receiptNumber: "RCPT-002",
-			issuedDate: new Date().toISOString().split("T")[0],
-			amountPaid: "2000",
+			issuedDate: getPastDate(60),
+			amountPaid: "4000",
 			balanceAfter: "0",
 		},
 		{
 			paymentId: paymentData[2].id,
 			receiptNumber: "RCPT-003",
-			issuedDate: new Date().toISOString().split("T")[0],
-			amountPaid: "1000",
-			balanceAfter: "500",
+			issuedDate: getPastDate(30),
+			amountPaid: "2000",
+			balanceAfter: "0",
 		},
 		{
 			paymentId: paymentData[3].id,
 			receiptNumber: "RCPT-004",
-			issuedDate: new Date().toISOString().split("T")[0],
-			amountPaid: "500",
-			balanceAfter: "0",
+			issuedDate: getPastDate(0),
+			amountPaid: "1500",
+			balanceAfter: "500",
 		},
 	]);
 

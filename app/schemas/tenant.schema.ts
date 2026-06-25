@@ -1,50 +1,54 @@
 import z from "zod";
-import {
-	insertTenantSchema,
-	selectTenantSchema,
-	updateTenantSchema,
-} from "@/db/schema/tenant";
+import { occupancyStatusEnum } from "@/db/schema/enums";
 
 // ── Output schemas ──
 
-export const TenantOutput = selectTenantSchema;
+export const tenantSchema = z.object({
+	userId: z.string().nullish(),
+	firstName: z.string().trim().min(3, "First name is required"),
+	lastName: z.string().trim().nullish(),
+	nickname: z.string().trim().nullish(),
+	address: z
+		.string()
+		.trim()
+		.min(5, "Address is required")
+		.max(100, "Address must not exceed 100 characters")
+		.nullish(),
+	nic: z.string().trim().min(10, "NIC is required"),
+	phoneNumber: z.string().trim().min(9, "Phone number is required"),
+	status: z.enum(occupancyStatusEnum.enumValues),
+});
 
-export const ListTenantOutput = z.object({
-	items: z.array(TenantOutput),
+export const tenantOutput = tenantSchema.extend({
+	id: z.number().min(1, "Id is required"),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+});
+
+export const listTenantOutput = z.object({
+	items: z.array(tenantOutput),
 	nextCursor: z.number().positive().nullable(),
 });
 
 // ── Input schemas ──
 
-export const CreateTenant = insertTenantSchema.omit({
-	id: true,
-	organizationId: true,
-	userId: true,
-	createdAt: true,
-	updatedAt: true,
+export const createTenant = tenantSchema;
+
+export const updateTenant = tenantSchema.extend({
+	id: z.number().min(1, "Id is required"),
+	occupation: z.string().trim().nullish(),
 });
 
-export const UpdateTenant = updateTenantSchema
-	.omit({
-		organizationId: true,
-		userId: true,
-		createdAt: true,
-		updatedAt: true,
-	})
-	.extend({
-		id: z.number(),
-	});
-
-export const DeleteTenant = z.object({
-	id: z.number(),
+export const deleteTenant = z.object({
+	id: z.number().min(1, "Id is required"),
 });
 
-export const TenantInput = z.object({
-	id: z.number(),
+export const tenantInput = z.object({
+	id: z.number().min(1, "Id is required"),
 });
 
-export const ListTenantInput = z.object({
-	cursor: z.number().positive().nullable(),
+export const listTenantInput = z.object({
+	cursor: z.number().positive().optional(),
 	limit: z.number().int().min(1).max(100).default(20),
 	search: z.string().optional().describe("Search by name, NIC, or phone"),
 });

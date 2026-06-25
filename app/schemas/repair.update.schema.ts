@@ -1,54 +1,37 @@
 import z from "zod";
-import {
-	insertUnitSchema,
-	selectUnitSchema,
-	updateUnitSchema,
-} from "@/db/schema/unit";
-import { repairStatusEnum, unitStatusEnum } from "@/db/schema/enums";
-import {
-	insertRepairUpdateSchema,
-	repairRequest,
-	selectRepairUpdateSchema,
-	updateRepairUpdateSchema,
-} from "@/db/schema/repair";
+import { repairStatusEnum } from "@/db/schema/enums";
 
 // ── Output schemas ──
 
-export const RepairUpdateOutput = selectRepairUpdateSchema;
+export const repairUpdateSchema = z.object({
+	repairRequestId: z.number().min(1, "Request id is required"),
+	userId: z.string().min(1, "User id is required"),
+	oldStatus: z.enum(repairStatusEnum.enumValues).nullable(),
+	newStatus: z.enum(repairStatusEnum.enumValues).nullable(),
+	description: z
+		.string()
+		.trim()
+		.max(500, "Description must not exceed 500 characters")
+		.nullable(),
+});
 
-export const ListRepairUpdateOutput = z.object({
+export const repairUpdateOutput = repairUpdateSchema.extend({
+	id: z.number().min(1, "Id is required"),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+});
+
+export const listRepairUpdateOutput = z.object({
 	nextCursor: z.number().positive().nullable(),
-	items: z.array(RepairUpdateOutput),
+	items: z.array(repairUpdateOutput),
 });
 
 // ── Input schemas ──
 
-export const CreateRepairUpdate = insertRepairUpdateSchema.omit({
-	id: true,
-	userId: true,
-	oldStatus: true,
-	createdAt: true,
-	updatedAt: true,
-});
+export const createRepairUpdate = repairUpdateSchema;
 
-export const UpdateRepairUpdate = updateRepairUpdateSchema
-	.omit({
-		userId: true,
-		oldStatus: true,
-		createdAt: true,
-		updatedAt: true,
-	})
-	.extend({
-		id: z.number().int().positive(),
-	});
-
-export const DeleteRepairUpdate = z.object({
-	unitId: z.number(),
-	id: z.number().int().positive(),
-});
-
-export const ListRepairUpdateInput = z.object({
+export const listRepairUpdateInput = z.object({
 	repairRequestId: z.number(),
-	cursor: z.number().positive().nullable(),
+	cursor: z.number().positive().optional(),
 	limit: z.number().int().min(1).max(100).default(20),
 });
