@@ -95,7 +95,7 @@ export const deleteUtilityContract = base
 		path: "/units/{unitId}/utilities/{id}",
 		summary: "Delete a utility account",
 		description:
-			"Soft-deletes a utility account. Only allowed if no bills are attached.",
+			"hard-deletes a utility account. Only allowed if no bills are attached.",
 		tags: ["Utilities"],
 	})
 	.input(deleteUtility)

@@ -10,6 +10,8 @@ import {
 	createPayment,
 	listPaymentInput,
 	listPaymentOutput,
+	nextRentMonthInput,
+	nextRentMonthOutput,
 	paymentInput,
 	paymentOutput,
 	updatePayment,
@@ -58,7 +60,7 @@ export const createPaymentContract = base
 		successStatus: 201,
 		summary: "Record a payment",
 		description:
-			"Records a payment against a lease. balanceAfter is calculated server-side from the running balance — do not pass it from the client. A receipt is auto-generated and returned.",
+			"Records a payment against a lease. Partial rent payments are not accepted and a receipt is auto-generated on success.",
 		tags: ["Payments"],
 	})
 	.input(createPayment)
@@ -90,14 +92,38 @@ export const getPaymentContract = base
 export const listPaymentContract = base
 	.route({
 		method: "GET",
-		path: "/leases/{leaseId}/payments",
-		summary: "List payments for a lease",
+		path: "/payments",
+		summary: "List payments",
 		description:
 			"Returns a cursor-paginated list of payments. Filter by type to e.g. show only rent payments.",
 		tags: ["Payments"],
 	})
 	.input(listPaymentInput)
 	.output(listPaymentOutput);
+
+export const nextRentMonthContract = base
+	.route({
+		method: "GET",
+		path: "/leases/{leaseId}/payments/next-rent-month",
+		summary: "Resolve next due rent month",
+		description:
+			"Returns the next unpaid rent month for the lease as of the provided payment date.",
+		tags: ["Payments"],
+	})
+	.input(nextRentMonthInput)
+	.output(nextRentMonthOutput);
+
+// export const listAllPaymentsContract = base
+// 	.route({
+// 		method: "GET",
+// 		path: "/payments",
+// 		summary: "List all payments",
+// 		description:
+// 			"Returns a cursor-paginated list of payments across all leases. Supports filtering by lease, tenant, type, and status.",
+// 		tags: ["Payments"],
+// 	})
+// 	.input(listAllPaymentInput)
+// 	.output(listAllPaymentOutput);
 
 // ── Receipt contracts ──
 

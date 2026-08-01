@@ -19,7 +19,7 @@ export const createLease = os.lease.create
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["create"] }))
 	.handler(async ({ input, errors, context }) => {
-		const { rentAmount, ...leaseData } = input;
+		const { rentAmount, agreedPaymentDay, ...leaseData } = input;
 		const { organizationId } = context.user;
 
 		// Check the unit exists and belongs to this org
@@ -53,21 +53,54 @@ export const createLease = os.lease.create
 			});
 		}
 
-		// Insert lease + seed first rent row + update unit status atomically
+		// Insert lease
 		const [newLease] = await db.insert(lease).values(leaseData).returning();
 
-		await db.insert(leaseRent).values({
-			leaseId: newLease.id,
-			rentAmount,
-			effectiveDate: leaseData.startDate,
-		});
+		// Seed first rent row
+		const [currentRent] = await db
+			.insert(leaseRent)
+			.values({
+				leaseId: newLease.id,
+				rentAmount,
+				agreedPaymentDay,
+				effectiveDate: leaseData.startDate,
+			})
+			.returning();
 
+		// Update unit status
 		await db
 			.update(unit)
 			.set({ status: "occupied" })
 			.where(eq(unit.id, leaseData.unitId));
 
-		return newLease;
+		// Update tenant status
+		await db
+			.update(tenant)
+			.set({ status: "active" })
+			.where(eq(tenant.id, leaseData.tenantId));
+
+		// Fetch updated related records
+		const [updatedUnit, updatedTenant] = await Promise.all([
+			db
+				.select()
+				.from(unit)
+				.where(eq(unit.id, newLease.unitId))
+				.limit(1)
+				.then((rows) => rows[0]),
+			db
+				.select()
+				.from(tenant)
+				.where(eq(tenant.id, newLease.tenantId))
+				.limit(1)
+				.then((rows) => rows[0]),
+		]);
+
+		return {
+			...newLease,
+			unit: updatedUnit,
+			tenant: updatedTenant,
+			currentRent,
+		};
 	});
 
 export const updateLease = os.lease.update
@@ -92,26 +125,61 @@ export const updateLease = os.lease.update
 			});
 		}
 
-		const [data] = await db
+		const [updatedLease] = await db
 			.update(lease)
 			.set(updates)
 			.where(eq(lease.id, id))
 			.returning();
 
-		return data;
+		const [[updatedUnit], [updatedTenant], [currentRent]] = await Promise.all([
+			db.select().from(unit).where(eq(unit.id, updatedLease.unitId)).limit(1),
+
+			db
+				.select()
+				.from(tenant)
+				.where(eq(tenant.id, updatedLease.tenantId))
+				.limit(1),
+
+			db
+				.select()
+				.from(leaseRent)
+				.where(
+					and(
+						eq(leaseRent.leaseId, updatedLease.id),
+						eq(leaseRent.status, "active"),
+					),
+				)
+				.orderBy(desc(leaseRent.effectiveDate))
+				.limit(1),
+		]);
+
+		return {
+			...updatedLease,
+			unit: updatedUnit,
+			tenant: updatedTenant,
+			currentRent: currentRent ?? null,
+		};
 	});
 
 export const renewLease = os.lease.renew
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["update"] }))
 	.handler(async ({ input, errors }) => {
-		const { id, newEndDate, rentAmount, effectiveDate } = input;
+		const {
+			id,
+			newEndDate,
+			depositAmount,
+			rentAmount,
+			effectiveDate,
+			agreedPaymentDay,
+		} = input;
 
 		const [existing] = await db
 			.select({
 				id: lease.id,
 				status: lease.status,
 				unitId: lease.unitId,
+				tenantId: lease.tenantId,
 				startDate: lease.startDate,
 				endDate: lease.endDate,
 			})
@@ -136,46 +204,63 @@ export const renewLease = os.lease.renew
 			});
 		}
 
-		// New end date must be in the future relative to the current end date
-		if (existing.endDate && newEndDate <= existing.endDate) {
+		if (newEndDate && existing.endDate && newEndDate <= existing.endDate) {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "RENEWAL_DATE_NOT_AFTER_CURRENT_END" },
-				cause: `newEndDate (${newEndDate}) must be after the current end date (${existing.endDate})`,
+				message: `newEndDate (${newEndDate}) must be after the current end date (${existing.endDate})`,
 			});
 		}
 
-		const [updated] = await db
+		const [updatedLease] = await db
 			.update(lease)
 			.set({
 				status: "extended",
 				endDate: newEndDate,
+				depositAmount,
 			})
 			.where(eq(lease.id, id))
 			.returning();
 
-		// Insert a new rent revision if the rent is changing on renewal
-		if (rentAmount) {
-			await db.insert(leaseRent).values({
+		const [currentRent] = await db
+			.insert(leaseRent)
+			.values({
 				leaseId: id,
 				rentAmount,
-				effectiveDate: effectiveDate ?? newEndDate,
+				agreedPaymentDay,
+				effectiveDate: effectiveDate ?? newEndDate ?? existing.startDate,
 				description: `Rent revised on lease renewal (effective ${effectiveDate})`,
-			});
-		}
+			})
+			.returning();
 
-		return updated;
+		const [[updatedUnit], [updatedTenant]] = await Promise.all([
+			db.select().from(unit).where(eq(unit.id, updatedLease.unitId)).limit(1),
+
+			db
+				.select()
+				.from(tenant)
+				.where(eq(tenant.id, updatedLease.tenantId))
+				.limit(1),
+		]);
+
+		return {
+			...updatedLease,
+			unit: updatedUnit,
+			tenant: updatedTenant,
+			currentRent,
+		};
 	});
 
 export const deleteLease = os.lease.delete
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["delete"] }))
-	.handler(async ({ input, errors, context }) => {
+	.handler(async ({ input, errors }) => {
 		const { id, endDate } = input;
 
 		const [existing] = await db
 			.select({
 				id: lease.id,
 				unitId: lease.unitId,
+				tenantId: lease.tenantId,
 				status: lease.status,
 			})
 			.from(lease)
@@ -199,7 +284,7 @@ export const deleteLease = os.lease.delete
 			});
 		}
 
-		const [data] = await db
+		const [updatedLease] = await db
 			.update(lease)
 			.set({
 				status: "terminated",
@@ -214,7 +299,25 @@ export const deleteLease = os.lease.delete
 			.set({ status: "available" })
 			.where(eq(unit.id, existing.unitId));
 
-		return data;
+		const [[updatedUnit], [updatedTenant], [currentRent]] = await Promise.all([
+			db.select().from(unit).where(eq(unit.id, existing.unitId)).limit(1),
+
+			db.select().from(tenant).where(eq(tenant.id, existing.tenantId)).limit(1),
+
+			db
+				.select()
+				.from(leaseRent)
+				.where(and(eq(leaseRent.leaseId, id), eq(leaseRent.status, "active")))
+				.orderBy(desc(leaseRent.effectiveDate))
+				.limit(1),
+		]);
+
+		return {
+			...updatedLease,
+			unit: updatedUnit,
+			tenant: updatedTenant,
+			currentRent: currentRent ?? null,
+		};
 	});
 
 export const getLease = os.lease.get
@@ -224,7 +327,7 @@ export const getLease = os.lease.get
 		const { role, userId } = context.user;
 
 		// Tenants can only read their own lease
-		let tenantIdFilter: number | undefined;
+		let scopedTenantId: number | undefined;
 		if (role === "tenant") {
 			const [self] = await db
 				.select({ id: tenant.id })
@@ -232,21 +335,21 @@ export const getLease = os.lease.get
 				.where(eq(tenant.userId, userId))
 				.limit(1);
 			if (!self) throw errors.FORBIDDEN();
-			tenantIdFilter = self.id;
+			scopedTenantId = self.id;
 		}
 
-		const [data] = await db
+		const [leaseRow] = await db
 			.select()
 			.from(lease)
 			.where(
 				and(
 					eq(lease.id, input.id),
-					tenantIdFilter ? eq(lease.tenantId, tenantIdFilter) : undefined,
+					scopedTenantId ? eq(lease.tenantId, scopedTenantId) : undefined,
 				),
 			)
 			.limit(1);
 
-		if (!data) {
+		if (!leaseRow) {
 			throw errors.NOT_FOUND({
 				data: {
 					resourceType: "Lease",
@@ -256,7 +359,30 @@ export const getLease = os.lease.get
 			});
 		}
 
-		return data;
+		const [[unitRow], [tenantRow], [currentRent]] = await Promise.all([
+			db.select().from(unit).where(eq(unit.id, leaseRow.unitId)).limit(1),
+
+			db.select().from(tenant).where(eq(tenant.id, leaseRow.tenantId)).limit(1),
+
+			db
+				.select()
+				.from(leaseRent)
+				.where(
+					and(
+						eq(leaseRent.leaseId, leaseRow.id),
+						eq(leaseRent.status, "active"),
+					),
+				)
+				.orderBy(desc(leaseRent.effectiveDate))
+				.limit(1),
+		]);
+
+		return {
+			...leaseRow,
+			unit: unitRow,
+			tenant: tenantRow,
+			currentRent: currentRent ?? null,
+		};
 	});
 
 export const listLease = os.lease.list
@@ -288,7 +414,7 @@ export const listLease = os.lease.list
 					cursor ? gt(lease.id, cursor) : undefined,
 				),
 			)
-			.orderBy(desc(lease.updatedAt))
+			.orderBy(desc(lease.startDate), desc(lease.updatedAt))
 			.limit(limit + 1);
 
 		const hasMore = rows.length > limit;

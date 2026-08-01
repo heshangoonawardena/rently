@@ -2,7 +2,7 @@ import { implement } from "@orpc/server";
 import { contract } from "../contract";
 import { db } from "@/db/db";
 import { inspection } from "@/db/schema/inspection";
-import { and, desc, eq, gt } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray } from "drizzle-orm";
 import {
 	authMiddleware,
 	BaseContext,
@@ -12,6 +12,23 @@ import { tenant } from "@/db/schema/tenant";
 import { lease } from "@/db/schema/lease";
 
 const os = implement(contract).$context<BaseContext>();
+
+/**
+ * Returns the tenant.id for the authenticated user if role === 'tenant',
+ * otherwise undefined.
+ */
+async function resolveTenantId(
+	role: string,
+	userId: string,
+): Promise<number | undefined> {
+	if (role !== "tenant") return undefined;
+	const [self] = await db
+		.select({ id: tenant.id })
+		.from(tenant)
+		.where(eq(tenant.userId, userId))
+		.limit(1);
+	return self?.id;
+}
 
 /**
  * Returns true if the tenant (looked up by userId) has an active lease on unitId.
@@ -83,14 +100,14 @@ export const updateInspection = os.inspection.update
 					resourceType: "Inspection",
 					resourceId: id,
 				},
-				cause: "INSPECTION_NOT_FOUND",
+				message: "Inspection Not Found",
 			});
 		}
 
-		if (existing.status !== "scheduled") {
+		if (existing.status !== "scheduled" && existing.status !== "rescheduled") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "INSPECTION_NOT_EDITABLE" },
-				cause: "Only scheduled inspections can be updated",
+				cause: "Only scheduled or rescheduled inspections can be updated",
 			});
 		}
 
@@ -124,14 +141,15 @@ export const completeInspection = os.inspection.complete
 					resourceType: "Inspection",
 					resourceId: id,
 				},
-				cause: "INSPECTION_NOT_FOUND",
+				message: "Inspection Not Found",
 			});
 		}
 
-		if (existing.status !== "scheduled") {
+		if (existing.status !== "scheduled" && existing.status !== "rescheduled") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "INSPECTION_NOT_COMPLETABLE" },
-				cause: "Only scheduled inspections can be marked as completed",
+				cause:
+					"Only scheduled or rescheduled inspections can be marked as completed",
 			});
 		}
 
@@ -215,10 +233,10 @@ export const deleteInspection = os.inspection.delete
 			});
 		}
 
-		if (existing.status !== "scheduled") {
+		if (existing.status !== "scheduled" && existing.status !== "rescheduled") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "INSPECTION_NOT_DELETABLE" },
-				cause: "Only scheduled inspections can be deleted",
+				message: "Only scheduled or rescheduled inspections can be deleted",
 			});
 		}
 
@@ -263,10 +281,15 @@ export const listInspection = os.inspection.list
 		const { unitId, cursor, limit, status } = input;
 		const { role, userId } = context.user;
 
-		// Tenants may only list inspections on their own unit
+		const tenantId = await resolveTenantId(role, userId);
+		let tenantUnitIds: number[] | undefined;
 		if (role === "tenant") {
-			const allowed = await tenantCanAccessUnit(userId, unitId);
-			if (!allowed) throw errors.FORBIDDEN();
+			if (tenantId === undefined) throw errors.FORBIDDEN();
+			const leaseRows = await db
+				.select({ unitId: lease.unitId })
+				.from(lease)
+				.where(and(eq(lease.tenantId, tenantId), eq(lease.status, "active")));
+			tenantUnitIds = leaseRows.map((row) => row.unitId);
 		}
 
 		const rows = await db
@@ -274,12 +297,16 @@ export const listInspection = os.inspection.list
 			.from(inspection)
 			.where(
 				and(
-					eq(inspection.unitId, unitId),
 					status ? eq(inspection.status, status) : undefined,
 					cursor ? gt(inspection.id, cursor) : undefined,
+					role === "tenant" && tenantUnitIds
+						? tenantUnitIds.length > 0
+							? inArray(inspection.unitId, tenantUnitIds)
+							: undefined
+						: undefined,
 				),
 			)
-			.orderBy(desc(inspection.scheduledDate))
+			.orderBy(asc(inspection.status), asc(inspection.scheduledDate))
 			.limit(limit + 1);
 
 		const hasMore = rows.length > limit;

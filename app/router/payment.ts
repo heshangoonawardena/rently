@@ -2,8 +2,27 @@ import { implement } from "@orpc/server";
 import { contract } from "../contract";
 import { db } from "@/db/db";
 import { payment, paymentReceipt } from "@/db/schema/payment";
-import { lease } from "@/db/schema/lease";
-import { and, desc, eq, gt, sql, sum } from "drizzle-orm";
+import { lease, leaseRent } from "@/db/schema/lease";
+import {
+	and,
+	desc,
+	eq,
+	gt,
+	inArray,
+	isNotNull,
+	lte,
+	ne,
+	sql,
+} from "drizzle-orm";
+import {
+	addMonths,
+	endOfMonth,
+	format,
+	isAfter,
+	isBefore,
+	parseISO,
+	startOfMonth,
+} from "date-fns";
 import {
 	authMiddleware,
 	BaseContext,
@@ -13,25 +32,78 @@ import { tenant } from "@/db/schema/tenant";
 
 const os = implement(contract).$context<BaseContext>();
 
-/** Compute the current running balance for a lease from all prior payments. */
-async function getRunningBalance(leaseId: number): Promise<number> {
-	const [row] = await db
-		.select({ balance: lease.depositAmount })
-		.from(lease)
-		.where(eq(lease.id, leaseId))
-		.limit(1);
+function dateOnly(dateValue: string): string {
+	return format(parseISO(dateValue), "yyyy-MM-dd");
+}
 
-	if (!row) return 0;
+function monthKey(dateValue: Date): string {
+	return format(dateValue, "yyyy-MM");
+}
 
-	// Latest balanceAfter is the current balance
-	const [latest] = await db
-		.select({ balanceAfter: payment.balanceAfter })
+function incrementMonth(dateValue: Date): Date {
+	return startOfMonth(addMonths(dateValue, 1));
+}
+
+async function resolveNextDueRentMonth(
+	leaseId: number,
+	leaseStartDate: string,
+	asOfMonthStart: Date,
+): Promise<{ periodStart: string; periodEnd: string } | null> {
+	const leaseStartMonth = startOfMonth(parseISO(leaseStartDate));
+
+	const accountedRows = await db
+		.select({ periodStart: payment.periodStart })
 		.from(payment)
-		.where(eq(payment.leaseId, leaseId))
-		.orderBy(desc(payment.createdAt))
+		.where(
+			and(
+				eq(payment.leaseId, leaseId),
+				inArray(payment.paymentType, ["rent", "arrear", "rent_waiver"]),
+				isNotNull(payment.periodStart),
+				lte(payment.periodStart, format(asOfMonthStart, "yyyy-MM-dd")),
+			),
+		);
+
+	const accountedMonths = new Set(
+		accountedRows
+			.map((row) => row.periodStart)
+			.filter((periodStart): periodStart is string => Boolean(periodStart))
+			.map((periodStart) => monthKey(parseISO(periodStart))),
+	);
+
+	let cursor = leaseStartMonth;
+	while (cursor.getTime() <= asOfMonthStart.getTime()) {
+		const key = monthKey(cursor);
+		if (!accountedMonths.has(key)) {
+			return {
+				periodStart: format(startOfMonth(cursor), "yyyy-MM-dd"),
+				periodEnd: format(endOfMonth(cursor), "yyyy-MM-dd"),
+			};
+		}
+		cursor = incrementMonth(cursor);
+	}
+
+	return null;
+}
+
+async function resolveRentAmountForPeriod(
+	leaseId: number,
+	periodEnd: string,
+): Promise<number | null> {
+	const [rentRow] = await db
+		.select({ rentAmount: leaseRent.rentAmount })
+		.from(leaseRent)
+		.where(
+			and(
+				eq(leaseRent.leaseId, leaseId),
+				eq(leaseRent.status, "active"),
+				lte(leaseRent.effectiveDate, periodEnd),
+			),
+		)
+		.orderBy(desc(leaseRent.effectiveDate), desc(leaseRent.id))
 		.limit(1);
 
-	return latest ? parseFloat(latest.balanceAfter) : 0;
+	if (!rentRow) return null;
+	return Number(rentRow.rentAmount);
 }
 
 /** Generate a sequential receipt number scoped to the org. */
@@ -66,13 +138,20 @@ async function resolveTenantScope(
 export const createPayment = os.payment.create
 	.use(authMiddleware)
 	.use(permissionMiddleware({ payment: ["create"] }))
-	.handler(async ({ input, errors }) => {
+	.handler(async ({ input, errors, context }) => {
 		const { leaseId, ...paymentData } = input;
+		const { role, userId } = context.user;
+
+		const tenantId = await resolveTenantScope(role, userId);
+		if (role === "tenant" && tenantId === undefined) throw errors.FORBIDDEN();
 
 		const [parentLease] = await db
 			.select({
 				id: lease.id,
 				status: lease.status,
+				tenantId: lease.tenantId,
+				startDate: lease.startDate,
+				depositAmount: lease.depositAmount,
 			})
 			.from(lease)
 			.where(eq(lease.id, leaseId))
@@ -84,8 +163,12 @@ export const createPayment = os.payment.create
 					resourceType: "Lease",
 					resourceId: leaseId,
 				},
-				cause: "LEASE_NOT_FOUND",
+				message: "LEASE_NOT_FOUND",
 			});
+		}
+
+		if (tenantId !== undefined && parentLease.tenantId !== tenantId) {
+			throw errors.FORBIDDEN();
 		}
 
 		if (parentLease.status !== "active" && parentLease.status !== "extended") {
@@ -96,37 +179,219 @@ export const createPayment = os.payment.create
 			});
 		}
 
-		const currentBalance = await getRunningBalance(leaseId);
-		const amount = parseFloat(paymentData.paymentAmount);
+		const paymentDate = parseISO(paymentData.paymentDate);
+		const today = new Date();
+		today.setHours(23, 59, 59, 999);
+		if (isAfter(paymentDate, today)) {
+			throw errors.DOMAIN_RULE_VIOLATION({
+				data: { rule: "FUTURE_PAYMENT_DATE_NOT_ALLOWED" },
+				cause: "Payment date cannot be in the future",
+			});
+		}
 
-		// Simple balance calculation: positive = credit, negative = arrears
-		const balanceAfter =
-			paymentData.paymentType === "deposit" ||
+		let normalizedPaymentType = paymentData.paymentType;
+		let normalizedAmount = paymentData.paymentAmount;
+		let normalizedPeriodStart: string | null = null;
+		let normalizedPeriodEnd: string | null = null;
+
+		if (
 			paymentData.paymentType === "rent" ||
-			paymentData.paymentType === "partial_rent" ||
-			paymentData.paymentType === "arrear"
-				? currentBalance + amount
-				: currentBalance - amount; // refunds and deductions reduce the balance
+			paymentData.paymentType === "rent_waiver"
+		) {
+			const paymentMonthStart = startOfMonth(paymentDate);
+			const nextDueMonth = await resolveNextDueRentMonth(
+				leaseId,
+				parentLease.startDate,
+				paymentMonthStart,
+			);
+
+			if (!nextDueMonth) {
+				throw errors.DOMAIN_RULE_VIOLATION({
+					data: { rule: "NO_PENDING_RENT_MONTH" },
+					cause: "No pending rent month exists for the selected payment date",
+				});
+			}
+
+			normalizedPeriodStart = nextDueMonth.periodStart;
+			normalizedPeriodEnd = nextDueMonth.periodEnd;
+
+			const rentAmount = await resolveRentAmountForPeriod(
+				leaseId,
+				normalizedPeriodEnd,
+			);
+
+			if (rentAmount === null) {
+				throw errors.DOMAIN_RULE_VIOLATION({
+					data: { rule: "RENT_NOT_CONFIGURED" },
+					cause: "Cannot record rent payment without an active rent amount",
+				});
+			}
+
+			if (
+				paymentData.paymentType === "rent" &&
+				rentAmount !== paymentData.paymentAmount
+			) {
+				throw errors.DOMAIN_RULE_VIOLATION({
+					data: { rule: "FULL_RENT_PAYMENT_REQUIRED" },
+					cause: "Rent payment amount must match the full current rent amount",
+				});
+			}
+
+			if (paymentData.paymentType === "rent_waiver") {
+				normalizedAmount = rentAmount;
+			}
+
+			const [existingMonthlyRentEntry] = await db
+				.select({ id: payment.id })
+				.from(payment)
+				.where(
+					and(
+						eq(payment.leaseId, leaseId),
+						inArray(payment.paymentType, ["rent", "arrear", "rent_waiver"]),
+						eq(payment.periodStart, normalizedPeriodStart),
+					),
+				)
+				.limit(1);
+
+			if (existingMonthlyRentEntry) {
+				throw errors.DOMAIN_RULE_VIOLATION({
+					data: { rule: "RENT_ALREADY_RECORDED_FOR_MONTH" },
+					cause: "A rent entry for this lease month is already recorded",
+				});
+			}
+
+			if (paymentData.paymentType === "rent") {
+				const periodMonthStart = startOfMonth(parseISO(normalizedPeriodStart));
+				if (isBefore(periodMonthStart, paymentMonthStart)) {
+					normalizedPaymentType = "arrear";
+				}
+			}
+		}
+
+		if (paymentData.paymentType === "deposit") {
+			normalizedPeriodStart = null;
+			normalizedPeriodEnd = null;
+		}
+
+		if (
+			paymentData.paymentType !== "rent" &&
+			paymentData.paymentType !== "rent_waiver" &&
+			paymentData.paymentType !== "deposit"
+		) {
+			normalizedPeriodStart = paymentData.periodStart
+				? dateOnly(paymentData.periodStart)
+				: null;
+			normalizedPeriodEnd = paymentData.periodEnd
+				? dateOnly(paymentData.periodEnd)
+				: null;
+		}
 
 		const [newPayment] = await db
 			.insert(payment)
 			.values({
-				...paymentData,
+				paymentType: normalizedPaymentType,
+				paymentMethod: paymentData.paymentMethod,
+				paymentDate: paymentData.paymentDate,
+				paymentAmount: normalizedAmount,
+				periodStart: normalizedPeriodStart,
+				periodEnd: normalizedPeriodEnd,
+				description: paymentData.description,
 				leaseId,
-				balanceAfter: balanceAfter.toFixed(2),
 			})
 			.returning();
 
-		const receiptNumber = await generateReceiptNumber();
-		await db.insert(paymentReceipt).values({
-			paymentId: newPayment.id,
-			receiptNumber,
-			issuedDate: paymentData.paymentDate,
-			amountPaid: paymentData.paymentAmount,
-			balanceAfter: balanceAfter.toFixed(2),
-		});
+		if (paymentData.paymentType === "deposit") {
+			await db
+				.update(lease)
+				.set({
+					depositAmount:
+						Number(parentLease.depositAmount) + paymentData.paymentAmount,
+				})
+				.where(eq(lease.id, leaseId));
+		}
+
+		if (normalizedPaymentType !== "rent_waiver") {
+			const receiptNumber = await generateReceiptNumber();
+			await db.insert(paymentReceipt).values({
+				paymentId: newPayment.id,
+				receiptNumber,
+				issuedDate: paymentData.paymentDate,
+				amountPaid: normalizedAmount,
+			});
+		}
 
 		return newPayment;
+	});
+
+export const nextRentMonth = os.payment.nextRentMonth
+	.use(authMiddleware)
+	.use(permissionMiddleware({ payment: ["read"] }))
+	.handler(async ({ input, errors }) => {
+		const [parentLease] = await db
+			.select({
+				id: lease.id,
+				status: lease.status,
+				startDate: lease.startDate,
+				tenantId: lease.tenantId,
+			})
+			.from(lease)
+			.where(eq(lease.id, input.leaseId))
+			.limit(1);
+
+		if (!parentLease) {
+			throw errors.NOT_FOUND({
+				data: {
+					resourceType: "Lease",
+					resourceId: input.leaseId,
+				},
+				message: "LEASE_NOT_FOUND",
+			});
+		}
+
+		if (parentLease.status !== "active" && parentLease.status !== "extended") {
+			throw errors.DOMAIN_RULE_VIOLATION({
+				data: { rule: "LEASE_NOT_ACTIVE_OR_EXTENDED" },
+				message:
+					"Payments can only be recorded against active or extended leases",
+			});
+		}
+
+		const paymentDate = parseISO(input.paymentDate);
+		const paymentMonthStart = startOfMonth(paymentDate);
+		const nextDueMonth = await resolveNextDueRentMonth(
+			input.leaseId,
+			parentLease.startDate,
+			paymentMonthStart,
+		);
+
+		if (!nextDueMonth) {
+			throw errors.DOMAIN_RULE_VIOLATION({
+				data: { rule: "NO_PENDING_RENT_MONTH" },
+				message: "No pending rent month exists for the selected payment date",
+			});
+		}
+
+		const rentAmount = await resolveRentAmountForPeriod(
+			input.leaseId,
+			nextDueMonth.periodEnd,
+		);
+
+		if (rentAmount === null) {
+			throw errors.DOMAIN_RULE_VIOLATION({
+				data: { rule: "RENT_NOT_CONFIGURED" },
+				message: "Cannot resolve next rent month without an active rent amount",
+			});
+		}
+
+		return {
+			periodStart: nextDueMonth.periodStart,
+			periodEnd: nextDueMonth.periodEnd,
+			rentAmount,
+			isArrearsRecovery: isBefore(
+				startOfMonth(parseISO(nextDueMonth.periodStart)),
+				paymentMonthStart,
+			),
+		};
 	});
 
 export const updatePayment = os.payment.update
@@ -136,7 +401,7 @@ export const updatePayment = os.payment.update
 		const { id, ...updates } = input;
 
 		const [existing] = await db
-			.select({ id: payment.id })
+			.select({ id: payment.id, leaseId: payment.leaseId })
 			.from(payment)
 			.where(eq(payment.id, id))
 			.limit(1);
@@ -149,6 +414,128 @@ export const updatePayment = os.payment.update
 				},
 				cause: "PAYMENT_NOT_FOUND",
 			});
+		}
+
+		const [parentLease] = await db
+			.select({
+				startDate: lease.startDate,
+				depositAmount: lease.depositAmount,
+			})
+			.from(lease)
+			.where(eq(lease.id, existing.leaseId))
+			.limit(1);
+
+		if (!parentLease) {
+			throw errors.NOT_FOUND({
+				data: {
+					resourceType: "Lease",
+					resourceId: existing.leaseId,
+				},
+				message: "LEASE_NOT_FOUND",
+			});
+		}
+
+		if (updates.paymentType === "rent") {
+			const paymentDate = parseISO(updates.paymentDate);
+			const paymentMonthStart = startOfMonth(paymentDate);
+
+			const inputPeriodStart = parseISO(updates.periodStart);
+			const normalizedPeriodStart = startOfMonth(inputPeriodStart);
+			const normalizedPeriodEnd = endOfMonth(inputPeriodStart);
+
+			const normalizedPeriodStartStr = format(
+				normalizedPeriodStart,
+				"yyyy-MM-dd",
+			);
+			const normalizedPeriodEndStr = format(normalizedPeriodEnd, "yyyy-MM-dd");
+			const leaseStartMonthStart = startOfMonth(
+				parseISO(parentLease.startDate),
+			);
+
+			if (isBefore(normalizedPeriodStart, leaseStartMonthStart)) {
+				throw errors.DOMAIN_RULE_VIOLATION({
+					data: { rule: "RENT_PERIOD_BEFORE_LEASE_START" },
+					cause: "Cannot record rent for a month before lease start",
+				});
+			}
+
+			if (isAfter(normalizedPeriodStart, paymentMonthStart)) {
+				throw errors.DOMAIN_RULE_VIOLATION({
+					data: { rule: "FUTURE_RENT_PERIOD_NOT_ALLOWED" },
+					message: "Cannot record rent for a future month",
+				});
+			}
+
+			if (
+				dateOnly(updates.periodStart) !== normalizedPeriodStartStr ||
+				dateOnly(updates.periodEnd) !== normalizedPeriodEndStr
+			) {
+				throw errors.DOMAIN_RULE_VIOLATION({
+					data: { rule: "INVALID_RENT_PERIOD_BOUNDARY" },
+					cause:
+						"Rent payment period must match the exact first and last day of one month",
+				});
+			}
+
+			const [currentRentRow] = await db
+				.select({ rentAmount: leaseRent.rentAmount })
+				.from(leaseRent)
+				.where(
+					and(
+						eq(leaseRent.leaseId, existing.leaseId),
+						eq(leaseRent.status, "active"),
+						lte(leaseRent.effectiveDate, normalizedPeriodEndStr),
+					),
+				)
+				.orderBy(desc(leaseRent.effectiveDate), desc(leaseRent.id))
+				.limit(1);
+
+			if (!currentRentRow) {
+				throw errors.DOMAIN_RULE_VIOLATION({
+					data: { rule: "RENT_NOT_CONFIGURED" },
+					cause: "Cannot record rent payment without an active rent amount",
+				});
+			}
+
+			if (Number(currentRentRow.rentAmount) !== updates.paymentAmount) {
+				throw errors.DOMAIN_RULE_VIOLATION({
+					data: { rule: "FULL_RENT_PAYMENT_REQUIRED" },
+					cause: "Rent payment amount must match the full current rent amount",
+				});
+			}
+
+			const [existingMonthlyRentPayment] = await db
+				.select({ id: payment.id })
+				.from(payment)
+				.where(
+					and(
+						eq(payment.leaseId, existing.leaseId),
+						eq(payment.paymentType, "rent"),
+						eq(payment.periodStart, normalizedPeriodStartStr),
+						ne(payment.id, id),
+					),
+				)
+				.limit(1);
+
+			if (existingMonthlyRentPayment) {
+				throw errors.DOMAIN_RULE_VIOLATION({
+					data: { rule: "RENT_ALREADY_RECORDED_FOR_MONTH" },
+					cause: "A rent payment for this lease month is already recorded",
+				});
+			}
+
+			updates.periodStart = normalizedPeriodStartStr;
+			updates.periodEnd = normalizedPeriodEndStr;
+		}
+
+		if (updates.paymentType === "deposit") {
+			if (Number(parentLease.depositAmount) !== updates.paymentAmount) {
+				throw errors.DOMAIN_RULE_VIOLATION({
+					data: { rule: "FULL_DEPOSIT_PAYMENT_REQUIRED" },
+					cause:
+						"Deposit payment amount must match the full lease deposit amount",
+				});
+			}
 		}
 
 		const [data] = await db
@@ -208,15 +595,15 @@ export const listPayment = os.payment.list
 
 		// Tenants may only list payments on their own leases
 		const tenantId = await resolveTenantScope(role, userId);
-		if (role === "tenant" && tenantId === undefined) throw errors.FORBIDDEN();
-
-		if (tenantId !== undefined) {
-			const [parentLease] = await db
-				.select({ id: lease.id })
+		let tenantLeaseIds: number[] | undefined;
+		if (role === "tenant") {
+			if (tenantId === undefined) throw errors.FORBIDDEN();
+			// Get all units where tenant has active leases
+			const leaseRows = await db
+				.select({ leaseId: lease.id })
 				.from(lease)
-				.where(and(eq(lease.id, leaseId), eq(lease.tenantId, tenantId)))
-				.limit(1);
-			if (!parentLease) throw errors.FORBIDDEN();
+				.where(and(eq(lease.tenantId, tenantId), eq(lease.status, "active")));
+			tenantLeaseIds = leaseRows.map((row) => row.leaseId);
 		}
 
 		const rows = await db
@@ -224,12 +611,17 @@ export const listPayment = os.payment.list
 			.from(payment)
 			.where(
 				and(
-					eq(payment.leaseId, leaseId),
+					leaseId ? eq(payment.leaseId, leaseId) : undefined,
 					paymentType ? eq(payment.paymentType, paymentType) : undefined,
 					cursor ? gt(payment.id, cursor) : undefined,
+					role === "tenant" && tenantLeaseIds
+						? tenantLeaseIds.length > 0
+							? inArray(payment.leaseId, tenantLeaseIds)
+							: undefined
+						: undefined,
 				),
 			)
-			.orderBy(desc(payment.paymentDate))
+			.orderBy(desc(payment.updatedAt), desc(payment.paymentDate))
 			.limit(limit + 1);
 
 		const hasMore = rows.length > limit;

@@ -40,12 +40,12 @@ export const leaseRentStatusEnum = pgEnum("lease_rent_status", [
 ]);
 
 export const paymentTypeEnum = pgEnum("payment_type", [
+	"rent",
+	"rent_waiver",
 	"deposit",
 	"deposit_deduction",
-	"rent",
-	"partial_rent",
-	"arrear",
 	"refund",
+	"arrear",
 	"other",
 ]);
 
@@ -100,6 +100,7 @@ export const repairStatusEnum = pgEnum("repair_status", [
 
 export const inspectionStatusEnum = pgEnum("inspection_status", [
 	"scheduled",
+	"rescheduled",
 	"completed",
 	"skipped",
 	"cancelled",

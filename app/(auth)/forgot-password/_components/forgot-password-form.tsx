@@ -37,7 +37,6 @@ export function ForgotPasswordForm({
 	const [isPending, startTransition] = useTransition();
 	const form = useForm<ForgotPasswordSchemaType>({
 		resolver: zodResolver(forgotPasswordSchema),
-		mode: "onTouched",
 		defaultValues: {
 			email: "",
 		},
@@ -68,7 +67,11 @@ export function ForgotPasswordForm({
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<form id="form-login" onSubmit={form.handleSubmit(onSubmit)}>
+					<form
+						id="form-login"
+						onSubmit={form.handleSubmit(onSubmit)}
+						autoComplete="off"
+					>
 						<FieldGroup>
 							<Controller
 								name="email"
@@ -80,9 +83,7 @@ export function ForgotPasswordForm({
 											{...field}
 											id="email"
 											aria-invalid={fieldState.invalid}
-											type="email"
 											placeholder="johndoe@gmail.com"
-											autoComplete="off"
 										/>
 										{fieldState.invalid && (
 											<FieldError errors={[fieldState.error]} />
@@ -110,9 +111,9 @@ export function ForgotPasswordForm({
 				</CardFooter>
 			</Card>
 			<FieldDescription className="px-6 text-center">
-				By clicking continue, you agree to our <a href="#">Terms of Service</a>
-				{""}
-				and <a href="#">Privacy Policy</a>.
+				By clicking continue, you agree to our{" "}
+				<Link href="#">Terms of Service</Link> and{" "}
+				<Link href="#">Privacy Policy</Link>.
 			</FieldDescription>
 		</div>
 	);

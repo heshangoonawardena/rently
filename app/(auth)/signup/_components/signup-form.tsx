@@ -23,7 +23,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { signUp } from "@/server/users";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { signupFormSchema, SignupFormSchemaType } from "@/lib/zodSchemas";
 
@@ -33,10 +33,10 @@ export function SignupForm({
 }: React.ComponentProps<"div">) {
 	const [isPending, startTransition] = useTransition();
 	const router = useRouter();
+	const [showPassword, setShowPassword] = useState(false);
 
 	const form = useForm<SignupFormSchemaType>({
 		resolver: zodResolver(signupFormSchema),
-		mode: "onBlur",
 		defaultValues: {
 			name: "",
 			email: "",
@@ -52,7 +52,7 @@ export function SignupForm({
 			toast.promise(signUp(values), {
 				loading: "Your account is being created...",
 				success: (data) => {
-					router.replace("/dashboard");
+					router.replace("/login");
 					return data.message;
 				},
 				error: (error) => {
@@ -72,7 +72,11 @@ export function SignupForm({
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<form id="form-signup" onSubmit={form.handleSubmit(onSubmit)}>
+					<form
+						id="form-signup"
+						onSubmit={form.handleSubmit(onSubmit)}
+						autoComplete="off"
+					>
 						<FieldGroup>
 							<Controller
 								name="name"
@@ -86,7 +90,6 @@ export function SignupForm({
 											aria-invalid={fieldState.invalid}
 											type="text"
 											placeholder="John Doe"
-											autoComplete="off"
 										/>
 										{fieldState.invalid && (
 											<FieldError errors={[fieldState.error]} />
@@ -105,9 +108,7 @@ export function SignupForm({
 											{...field}
 											id="email"
 											aria-invalid={fieldState.invalid}
-											type="email"
 											placeholder="johndoe@gmail.com"
-											autoComplete="off"
 										/>
 										{fieldState.invalid && (
 											<FieldError errors={[fieldState.error]} />
@@ -123,13 +124,34 @@ export function SignupForm({
 									render={({ field, fieldState }) => (
 										<Field data-invalid={fieldState.invalid}>
 											<FieldLabel htmlFor="password">Password</FieldLabel>
-											<Input
-												{...field}
-												id="password"
-												aria-invalid={fieldState.invalid}
-												type="password"
-												autoComplete="off"
-											/>
+
+											<div className="relative">
+												<Input
+													{...field}
+													id="password"
+													aria-invalid={fieldState.invalid}
+													type={showPassword ? "text" : "password"}
+													className="pr-10"
+												/>
+
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													className="absolute right-1 size-8"
+													onClick={() => setShowPassword((prev) => !prev)}
+												>
+													{showPassword ? (
+														<EyeOff className="h-4 w-4" />
+													) : (
+														<Eye className="h-4 w-4" />
+													)}
+													<span className="sr-only">
+														{showPassword ? "Hide password" : "Show password"}
+													</span>
+												</Button>
+											</div>
+
 											{fieldState.invalid && (
 												<FieldError errors={[fieldState.error]} />
 											)}
@@ -137,7 +159,7 @@ export function SignupForm({
 									)}
 								/>
 
-								<Controller
+								{/* <Controller
 									name="password.confirm"
 									control={form.control}
 									render={({ field, fieldState }) => (
@@ -150,17 +172,56 @@ export function SignupForm({
 												id="confirm"
 												aria-invalid={fieldState.invalid}
 												type="password"
-												autoComplete="off"
 											/>
 											{fieldState.invalid && (
 												<FieldError errors={[fieldState.error]} />
 											)}
 										</Field>
 									)}
+								/> */}
+
+								<Controller
+									name="password.confirm"
+									control={form.control}
+									render={({ field, fieldState }) => (
+										<Field data-invalid={fieldState.invalid}>
+											<FieldLabel htmlFor="confirm">
+												Confirm Password
+											</FieldLabel>
+
+											<div className="relative">
+												<Input
+													{...field}
+													id="confirm"
+													aria-invalid={fieldState.invalid}
+													type={showPassword ? "text" : "password"}
+													className="pr-10"
+												/>
+
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													className="absolute right-1 size-8"
+													onClick={() => setShowPassword((prev) => !prev)}
+												>
+													{showPassword ? (
+														<EyeOff className="h-4 w-4" />
+													) : (
+														<Eye className="h-4 w-4" />
+													)}
+													<span className="sr-only">
+														{showPassword ? "Hide password" : "Show password"}
+													</span>
+												</Button>
+											</div>
+
+											{fieldState.invalid && (
+												<FieldError errors={[fieldState.error]} />
+											)}
+										</Field>
+									)}
 								/>
-								<FieldDescription className="col-span-2">
-									Must be at least 8 characters long.
-								</FieldDescription>
 							</div>
 						</FieldGroup>
 					</form>
@@ -182,9 +243,9 @@ export function SignupForm({
 				</CardFooter>
 			</Card>
 			<FieldDescription className="px-6 text-center">
-				By clicking continue, you agree to our <a href="#">Terms of Service</a>
-				{""}
-				and <a href="#">Privacy Policy</a>.
+				By clicking continue, you agree to our{" "}
+				<Link href="#">Terms of Service</Link> and{" "}
+				<Link href="#">Privacy Policy</Link>.
 			</FieldDescription>
 		</div>
 	);

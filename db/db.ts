@@ -13,7 +13,7 @@ const pool = new Pool({
 export const db = drizzle(pool, { schema });
 export type DB = typeof db;
 
-// for neon
+// // for neon
 // import { drizzle } from "drizzle-orm/neon-http";
 // import { config } from "dotenv";
 // import * as schema from "@/db/schema/index";

@@ -17,7 +17,7 @@ export default function FeaturesSection() {
 		>
 			{/* Horizontal bar */}
 			<div className="bg-primary absolute -top-10 left-1/2 h-16 w-44 -translate-x-1/2 rounded-full opacity-40 blur-3xl select-none"></div>
-			<div className="via-primary/50 absolute top-0 left-1/2 h-px w-3/5 -translate-x-1/2 bg-gradient-to-r from-transparent to-transparent transition-all ease-in-out"></div>
+			<div className="via-primary/50 absolute top-0 left-1/2 h-px w-3/5 -translate-x-1/2 bg-linear-to-r from-transparent to-transparent transition-all ease-in-out"></div>
 
 			{/* Background blur effects */}
 			<BackgroundBlur />
@@ -32,7 +32,7 @@ export default function FeaturesSection() {
 				<div className="mx-auto max-w-5xl px-6">
 					<h2
 						className={cn(
-							"mb-8 text-foreground text-center text-4xl font-medium tracking-tighter md:text-[54px] md:leading-[60px]"
+							"mb-8 text-foreground text-center text-4xl font-medium tracking-tighter md:text-[54px] md:leading-15",
 						)}
 					>
 						Features
@@ -75,7 +75,7 @@ export default function FeaturesSection() {
 								<CardContent className="pt-6">
 									<div className="relative mx-auto flex aspect-square size-32 rounded-full border before:absolute before:-inset-2 before:rounded-full before:border dark:border-white/10 dark:before:border-white/5">
 										<svg
-											className="m-auto h-fit w-24 text-zinc-800 dark:text-zinc-100"
+											className="m-auto h-fit w-24 text-zinc-800"
 											viewBox="0 0 24 24"
 											fill="currentColor"
 											xmlns="http://www.w3.org/2000/svg"
@@ -107,7 +107,7 @@ export default function FeaturesSection() {
 											<rect width="386" height="123" rx="10" />
 											<g clipPath="url(#clip0_0_106)">
 												<circle
-													className="text-muted-foreground dark:text-muted"
+													className="text-muted-foreground"
 													cx="29"
 													cy="29"
 													r="15"
@@ -158,7 +158,7 @@ export default function FeaturesSection() {
 													gradientUnits="userSpaceOnUse"
 												>
 													<stop
-														className="text-primary/15 dark:text-primary/35"
+														className="text-primary/15"
 														stopColor="currentColor"
 													/>
 													<stop
@@ -198,7 +198,7 @@ export default function FeaturesSection() {
 											<Shield className="m-auto size-5" strokeWidth={1} />
 										</div>
 										<div className="space-y-2">
-											<h2 className="group-hover:text-secondary-950 text-lg font-bold text-zinc-800 transition dark:text-white">
+											<h2 className="group-hover:text-secondary-950 text-lg font-bold text-zinc-800 transition">
 												Know exactly what’s happening
 											</h2>
 											<p className="text-foreground">
@@ -242,7 +242,7 @@ export default function FeaturesSection() {
 													gradientUnits="userSpaceOnUse"
 												>
 													<stop
-														className="text-primary/15 dark:text-primary/35"
+														className="text-primary/15"
 														stopColor="currentColor"
 													/>
 													<stop

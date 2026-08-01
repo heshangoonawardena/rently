@@ -23,8 +23,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { signInformSchema, SignInFormSchemaType } from "@/lib/zodSchemas";
 
@@ -33,11 +33,11 @@ export function LoginForm({
 	...props
 }: React.ComponentProps<"div">) {
 	const [isPending, startTransition] = useTransition();
+	const [showPassword, setShowPassword] = useState(false);
 
 	const router = useRouter();
 	const form = useForm<SignInFormSchemaType>({
 		resolver: zodResolver(signInformSchema),
-		mode: "onBlur",
 		defaultValues: {
 			email: "",
 			password: "",
@@ -67,7 +67,11 @@ export function LoginForm({
 					<CardDescription>Login with email and password</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<form id="form-login" onSubmit={form.handleSubmit(onSubmit)}>
+					<form
+						id="form-login"
+						onSubmit={form.handleSubmit(onSubmit)}
+						autoComplete="off"
+					>
 						<FieldGroup>
 							<Controller
 								name="email"
@@ -79,9 +83,7 @@ export function LoginForm({
 											{...field}
 											id="email"
 											aria-invalid={fieldState.invalid}
-											type="email"
 											placeholder="johndoe@gmail.com"
-											autoComplete="on"
 										/>
 										{fieldState.invalid && (
 											<FieldError errors={[fieldState.error]} />
@@ -97,12 +99,34 @@ export function LoginForm({
 									render={({ field, fieldState }) => (
 										<Field data-invalid={fieldState.invalid}>
 											<FieldLabel htmlFor="password">Password</FieldLabel>
-											<Input
-												{...field}
-												id="password"
-												aria-invalid={fieldState.invalid}
-												type="password"
-											/>
+
+											<div className="relative">
+												<Input
+													{...field}
+													id="password"
+													aria-invalid={fieldState.invalid}
+													type={showPassword ? "text" : "password"}
+													className="pr-10"
+												/>
+
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													className="absolute right-1 size-8"
+													onClick={() => setShowPassword((prev) => !prev)}
+												>
+													{showPassword ? (
+														<EyeOff className="h-4 w-4" />
+													) : (
+														<Eye className="h-4 w-4" />
+													)}
+													<span className="sr-only">
+														{showPassword ? "Hide password" : "Show password"}
+													</span>
+												</Button>
+											</div>
+
 											{fieldState.invalid && (
 												<FieldError errors={[fieldState.error]} />
 											)}
@@ -137,9 +161,8 @@ export function LoginForm({
 			</Card>
 			<FieldDescription className="px-6 text-center">
 				By clicking continue, you agree to our{" "}
-				<Link href="#">Terms of Service</Link>
-				{""}
-				and <Link href="#">Privacy Policy</Link>.
+				<Link href="#">Terms of Service</Link> and{" "}
+				<Link href="#">Privacy Policy</Link>.
 			</FieldDescription>
 		</div>
 	);

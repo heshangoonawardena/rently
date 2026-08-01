@@ -61,14 +61,6 @@ export const documents = async (db: DB) => {
 			documentDate: "2023-12-01",
 			status: "active",
 		},
-		{
-			leaseId: leaseData[1].id,
-			documentType: "agreement",
-			label: "agreement copy",
-			storageKey: "/documents/id-alice-williams.pdf",
-			documentDate: "2023-12-01",
-			status: "expired",
-		},
 	]);
 
 	console.log("Documents seeded successfully");

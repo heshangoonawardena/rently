@@ -30,7 +30,7 @@ const owner = ac.newRole({
 
 const manager = ac.newRole({
 	unit: ["read", "update"],
-	tenant: ["create", "read", "update"],
+	tenant: ["create", "read", "update", "delete"],
 	lease: ["create", "read", "update"],
 	payment: ["create", "read"],
 	utility: ["create", "read", "update"],
@@ -38,11 +38,12 @@ const manager = ac.newRole({
 	inspection: ["create", "read", "update"],
 	document: ["create", "read", "update"],
 	member: ["invite", "read"],
-	organization: ["read"],
+	organization: ["read", "update"],
 });
 
 const tenant = ac.newRole({
 	unit: ["read"],
+	tenant: ["read"],
 	lease: ["read"],
 	payment: ["read"],
 	utility: ["read"],
@@ -53,3 +54,4 @@ const tenant = ac.newRole({
 });
 
 export { owner, manager, tenant, ac, statement };
+// export type OrganizationRole = keyof typeof "owner" | "manager"	| "tenant";

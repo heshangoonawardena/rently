@@ -5,11 +5,7 @@ import { unit } from "@/db/schema/unit";
 import { lease, leaseRent } from "@/db/schema/lease";
 import { tenant } from "@/db/schema/tenant";
 import { payment, paymentReceipt } from "@/db/schema/payment";
-import {
-	unitDocument,
-	tenantDocument,
-	leaseDocument,
-} from "@/db/schema/document";
+import { unitDocument, leaseDocument } from "@/db/schema/document";
 import { inspection } from "@/db/schema/inspection";
 import { utility, utilityBill } from "@/db/schema/utility";
 import { repairRequest } from "@/db/schema/repair";
@@ -32,6 +28,7 @@ import {
 	BaseContext,
 	permissionMiddleware,
 } from "./middleware";
+import { format } from "date-fns";
 
 const os = implement(contract).$context<BaseContext>();
 
@@ -39,18 +36,20 @@ const os = implement(contract).$context<BaseContext>();
 
 /** Returns today's ISO date string (YYYY-MM-DD). */
 function today(): string {
-	return new Date().toISOString().split("T")[0];
+	return format(new Date(), "yyyy-MM-dd");
 }
 
 /** Returns the first and last day of the current calendar month as ISO strings. */
 function currentMonthRange(): { from: string; to: string } {
 	const now = new Date();
-	const from = new Date(now.getFullYear(), now.getMonth(), 1)
-		.toISOString()
-		.split("T")[0];
-	const to = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-		.toISOString()
-		.split("T")[0];
+	const from = format(
+		new Date(now.getFullYear(), now.getMonth(), 1),
+		"yyyy-MM-dd",
+	);
+	const to = format(
+		new Date(now.getFullYear(), now.getMonth() + 1, 0),
+		"yyyy-MM-dd",
+	);
 	return { from, to };
 }
 
@@ -59,12 +58,6 @@ function daysBetween(a: string, b: string): number {
 	return Math.round(
 		(new Date(b).getTime() - new Date(a).getTime()) / (1000 * 60 * 60 * 24),
 	);
-}
-
-/** Converts a Date or ISO string to ISO date string (YYYY-MM-DD). */
-function toIsoDate(d: Date | string): string {
-	if (typeof d === "string") return d.split("T")[0];
-	return d.toISOString().split("T")[0];
 }
 
 // ── Handlers ──
@@ -154,10 +147,10 @@ export const rentCollection = os.report.rentCollection
 			.orderBy(desc(leaseRent.effectiveDate));
 
 		// Keep only the most recent rent row per lease
-		const currentRentByLease = new Map<number, string>();
+		const currentRentByLease = new Map<number, number>();
 		for (const r of rentRows) {
 			if (!currentRentByLease.has(r.leaseId)) {
-				currentRentByLease.set(r.leaseId, r.rentAmount);
+				currentRentByLease.set(r.leaseId, Number(r.rentAmount));
 			}
 		}
 
@@ -165,23 +158,33 @@ export const rentCollection = os.report.rentCollection
 		const paymentRows = await db
 			.select({
 				leaseId: payment.leaseId,
+				paymentType: payment.paymentType,
+				periodStart: payment.periodStart,
 				paymentAmount: payment.paymentAmount,
 			})
 			.from(payment)
 			.where(
 				and(
 					inArray(payment.leaseId, leaseIds),
-					gte(payment.paymentDate, period.from),
-					lte(payment.paymentDate, period.to),
-					inArray(payment.paymentType, ["rent", "partial_rent", "arrear"]),
+					isNotNull(payment.periodStart),
+					gte(payment.periodStart, period.from),
+					lte(payment.periodStart, period.to),
+					inArray(payment.paymentType, ["rent", "arrear", "rent_waiver"]),
 				),
 			);
 
-		// Sum payments per lease
+		// Sum cash collections per lease and track waived rent separately.
 		const collectedByLease = new Map<number, number>();
+		const waivedByLease = new Map<number, number>();
 		for (const p of paymentRows) {
-			const prev = collectedByLease.get(p.leaseId) ?? 0;
-			collectedByLease.set(p.leaseId, prev + Number(p.paymentAmount));
+			if (p.paymentType === "rent_waiver") {
+				const prevWaived = waivedByLease.get(p.leaseId) ?? 0;
+				waivedByLease.set(p.leaseId, prevWaived + Number(p.paymentAmount));
+				continue;
+			}
+
+			const prevCollected = collectedByLease.get(p.leaseId) ?? 0;
+			collectedByLease.set(p.leaseId, prevCollected + Number(p.paymentAmount));
 		}
 
 		// Unit and tenant names
@@ -221,9 +224,10 @@ export const rentCollection = os.report.rentCollection
 		let totalCollected = 0;
 
 		const rows = leaseRows.map((l) => {
-			const rentDue = Number(currentRentByLease.get(l.id) ?? "0");
+			const rentDue = currentRentByLease.get(l.id) ?? 0;
 			const collected = collectedByLease.get(l.id) ?? 0;
-			const outstanding = rentDue - collected;
+			const waived = waivedByLease.get(l.id) ?? 0;
+			const outstanding = rentDue - collected - waived;
 
 			totalExpected += rentDue;
 			totalCollected += collected;
@@ -244,7 +248,9 @@ export const rentCollection = os.report.rentCollection
 			period,
 			totalExpected: totalExpected.toFixed(2),
 			totalCollected: totalCollected.toFixed(2),
-			totalOutstanding: (totalExpected - totalCollected).toFixed(2),
+			totalOutstanding: rows
+				.reduce((sum, row) => sum + Number(row.outstanding), 0)
+				.toFixed(2),
 			rows,
 		};
 	});
@@ -348,7 +354,6 @@ export const paymentOverview = os.report.paymentOverview
 				paymentType: p.paymentType,
 				paymentMethod: p.paymentMethod,
 				paymentDate: p.paymentDate,
-				balanceAfter: p.balanceAfter,
 				receiptNumber: receiptNumber ?? null,
 				description: p.description ?? null,
 			};
@@ -371,6 +376,7 @@ export const arrearsOverview = os.report.arrearsOverview
 				id: lease.id,
 				unitId: lease.unitId,
 				tenantId: lease.tenantId,
+				startDate: lease.startDate,
 			})
 			.from(lease)
 			.innerJoin(unit, eq(unit.id, lease.unitId))
@@ -392,20 +398,6 @@ export const arrearsOverview = os.report.arrearsOverview
 
 		const leaseIds = leaseRows.map((l) => l.id);
 
-		// Latest balanceAfter per lease (from most recent payment)
-		const latestPayments = await db
-			.selectDistinctOn([payment.leaseId], {
-				leaseId: payment.leaseId,
-				balanceAfter: payment.balanceAfter,
-			})
-			.from(payment)
-			.where(inArray(payment.leaseId, leaseIds))
-			.orderBy(payment.leaseId, desc(payment.createdAt), desc(payment.id));
-
-		const balanceByLease = new Map(
-			latestPayments.map((p) => [p.leaseId, Number(p.balanceAfter)]),
-		);
-
 		// Current rent per lease (for estimating months overdue)
 		const todayStr = today();
 		const rentRows = await db
@@ -425,6 +417,27 @@ export const arrearsOverview = os.report.arrearsOverview
 			if (!currentRentByLease.has(r.leaseId)) {
 				currentRentByLease.set(r.leaseId, Number(r.rentAmount));
 			}
+		}
+
+		const collectedRows = await db
+			.select({
+				leaseId: payment.leaseId,
+				paymentAmount: payment.paymentAmount,
+			})
+			.from(payment)
+			.where(
+				and(
+					inArray(payment.leaseId, leaseIds),
+					inArray(payment.paymentType, ["rent", "arrear", "rent_waiver"]),
+					isNotNull(payment.periodStart),
+					lte(payment.periodStart, todayStr),
+				),
+			);
+
+		const collectedByLease = new Map<number, number>();
+		for (const row of collectedRows) {
+			const prev = collectedByLease.get(row.leaseId) ?? 0;
+			collectedByLease.set(row.leaseId, prev + Number(row.paymentAmount));
 		}
 
 		const unitRows = await db
@@ -459,11 +472,23 @@ export const arrearsOverview = os.report.arrearsOverview
 		let totalArrears = 0;
 
 		for (const l of leaseRows) {
-			const balance = balanceByLease.get(l.id) ?? 0;
-			if (balance <= 0) continue; // not in arrears
+			const rent = currentRentByLease.get(l.id) ?? 0;
+			if (rent <= 0) continue;
 
-			const arrears = balance;
-			const rent = currentRentByLease.get(l.id) ?? 1;
+			const start = new Date(l.startDate);
+			const now = new Date(todayStr);
+			const monthsElapsed =
+				(now.getFullYear() - start.getFullYear()) * 12 +
+				(now.getMonth() - start.getMonth()) +
+				1;
+
+			const billedMonths = Math.max(monthsElapsed, 0);
+			const expected = billedMonths * rent;
+			const collected = collectedByLease.get(l.id) ?? 0;
+			const arrears = expected - collected;
+
+			if (arrears <= 0) continue;
+
 			const monthsOverdue = Math.floor(arrears / rent);
 			const t = tenantById.get(l.tenantId);
 
@@ -477,7 +502,7 @@ export const arrearsOverview = os.report.arrearsOverview
 					? [t.firstName, t.lastName].filter(Boolean).join(" ")
 					: "",
 				tenantPhone: t?.phoneNumber ?? "",
-				currentBalance: balance.toFixed(2),
+				currentBalance: arrears.toFixed(2),
 				arrearsAmount: arrears.toFixed(2),
 				monthsOverdue,
 			});
@@ -501,7 +526,7 @@ export const upcomingRentDue = os.report.upcomingRentDue
 		const todayStr = today();
 		const futureDate = new Date();
 		futureDate.setDate(futureDate.getDate() + daysAhead);
-		const futureDateStr = toIsoDate(futureDate);
+		const futureDateStr = format(futureDate, "yyyy-MM-dd");
 
 		const leaseRows = await db
 			.select({
@@ -534,10 +559,10 @@ export const upcomingRentDue = os.report.upcomingRentDue
 			)
 			.orderBy(desc(leaseRent.effectiveDate));
 
-		const currentRentByLease = new Map<number, string>();
+		const currentRentByLease = new Map<number, number>();
 		for (const r of rentRows) {
 			if (!currentRentByLease.has(r.leaseId)) {
-				currentRentByLease.set(r.leaseId, r.rentAmount);
+				currentRentByLease.set(r.leaseId, Number(r.rentAmount));
 			}
 		}
 
@@ -582,7 +607,7 @@ export const upcomingRentDue = os.report.upcomingRentDue
 				dueDate.setMonth(dueDate.getMonth() + 1);
 			}
 
-			const dueDateStr = toIsoDate(dueDate);
+			const dueDateStr = format(dueDate, "yyyy-MM-dd");
 			if (dueDateStr > futureDateStr) continue;
 
 			const daysUntilDue = daysBetween(todayStr, dueDateStr);
@@ -597,7 +622,7 @@ export const upcomingRentDue = os.report.upcomingRentDue
 					? [t.firstName, t.lastName].filter(Boolean).join(" ")
 					: "",
 				tenantPhone: t?.phoneNumber ?? "",
-				rentAmount: currentRentByLease.get(l.id) ?? "0.00",
+				rentAmount: (currentRentByLease.get(l.id) ?? 0).toFixed(2),
 				dueDate: dueDateStr,
 				daysUntilDue,
 			});
@@ -618,7 +643,7 @@ export const expiringDocuments = os.report.expiringDocuments
 		const todayStr = today();
 		const futureDate = new Date();
 		futureDate.setDate(futureDate.getDate() + daysAhead);
-		const futureDateStr = toIsoDate(futureDate);
+		const futureDateStr = format(futureDate, "yyyy-MM-dd");
 
 		const rows: Array<{
 			id: number;
@@ -711,14 +736,14 @@ export const expiringDocuments = os.report.expiringDocuments
 export const upcomingInspections = os.report.upcomingInspections
 	.use(authMiddleware)
 	.use(permissionMiddleware({ inspection: ["read"] }))
-	.handler(async ({ input, errors, context }) => {
-		const { organizationId, role } = context.user;
+	.handler(async ({ input, context }) => {
+		const { organizationId } = context.user;
 
-		const { daysAhead, unitId } = input;
+		const { daysAhead, unitId, status } = input;
 		const todayStr = today();
 		const futureDate = new Date();
 		futureDate.setDate(futureDate.getDate() + daysAhead);
-		const futureDateStr = toIsoDate(futureDate);
+		const futureDateStr = format(futureDate, "yyyy-MM-dd");
 
 		const rows = await db
 			.select({
@@ -736,7 +761,12 @@ export const upcomingInspections = os.report.upcomingInspections
 			.where(
 				and(
 					eq(unit.organizationId, organizationId),
-					eq(inspection.status, "scheduled"),
+					status
+						? eq(inspection.status, status)
+						: or(
+								eq(inspection.status, "scheduled"),
+								eq(inspection.status, "rescheduled"),
+							),
 					gte(inspection.scheduledDate, todayStr),
 					lte(inspection.scheduledDate, futureDateStr),
 					unitId ? eq(inspection.unitId, unitId) : undefined,
@@ -865,14 +895,14 @@ export const repairSummary = os.report.repairSummary
 export const expiringLeases = os.report.expiringLeases
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["read"] }))
-	.handler(async ({ input, errors, context }) => {
-		const { organizationId, role } = context.user;
+	.handler(async ({ input, context }) => {
+		const { organizationId } = context.user;
 
 		const { daysAhead } = input;
 		const todayStr = today();
 		const futureDate = new Date();
 		futureDate.setDate(futureDate.getDate() + daysAhead);
-		const futureDateStr = toIsoDate(futureDate);
+		const futureDateStr = format(futureDate, "yyyy-MM-dd");
 
 		const leaseRows = await db
 			.select({

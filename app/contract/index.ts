@@ -53,6 +53,7 @@ import {
 	getReceiptContract,
 	listPaymentContract,
 	listReceiptsContract,
+	nextRentMonthContract,
 	updatePaymentContract,
 } from "./payment.contract";
 import {
@@ -106,6 +107,13 @@ import {
 	updateUtilityBillContract,
 	updateUtilityContract,
 } from "./utility.contract";
+import {
+	approveUserContract,
+	listAvailableTenantsForApprovalContract,
+	listUsersContract,
+	revokeUserAccessContract,
+	updateUserRoleContract,
+} from "./user.contract";
 
 export const contract = {
 	unit: {
@@ -143,6 +151,7 @@ export const contract = {
 		update: updatePaymentContract,
 		get: getPaymentContract,
 		list: listPaymentContract,
+		nextRentMonth: nextRentMonthContract,
 		getReceipt: getReceiptContract,
 		listReceipts: listReceiptsContract,
 	},
@@ -215,5 +224,12 @@ export const contract = {
 		listLogs: listNotificationLogsContract,
 		markRead: markNotificationReadContract,
 		markAllRead: markAllNotificationsReadContract,
+	},
+	user: {
+		list: listUsersContract,
+		approve: approveUserContract,
+		updateRole: updateUserRoleContract,
+		revokeAccess: revokeUserAccessContract,
+		listAvailableTenants: listAvailableTenantsForApprovalContract,
 	},
 };

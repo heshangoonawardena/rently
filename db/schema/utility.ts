@@ -34,7 +34,7 @@ export const utility = pgTable(
 			.references(() => unit.id, { onDelete: "cascade" }),
 		utilityType: utilityTypeEnum("utility_type").notNull(),
 		holderName: text("holder_name").notNull(),
-		address: text("address"),
+		address: text("address").notNull(),
 		accountNumber: text("account_number").notNull().unique(),
 		description: text("description"),
 		status: utilityStatusEnum("status").default("active").notNull(),

@@ -1,7 +1,7 @@
 "use client";
+import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Button } from "../../../components/ui/button";
 
 export function StickyFooter() {
 	const [isAtBottom, setIsAtBottom] = useState(false);
@@ -48,24 +48,24 @@ export function StickyFooter() {
 								transition={{ duration: 0.6, delay: 0.1 }}
 							>
 								<div className="flex flex-col items-start">
-									<Button variant={"link"} size={"lg"}>
+									<Button variant={"ghost"} size={"lg"}>
 										Home
 									</Button>
-									<Button variant={"link"} size={"lg"}>
+									<Button variant={"ghost"} size={"lg"}>
 										Docs*
 									</Button>
-									<Button variant={"link"} size={"lg"}>
+									<Button variant={"ghost"} size={"lg"}>
 										Components*
 									</Button>
 								</div>
 								<div className="flex flex-col items-start">
-									<Button variant={"link"} size={"lg"}>
+									<Button variant={"ghost"} size={"lg"}>
 										Github
 									</Button>
-									<Button variant={"link"} size={"lg"}>
+									<Button variant={"ghost"} size={"lg"}>
 										Instagram
 									</Button>
-									<Button variant={"link"} size={"lg"}>
+									<Button variant={"ghost"} size={"lg"}>
 										Whatsapp
 									</Button>
 								</div>

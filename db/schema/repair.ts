@@ -61,8 +61,8 @@ export const repairUpdate = pgTable(
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "restrict" }),
-		oldStatus: repairStatusEnum("old_status"),
-		newStatus: repairStatusEnum("new_status"),
+		oldStatus: repairStatusEnum("old_status").notNull(),
+		newStatus: repairStatusEnum("new_status").notNull(),
 		description: text("description"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()

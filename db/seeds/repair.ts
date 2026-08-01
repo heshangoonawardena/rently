@@ -28,6 +28,15 @@ export const repairs = async (db: DB) => {
 				priority: "high",
 				status: "in_progress",
 			},
+			{
+				unitId: unitData[1].id,
+				userId: userData[1].id,
+				repairType: "other",
+				title: "No power",
+				description: "No power from 9 am today",
+				priority: "urgent",
+				status: "cancelled",
+			},
 		])
 		.returning();
 
@@ -38,13 +47,28 @@ export const repairs = async (db: DB) => {
 			repairRequestId: repairRequestData[0].id,
 			userId: userData[1].id,
 			oldStatus: "open",
+			description: "Faucet needs to be replaced",
 			newStatus: "in_progress",
+		},
+		{
+			repairRequestId: repairRequestData[0].id,
+			description: "Replaced the faucet and charged the tenant",
+			userId: userData[1].id,
+			oldStatus: "in_progress",
+			newStatus: "resolved",
 		},
 		{
 			repairRequestId: repairRequestData[1].id,
 			userId: userData[2].id,
-			oldStatus: "in_progress",
-			newStatus: "resolved",
+			oldStatus: "open",
+			newStatus: "in_progress",
+		},
+		{
+			repairRequestId: repairRequestData[2].id,
+			userId: userData[2].id,
+			description: "Island-wide power cut",
+			oldStatus: "open",
+			newStatus: "cancelled",
 		},
 	]);
 

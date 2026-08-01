@@ -20,6 +20,29 @@ export const createTenant = os.tenant.create
 	.handler(async ({ input, errors, context }) => {
 		const { organizationId } = context.user;
 
+		if (input.nickname) {
+			const [nicknameConflict] = await db
+				.select({ id: tenant.id })
+				.from(tenant)
+				.where(
+					and(
+						eq(tenant.organizationId, organizationId),
+						eq(tenant.nickname, input.nickname),
+					),
+				)
+				.limit(1);
+
+			if (nicknameConflict) {
+				throw errors.CONFLICT({
+					data: {
+						field: "nickname",
+						value: input.nickname,
+					},
+					message: "Tenant Nickname Already Exists",
+				});
+			}
+		}
+
 		const [nicConflict] = await db
 			.select({ id: tenant.id })
 			.from(tenant)
@@ -37,7 +60,7 @@ export const createTenant = os.tenant.create
 					field: "nic",
 					value: input.nic,
 				},
-				cause: "TENANT_NIC_ALREADY_EXISTS",
+				message: "Tenant Nic Already Exists",
 			});
 		}
 
@@ -58,7 +81,7 @@ export const createTenant = os.tenant.create
 					field: "phoneNumber",
 					value: input.phoneNumber,
 				},
-				cause: "TENANT_PHONE_ALREADY_EXISTS",
+				message: "Tenant Phone Number Already Exists",
 			});
 		}
 
@@ -92,7 +115,7 @@ export const updateTenant = os.tenant.update
 					resourceType: "Tenant",
 					resourceId: id,
 				},
-				cause: "TENANT_NOT_FOUND",
+				message: "Tenant Not Found",
 			});
 		}
 
@@ -125,7 +148,7 @@ export const deleteTenant = os.tenant.delete
 					resourceType: "Tenant",
 					resourceId: input.id,
 				},
-				cause: "TENANT_NOT_FOUND",
+				message: "Tenant Not Found",
 			});
 		}
 
@@ -139,7 +162,7 @@ export const deleteTenant = os.tenant.delete
 		if (activeLease) {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "TENANT_HAS_ACTIVE_LEASE" },
-				cause: "Cannot delete a tenant with an active lease",
+				message: "Cannot delete a tenant with an active lease",
 			});
 		}
 
@@ -172,7 +195,7 @@ export const getTenant = os.tenant.get
 					resourceType: "Tenant",
 					resourceId: input.id,
 				},
-				cause: "TENANT_NOT_FOUND",
+				message: "Tenant Not Found",
 			});
 		}
 
@@ -201,7 +224,7 @@ export const listTenant = os.tenant.list
 					cursor ? gt(tenant.id, cursor) : undefined,
 				),
 			)
-			.orderBy(asc(tenant.updatedAt))
+			.orderBy(desc(tenant.updatedAt))
 			.limit(limit + 1);
 
 		const hasMore = rows.length > limit;
@@ -233,7 +256,7 @@ export const createTenantOccupant = os.tenant.createOccupant
 					resourceType: "Tenant",
 					resourceId: tenantId,
 				},
-				cause: "TENANT_NOT_FOUND",
+				message: "Tenant Not Found",
 			});
 		}
 
@@ -263,7 +286,7 @@ export const updateTenantOccupant = os.tenant.updateOccupant
 					resourceType: "TenantOccupant",
 					resourceId: id,
 				},
-				cause: "TENANT_OCCUPANT_NOT_FOUND",
+				message: "Tenant Occupant Not Found",
 			});
 		}
 
@@ -292,7 +315,7 @@ export const deleteTenantOccupant = os.tenant.deleteOccupant
 					resourceType: "TenantOccupant",
 					resourceId: input.id,
 				},
-				cause: "TENANT_OCCUPANT_NOT_FOUND",
+				message: "Tenant Occupant Not Found",
 			});
 		}
 
@@ -308,19 +331,33 @@ export const deleteTenantOccupant = os.tenant.deleteOccupant
 export const listTenantOccupant = os.tenant.listOccupants
 	.use(authMiddleware)
 	.use(permissionMiddleware({ tenant: ["read"] }))
-	.handler(async ({ input }) => {
-		const { tenantId, cursor, limit } = input;
+	.handler(async ({ input, errors, context }) => {
+		const { tenantId, cursor, limit, status } = input;
+		const { role, userId } = context.user;
+
+		let scopedTenantId = tenantId;
+		if (role === "tenant") {
+			const [self] = await db
+				.select({ id: tenant.id })
+				.from(tenant)
+				.where(eq(tenant.userId, userId))
+				.limit(1);
+			if (!self) throw errors.FORBIDDEN();
+			scopedTenantId = self.id;
+		}
 
 		const rows = await db
 			.select()
 			.from(tenantOccupant)
 			.where(
 				and(
-					eq(tenantOccupant.tenantId, tenantId),
+					// eq(tenantOccupant.tenantId, tenantId),
+					eq(tenantOccupant.tenantId, scopedTenantId),
+					status ? eq(tenantOccupant.status, status) : undefined,
 					cursor ? gt(tenantOccupant.id, cursor) : undefined,
 				),
 			)
-			.orderBy(asc(tenantOccupant.updatedAt))
+			.orderBy(desc(tenantOccupant.updatedAt))
 			.limit(limit + 1);
 
 		const hasMore = rows.length > limit;

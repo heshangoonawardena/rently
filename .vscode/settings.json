@@ -1,3 +1,6 @@
 {
-	"cSpell.words": ["Rently"]
+	"cSpell.words": ["Rently"],
+	"chat.tools.terminal.autoApprove": {
+		"pnpm": true
+	}
 }

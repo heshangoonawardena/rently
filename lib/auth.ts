@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { organization } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db/db";
-import { schema } from "@/db/schema";
+import * as schema from "@/db/schema/auth";
 import { nextCookies } from "better-auth/next-js";
 import { Resend } from "resend";
 import { ForgotPasswordEmail } from "@/components/emails/reset-password";
@@ -16,6 +16,20 @@ export const auth = betterAuth({
 		provider: "pg",
 		schema,
 	}),
+	databaseHooks: {
+		session: {
+			create: {
+				before: async (session) => {
+					return {
+						data: {
+							...session,
+							activeOrganizationId: "org_1", // change to rently and in seed auth
+						},
+					};
+				},
+			},
+		},
+	},
 	emailAndPassword: {
 		enabled: true,
 		sendResetPassword: async ({ user, url }) => {
@@ -72,6 +86,7 @@ export const auth = betterAuth({
 				tenant,
 			},
 		}),
+
 		nextCookies(),
 	], // this must be the last in the array
 });

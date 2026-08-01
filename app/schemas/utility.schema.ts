@@ -3,6 +3,42 @@ import { utilityStatusEnum, utilityTypeEnum } from "@/db/schema/enums";
 
 // ── Output schemas ──
 
+export const utilityOutput = z.object({
+	id: z.number().min(1, "Id is required"),
+	unitId: z.number().min(1, "Unit id is required"),
+	utilityType: z.enum(utilityTypeEnum.enumValues),
+	holderName: z
+		.string()
+		.min(2, "Holder name is required")
+		.max(50, "Holder name must not exceed 50 characters"),
+	address: z
+		.string()
+		.trim()
+		.min(2, "Address is required")
+		.max(100, "Address must not exceed 100 characters"),
+	accountNumber: z
+		.string()
+		.min(4, "Account number is required")
+		.max(20, "Account number must not exceed 20 characters"),
+	description: z
+		.string()
+		.trim()
+		.max(500, "Description must not exceed 500 characters")
+		.nullable(),
+	status: z.enum(utilityStatusEnum.enumValues),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+});
+
+export const listUtilityOutput = z.object({
+	items: z.array(utilityOutput),
+	nextCursor: z.number().positive().nullable(),
+});
+
+export type ListUtilityOutput = z.infer<typeof listUtilityOutput>;
+
+// ── Input schemas ──
+
 export const utilitySchema = z.object({
 	unitId: z.number().min(1, "Unit id is required"),
 	utilityType: z.enum(utilityTypeEnum.enumValues),
@@ -13,43 +49,28 @@ export const utilitySchema = z.object({
 	address: z
 		.string()
 		.trim()
-		.min(5, "Address is required")
+		.min(5, "Address must be at least 5 characters")
 		.max(100, "Address must not exceed 100 characters")
-		.nullable(),
+		.regex(/^[\p{L}\p{N}\s.,/#'()-]+$/u, "Address contains invalid characters"),
 	accountNumber: z
 		.string()
-		.min(8, "Account number is required")
+		.min(4, "Account number is required")
 		.max(20, "Account number must not exceed 20 characters"),
 	description: z
 		.string()
 		.trim()
 		.max(500, "Description must not exceed 500 characters")
-		.nullable(),
-	status: z.enum(utilityStatusEnum.enumValues),
+		.nullish(),
 });
-
-export const utilityOutput = utilitySchema.extend({
-	id: z.number().min(1, "Id is required"),
-	createdAt: z.date(),
-	updatedAt: z.date(),
-});
-
-export const listUtilityOutput = z.object({
-	items: z.array(utilityOutput),
-	nextCursor: z.number().positive().nullable(),
-});
-
-// ── Input schemas ──
 
 export const createUtility = utilitySchema;
 
-export const updateUtility = utilitySchema
-	.omit({
-		status: true,
-	})
-	.extend({
-		id: z.number().min(1, "Id is required"),
-	});
+export type CreateUtility = z.infer<typeof createUtility>;
+
+export const updateUtility = utilitySchema.extend({
+	id: z.number().min(1, "Id is required"),
+});
+export type UpdateUtility = z.infer<typeof updateUtility>;
 
 export const deleteUtility = z.object({
 	unitId: z.number().min(1, "Unit id is required"),

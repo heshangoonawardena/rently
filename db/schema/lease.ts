@@ -33,11 +33,10 @@ export const lease = pgTable(
 			.references(() => tenant.id, { onDelete: "restrict" }),
 		startDate: date("start_date").notNull(),
 		endDate: date("end_date"),
-		// Agreed deposit at signing. Actual deposit balance is derived
-		// from the payment table (sum of deposit_deduction payments).
 		depositAmount: numeric("deposit_amount", {
 			precision: 12,
 			scale: 2,
+			mode: "number",
 		}).notNull(),
 		status: leaseStatusEnum("status").default("active").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -51,7 +50,6 @@ export const lease = pgTable(
 	(table) => [
 		index("lease_unitId_idx").on(table.unitId),
 		index("lease_tenantId_idx").on(table.tenantId),
-		// Enforce one active lease per unit at DB level
 		uniqueIndex("lease_unit_active_unique_idx")
 			.on(table.unitId)
 			.where(sql`status = 'active'`),
@@ -70,7 +68,12 @@ export const leaseRent = pgTable(
 		leaseId: integer("lease_id")
 			.notNull()
 			.references(() => lease.id, { onDelete: "cascade" }),
-		rentAmount: numeric("rent_amount", { precision: 12, scale: 2 }).notNull(),
+		agreedPaymentDay: integer("agreed_payment_day").notNull().default(1),
+		rentAmount: numeric("rent_amount", {
+			precision: 12,
+			scale: 2,
+			mode: "number",
+		}).notNull(),
 		effectiveDate: date("effective_date").notNull(),
 		description: text("description"),
 		status: leaseRentStatusEnum("status").default("active").notNull(),

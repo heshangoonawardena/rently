@@ -31,6 +31,7 @@ import {
 	getReceipt,
 	listPayment,
 	listReceipts,
+	nextRentMonth,
 	updatePayment,
 } from "./payment";
 import {
@@ -103,6 +104,13 @@ import {
 	markNotificationRead,
 	upsertNotificationPreference,
 } from "./notification";
+import {
+	approveUser,
+	listAvailableTenantsForApproval,
+	listUsers,
+	revokeUserAccess,
+	updateUserRole,
+} from "./user";
 
 const os = implement(contract).$context<BaseContext>();
 
@@ -142,6 +150,7 @@ export const router = os.router({
 		update: updatePayment,
 		get: getPayment,
 		list: listPayment,
+		nextRentMonth: nextRentMonth,
 		getReceipt: getReceipt,
 		listReceipts: listReceipts,
 	},
@@ -214,5 +223,12 @@ export const router = os.router({
 		listLogs: listNotificationLogs,
 		markRead: markNotificationRead,
 		markAllRead: markAllNotificationsRead,
+	},
+	user: {
+		list: listUsers,
+		approve: approveUser,
+		updateRole: updateUserRole,
+		revokeAccess: revokeUserAccess,
+		listAvailableTenants: listAvailableTenantsForApproval,
 	},
 });

@@ -1,6 +1,7 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
+	completeInspection,
 	createInspection,
 	deleteInspection,
 	inspectionInput,
@@ -47,7 +48,7 @@ export const base = oc.errors({
 export const createInspectionContract = base
 	.route({
 		method: "POST",
-		path: "/units/{unitId}/inspections",
+		path: "/inspections",
 		successStatus: 201,
 		summary: "Schedule an inspection",
 		description:
@@ -60,7 +61,7 @@ export const createInspectionContract = base
 export const updateInspectionContract = base
 	.route({
 		method: "PATCH",
-		path: "/units/{unitId}/inspections/{id}",
+		path: "/inspections/{id}",
 		summary: "Update an inspection",
 		description:
 			"Updates inspection details. Use this to reschedule or add notes before completion.",
@@ -72,19 +73,19 @@ export const updateInspectionContract = base
 export const completeInspectionContract = base
 	.route({
 		method: "POST",
-		path: "/units/{unitId}/inspections/{id}/complete",
+		path: "/inspections/{id}/complete",
 		summary: "Mark an inspection as completed",
 		description:
 			"Transitions a scheduled inspection to 'completed'. Records the actual completion date.",
 		tags: ["Inspections"],
 	})
-	.input(updateInspection)
+	.input(completeInspection)
 	.output(inspectionOutput);
 
 export const skipInspectionContract = base
 	.route({
 		method: "POST",
-		path: "/units/{unitId}/inspections/{id}/skip",
+		path: "/inspections/{id}/skip",
 		summary: "Mark an inspection as skipped",
 		description:
 			"Marks a scheduled inspection as skipped with an optional reason.",
@@ -96,7 +97,7 @@ export const skipInspectionContract = base
 export const deleteInspectionContract = base
 	.route({
 		method: "DELETE",
-		path: "/units/{unitId}/inspections/{id}",
+		path: "/inspections/{id}",
 		summary: "Delete an inspection",
 		description:
 			"Soft-deletes a scheduled inspection. Completed or skipped inspections cannot be deleted.",
@@ -108,7 +109,7 @@ export const deleteInspectionContract = base
 export const getInspectionContract = base
 	.route({
 		method: "GET",
-		path: "/units/{unitId}/inspections/{id}",
+		path: "/inspections/{id}",
 		summary: "Get an inspection",
 		description: "Retrieves a single inspection by ID.",
 		tags: ["Inspections"],
@@ -119,7 +120,7 @@ export const getInspectionContract = base
 export const listInspectionContract = base
 	.route({
 		method: "GET",
-		path: "/units/{unitId}/inspections",
+		path: "/inspections",
 		summary: "List inspections for a unit",
 		description:
 			"Returns paginated inspections ordered by scheduledDate descending.",

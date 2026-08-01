@@ -13,6 +13,47 @@ import { tenant } from "@/db/schema/tenant";
 
 const os = implement(contract).$context<BaseContext>();
 
+
+/**
+ * Returns the tenant.id for the authenticated user if role === 'tenant',
+ * otherwise undefined.
+ */
+async function resolveTenantId(
+	role: string,
+	userId: string,
+): Promise<number | undefined> {
+	if (role !== "tenant") return undefined;
+	const [self] = await db
+		.select({ id: tenant.id })
+		.from(tenant)
+		.where(eq(tenant.userId, userId))
+		.limit(1);
+	return self?.id;
+}
+
+/**
+ * Verify that a tenant has an active lease on a given unit.
+ */
+async function tenantHasLeaseOnUnit(
+	tenantId: number,
+	unitId: number,
+): Promise<boolean> {
+	const [row] = await db
+		.select({ id: lease.id })
+		.from(lease)
+		.where(
+			and(
+				eq(lease.unitId, unitId),
+				eq(lease.tenantId, tenantId),
+				eq(lease.status, "active"),
+			),
+		)
+		.limit(1);
+	return row !== undefined;
+}
+
+
+
 export const createUnit = os.unit.create
 	.use(authMiddleware)
 	.use(permissionMiddleware({ unit: ["create"] }))
@@ -32,7 +73,7 @@ export const createUnit = os.unit.create
 					field: "name",
 					value: input.name,
 				},
-				cause: "UNIT_ALREADY_EXISTS",
+				message: "Unit already exists",
 			});
 		}
 
@@ -65,7 +106,7 @@ export const updateUnit = os.unit.update
 					resourceId: id,
 					resourceType: "Unit",
 				},
-				cause: "UNIT_NOT_FOUND",
+				message: "Unit not found",
 			});
 		}
 
@@ -87,7 +128,7 @@ export const deleteUnit = os.unit.delete
 					resourceId: input.id,
 					resourceType: "Unit",
 				},
-				cause: "UNIT_NOT_FOUND",
+				message: "Unit not found",
 			});
 		}
 
@@ -120,7 +161,7 @@ export const getUnit = os.unit.get
 					resourceType: "Unit",
 					resourceId: input.id,
 				},
-				cause: "UNIT_NOT_FOUND",
+				message: "Unit not found",
 			});
 		}
 
@@ -130,9 +171,20 @@ export const getUnit = os.unit.get
 export const listUnit = os.unit.list
 	.use(authMiddleware)
 	.use(permissionMiddleware({ unit: ["read"] }))
-	.handler(async ({ input, context }) => {
-		const { cursor, limit, status } = input;
-		const { organizationId } = context.user;
+	.handler(async ({ input, context, errors }) => {
+		const { cursor, limit, status, id } = input;
+		const { role, userId, organizationId } = context.user;
+
+		const tenantId = await resolveTenantId(role, userId);
+		let tenantUnitIds: number[] | undefined;
+		if (role === "tenant") {
+			if (tenantId === undefined) throw errors.FORBIDDEN();
+			const leaseRows = await db
+				.select({ unitId: lease.unitId })
+				.from(lease)
+				.where(and(eq(lease.tenantId, tenantId), eq(lease.status, "active")));
+			tenantUnitIds = leaseRows.map((row) => row.unitId);
+		}
 
 		const rows = await db
 			.select()
@@ -140,8 +192,14 @@ export const listUnit = os.unit.list
 			.where(
 				and(
 					eq(unit.organizationId, organizationId),
+					id ? eq(unit.id, id) : undefined,
 					status ? eq(unit.status, status) : undefined,
 					cursor ? gt(unit.id, cursor) : undefined,
+					role === "tenant" && tenantUnitIds
+						? tenantUnitIds.length > 0
+							? inArray(unit.id, tenantUnitIds)
+							: undefined
+						: undefined,
 				),
 			)
 			.orderBy(desc(unit.createdAt))

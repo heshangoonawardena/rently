@@ -1,46 +1,70 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import { Moon, Sun, SunMoon } from "lucide-react";
-import { useTheme } from "next-themes";
+import * as React from "react"
+import { Moon, Sun } from "lucide-react"
 
-import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button"
+import { useTheme } from "@/hooks/use-theme"
+import { useCircularTransition } from "@/hooks/use-circular-transition"
+import "./theme-customizer/circular-transition.css"
 
-export function ModeToggle() {
-	const { setTheme, theme } = useTheme();
-	console.log(theme);
+interface ModeToggleProps {
+  variant?: "outline" | "ghost" | "default"
+}
 
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button variant="outline" size="icon">
-					{theme === "light" ? (
-						<Sun className="h-[1.2rem] w-[1.2rem]" />
-					) : theme === "dark" ? (
-						<Moon className="h-[1.2rem] w-[1.2rem]" />
-					) : (
-						<SunMoon className="h-[1.2rem] w-[1.2rem]" />
-					)}
-					<span className="sr-only">Toggle theme</span>
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="center">
-				<DropdownMenuItem onClick={() => setTheme("light")}>
-					Light
-				</DropdownMenuItem>
-				<DropdownMenuItem onClick={() => setTheme("dark")}>
-					Dark
-				</DropdownMenuItem>
-				<DropdownMenuItem onClick={() => setTheme("system")}>
-					System
-				</DropdownMenuItem>
-			</DropdownMenuContent>
-		</DropdownMenu>
-	);
+export function ModeToggle({ variant = "outline" }: ModeToggleProps) {
+  const { theme } = useTheme()
+  const { toggleTheme } = useCircularTransition()
+
+  // Simple, reliable dark mode detection with re-sync
+  const [isDarkMode, setIsDarkMode] = React.useState(false)
+
+  React.useEffect(() => {
+    const updateMode = () => {
+      if (theme === "dark") {
+        setIsDarkMode(true)
+      } else if (theme === "light") {
+        setIsDarkMode(false)
+      } else {
+        setIsDarkMode(typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)
+      }
+    }
+
+    updateMode()
+
+    // Listen for system theme changes
+    const mediaQuery = typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: dark)") : null
+    if (mediaQuery) {
+      mediaQuery.addEventListener("change", updateMode)
+    }
+
+    return () => {
+      if (mediaQuery) {
+        mediaQuery.removeEventListener("change", updateMode)
+      }
+    }
+  }, [theme])
+
+  const handleToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+    toggleTheme(event)
+  }
+
+  return (
+    <Button
+      variant={variant}
+      size="icon"
+      onClick={handleToggle}
+      className="cursor-pointer mode-toggle-button relative overflow-hidden"
+    >
+      {/* Show the icon for the mode you can switch TO */}
+      {isDarkMode ? (
+        <Sun className="h-[1.2rem] w-[1.2rem] transition-transform duration-300 rotate-0 scale-100" />
+      ) : (
+        <Moon className="h-[1.2rem] w-[1.2rem] transition-transform duration-300 rotate-0 scale-100" />
+      )}
+      <span className="sr-only">
+        Switch to {isDarkMode ? "light" : "dark"} mode
+      </span>
+    </Button>
+  )
 }

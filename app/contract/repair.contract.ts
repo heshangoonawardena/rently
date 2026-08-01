@@ -103,7 +103,7 @@ export const getRepairRequestContract = base
 export const listRepairRequestContract = base
 	.route({
 		method: "GET",
-		path: "/units/{unitId}/repairs",
+		path: "/repairs",
 		summary: "List repair requests for a unit",
 		description:
 			"Returns a cursor-paginated list of repair requests. Filter by status or priority.",

@@ -1,5 +1,6 @@
 import { DB } from "@/db/db";
 import { utility, utilityBill } from "@/db/schema/utility";
+import { format } from "date-fns";
 
 export const utilities = async (db: DB) => {
 	const unitData = await db.query.unit.findMany();
@@ -11,13 +12,29 @@ export const utilities = async (db: DB) => {
 				unitId: unitData[0].id,
 				utilityType: "electricity",
 				holderName: "A B Perera",
-				accountNumber: "12345",
+				accountNumber: "12345678",
+				address: "456 Oak Ave, Springfield, IL 62702",
+			},
+			{
+				unitId: unitData[0].id,
+				utilityType: "water",
+				holderName: "A B Perera",
+				accountNumber: "67129380",
+				address: "456 Oak Ave, Springfield, IL 62702",
+			},
+			{
+				unitId: unitData[0].id,
+				utilityType: "tax",
+				holderName: "A B Perera",
+				accountNumber: "82647103",
+				address: "456 Oak Ave, Springfield, IL 62702",
 			},
 			{
 				unitId: unitData[1].id,
 				utilityType: "water",
 				holderName: "Y Z Silva",
-				accountNumber: "6712",
+				accountNumber: "67129381",
+				address: "456 Oak Ave, Springfield, IL 62702",
 			},
 		])
 		.returning();
@@ -26,15 +43,15 @@ export const utilities = async (db: DB) => {
 		{
 			utilityId: utilityData[0].id,
 			billAmount: "5000",
-			periodStart: new Date().toISOString().split("T")[0],
-			periodEnd: new Date().toISOString().split("T")[0],
+			periodStart: format(new Date(), "yyyy-MM-dd"),
+			periodEnd: format(new Date(), "yyyy-MM-dd"),
 			status: "issued",
 		},
 		{
 			utilityId: utilityData[1].id,
 			billAmount: "2000",
-			periodStart: new Date().toISOString().split("T")[0],
-			periodEnd: new Date().toISOString().split("T")[0],
+			periodStart: format(new Date(), "yyyy-MM-dd"),
+			periodEnd: format(new Date(), "yyyy-MM-dd"),
 			status: "issued",
 		},
 	]);

@@ -1,4 +1,9 @@
-import { paymentMethodEnum, paymentTypeEnum } from "@/db/schema/enums";
+import {
+	inspectionStatusEnum,
+	leaseStatusEnum,
+	paymentMethodEnum,
+	paymentTypeEnum,
+} from "@/db/schema/enums";
 import z from "zod";
 
 // ── Shared primitives ──
@@ -31,11 +36,11 @@ export const rentCollectionRow = z.object({
 	unitName: z.string(),
 	tenantId: z.number().int(),
 	tenantName: z.string(),
-	rentDue: z.string().describe("Numeric string — expected rent amount"),
-	collected: z.string().describe("Numeric string — total payments received"),
-	outstanding: z
-		.string()
-		.describe("Numeric string — positive = arrears owed, negative = overpaid"),
+	rentDue: z.coerce.number().describe("Expected rent amount"),
+	collected: z.coerce.number().describe("Total payments received"),
+	outstanding: z.coerce
+		.number()
+		.describe("Positive = arrears owed, negative = overpaid"),
 });
 
 export const rentCollectionInput = dateRangeInput.extend({
@@ -48,9 +53,9 @@ export const rentCollectionOutput = z.object({
 		from: z.iso.date(),
 		to: z.iso.date(),
 	}),
-	totalExpected: z.string(),
-	totalCollected: z.string(),
-	totalOutstanding: z.string(),
+	totalExpected: z.coerce.number(),
+	totalCollected: z.coerce.number(),
+	totalOutstanding: z.coerce.number(),
 	rows: z.array(rentCollectionRow),
 });
 
@@ -63,11 +68,10 @@ export const paymentOverviewRow = z.object({
 	unitName: z.string(),
 	tenantId: z.number().int(),
 	tenantName: z.string(),
-	paymentAmount: z.string(),
+	paymentAmount: z.coerce.number(),
 	paymentType: z.enum(paymentTypeEnum.enumValues),
 	paymentMethod: z.enum(paymentMethodEnum.enumValues),
 	paymentDate: z.string(),
-	balanceAfter: z.string(),
 	receiptNumber: z.string().nullable(),
 	description: z.string().nullable(),
 });
@@ -99,13 +103,13 @@ export const arrearsRow = z.object({
 	tenantId: z.number().int(),
 	tenantName: z.string(),
 	tenantPhone: z.string(),
-	currentBalance: z
-		.string()
+	currentBalance: z.coerce
+		.number()
 		.describe(
 			"Running balance — negative means the tenant owes money (arrears)",
 		),
-	arrearsAmount: z
-		.string()
+	arrearsAmount: z.coerce
+		.number()
 		.describe(
 			"Absolute arrears amount (positive). Zero if tenant is not in arrears.",
 		),
@@ -113,7 +117,7 @@ export const arrearsRow = z.object({
 });
 
 export const arrearsOverviewOutput = z.object({
-	totalArrears: z.string(),
+	totalArrears: z.coerce.number(),
 	tenantsInArrears: z.number().int(),
 	tenantsInTotal: z.number().int(),
 	rows: z.array(arrearsRow),
@@ -128,7 +132,7 @@ export const upcomingRentDueRow = z.object({
 	tenantId: z.number().int(),
 	tenantName: z.string(),
 	tenantPhone: z.string(),
-	rentAmount: z.string(),
+	rentAmount: z.coerce.number(),
 	dueDate: z.iso.date().describe("Date rent is next due"),
 	daysUntilDue: z.number().int(),
 });
@@ -197,6 +201,7 @@ export const upcomingInspectionsInput = z.object({
 		.default(30)
 		.describe("How many days ahead to look"),
 	unitId: z.number().int().positive().optional(),
+	status: z.enum(inspectionStatusEnum.enumValues).optional(),
 });
 
 export const upcomingInspectionsOutput = z.object({
@@ -211,15 +216,15 @@ export const overdueUtilityBillRow = z.object({
 	utilityType: z.string(),
 	unitId: z.number().int(),
 	unitName: z.string(),
-	billAmount: z.string(),
-	previousDueAmount: z.string(),
+	billAmount: z.coerce.number(),
+	previousDueAmount: z.coerce.number(),
 	periodEnd: z.iso.date(),
 	daysPastDue: z.number().int(),
 	status: z.string(),
 });
 
 export const overdueUtilityBillsOutput = z.object({
-	totalOverdue: z.string(),
+	totalOverdue: z.coerce.number(),
 	rows: z.array(overdueUtilityBillRow),
 });
 
@@ -259,7 +264,7 @@ export const expiringLeaseRow = z.object({
 	tenantPhone: z.string(),
 	endDate: z.iso.date(),
 	daysUntilExpiry: z.number().int(),
-	status: z.string(),
+	status: z.enum(leaseStatusEnum.enumValues).optional(),
 });
 
 export const expiringLeasesInput = z.object({

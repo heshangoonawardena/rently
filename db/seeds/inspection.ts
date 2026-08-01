@@ -14,8 +14,7 @@ export const inspections = async (db: DB) => {
 			userId: userData[1].id,
 			title: "Move-in Inspection",
 			scheduledDate: getPastDate(30),
-			completedDate: getPastDate(20),
-			status: "completed",
+			status: "scheduled",
 		},
 		{
 			unitId: unitData[1].id,

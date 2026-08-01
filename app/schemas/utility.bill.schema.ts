@@ -6,8 +6,8 @@ import { utilityBillStatusEnum } from "@/db/schema/enums";
 export const utilityBillOutput = z.object({
 	id: z.number().min(1, "Id is required"),
 	utilityId: z.number().min(1, "Utility id is required"),
-	billAmount: z.string(),
-	previousDueAmount: z.string().optional(),
+	billAmount: z.coerce.number(),
+	previousDueAmount: z.coerce.number().optional(),
 	periodStart: z.string(),
 	periodEnd: z.string(),
 	description: z

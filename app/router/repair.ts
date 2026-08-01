@@ -1,8 +1,9 @@
 import { implement } from "@orpc/server";
 import { contract } from "../contract";
 import { db } from "@/db/db";
+import { user } from "@/db/schema/auth";
 import { repairRequest, repairUpdate } from "@/db/schema/repair";
-import { and, desc, eq, gt } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray } from "drizzle-orm";
 import {
 	authMiddleware,
 	BaseContext,
@@ -198,27 +199,52 @@ export const listRepairRequest = os.repair.list
 		const { unitId, cursor, limit, status, priority, repairType } = input;
 		const { role, userId } = context.user;
 
-		// Tenants may only list repairs on their own unit
 		const tenantId = await resolveTenantId(role, userId);
+		let tenantUnitIds: number[] | undefined;
 		if (role === "tenant") {
 			if (tenantId === undefined) throw errors.FORBIDDEN();
-			const allowed = await tenantHasLeaseOnUnit(tenantId, unitId);
-			if (!allowed) throw errors.FORBIDDEN();
+			const leaseRows = await db
+				.select({ unitId: lease.unitId })
+				.from(lease)
+				.where(and(eq(lease.tenantId, tenantId), eq(lease.status, "active")));
+			tenantUnitIds = leaseRows.map((row) => row.unitId);
 		}
 
 		const rows = await db
-			.select()
+			.select({
+				id: repairRequest.id,
+				unitId: repairRequest.unitId,
+				userId: repairRequest.userId,
+				repairType: repairRequest.repairType,
+				title: repairRequest.title,
+				description: repairRequest.description,
+				priority: repairRequest.priority,
+				status: repairRequest.status,
+				createdAt: repairRequest.createdAt,
+				updatedAt: repairRequest.updatedAt,
+				requesterName: user.name,
+			})
 			.from(repairRequest)
+			.leftJoin(user, eq(repairRequest.userId, user.id))
 			.where(
 				and(
-					eq(repairRequest.unitId, unitId),
+					unitId ? eq(repairRequest.unitId, unitId) : undefined,
 					status ? eq(repairRequest.status, status) : undefined,
 					priority ? eq(repairRequest.priority, priority) : undefined,
 					repairType ? eq(repairRequest.repairType, repairType) : undefined,
 					cursor ? gt(repairRequest.id, cursor) : undefined,
+					role === "tenant" && tenantUnitIds
+						? tenantUnitIds.length > 0
+							? inArray(repairRequest.unitId, tenantUnitIds)
+							: undefined
+						: undefined,
 				),
 			)
-			.orderBy(desc(repairRequest.createdAt))
+			.orderBy(
+				asc(repairRequest.status),
+				desc(repairRequest.priority),
+				desc(repairRequest.updatedAt),
+			)
 			.limit(limit + 1);
 
 		const hasMore = rows.length > limit;
@@ -230,8 +256,6 @@ export const listRepairRequest = os.repair.list
 		};
 	});
 
-// ── Repair Update (event log) handlers ──
-
 export const addRepairUpdate = os.repair.addUpdate
 	.use(authMiddleware)
 	.use(permissionMiddleware({ repair: ["update"] }))
@@ -239,7 +263,6 @@ export const addRepairUpdate = os.repair.addUpdate
 		const { repairRequestId, newStatus, ...rest } = input;
 		const { userId } = context.user;
 
-		// Capture the current status as oldStatus
 		const [current] = await db
 			.select({
 				id: repairRequest.id,
@@ -261,7 +284,6 @@ export const addRepairUpdate = os.repair.addUpdate
 
 		const oldStatus = current.status;
 
-		// Insert the immutable update log entry
 		const [updateEntry] = await db
 			.insert(repairUpdate)
 			.values({
@@ -273,7 +295,6 @@ export const addRepairUpdate = os.repair.addUpdate
 			})
 			.returning();
 
-		// Advance the request status if a new status was provided
 		if (newStatus && newStatus !== oldStatus) {
 			await db
 				.update(repairRequest)
@@ -314,8 +335,19 @@ export const listRepairUpdates = os.repair.listUpdates
 		}
 
 		const rows = await db
-			.select()
+			.select({
+				id: repairUpdate.id,
+				repairRequestId: repairUpdate.repairRequestId,
+				userId: repairUpdate.userId,
+				oldStatus: repairUpdate.oldStatus,
+				newStatus: repairUpdate.newStatus,
+				description: repairUpdate.description,
+				createdAt: repairUpdate.createdAt,
+				updatedAt: repairUpdate.updatedAt,
+				updaterName: user.name,
+			})
 			.from(repairUpdate)
+			.leftJoin(user, eq(repairUpdate.userId, user.id))
 			.where(
 				and(
 					eq(repairUpdate.repairRequestId, repairRequestId),

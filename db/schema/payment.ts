@@ -31,11 +31,7 @@ export const payment = pgTable(
 		paymentAmount: numeric("payment_amount", {
 			precision: 12,
 			scale: 2,
-		}).notNull(),
-		// Running balance after this payment. Negative value = tenant in arrears.
-		balanceAfter: numeric("balance_after", {
-			precision: 12,
-			scale: 2,
+			mode: "number",
 		}).notNull(),
 		// Applicable rent period. Optional for non-rent payment types (e.g. deposit).
 		periodStart: date("period_start"),
@@ -69,10 +65,10 @@ export const paymentReceipt = pgTable(
 			.references(() => payment.id, { onDelete: "restrict" }),
 		receiptNumber: text("receipt_number").notNull(),
 		issuedDate: date("issued_date").notNull(),
-		amountPaid: numeric("amount_paid", { precision: 12, scale: 2 }).notNull(),
-		balanceAfter: numeric("balance_after", {
+		amountPaid: numeric("amount_paid", {
 			precision: 12,
 			scale: 2,
+			mode: "number",
 		}).notNull(),
 		// Human-readable period label e.g. "March 2025" or "15 Jan – 14 Feb 2025"
 		period: text("period"),
@@ -102,10 +98,14 @@ export const selectPaymentReceiptSchema = createSelectSchema(paymentReceipt);
 export type PaymentReceiptType = z.infer<typeof selectPaymentReceiptSchema>;
 
 export const insertPaymentReceiptSchema = createInsertSchema(paymentReceipt);
-export type InsertPaymentReceiptType = z.infer<typeof insertPaymentReceiptSchema>;
+export type InsertPaymentReceiptType = z.infer<
+	typeof insertPaymentReceiptSchema
+>;
 
 export const updatePaymentReceiptSchema = createUpdateSchema(paymentReceipt);
-export type UpdatePaymentReceiptType = z.infer<typeof updatePaymentReceiptSchema>;
+export type UpdatePaymentReceiptType = z.infer<
+	typeof updatePaymentReceiptSchema
+>;
 
 // ============================================================
 // RELATIONS

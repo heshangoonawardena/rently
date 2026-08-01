@@ -62,7 +62,7 @@ export const createUtility = os.utility.create
 					field: "accountNumber",
 					value: input.accountNumber,
 				},
-				cause: "UTILITY_ALREADY_EXISTS",
+				message: "Utility Already Exists",
 			});
 		}
 

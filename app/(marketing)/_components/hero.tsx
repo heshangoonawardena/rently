@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import BackgroundBlur from "./background-blur";
 import { CircleArrowRight, House, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 export default function Hero() {
 	const [mounted, setMounted] = useState(false);
@@ -94,15 +95,15 @@ export default function Hero() {
 
 							{/* Get started button */}
 							<div className="flex items-center justify-center">
-								<a href="/docs/components/theme-toggle-animations">
-									<div className="group cursor-pointer border border-border bg-card gap-2 h-[60px] flex items-center p-[10px] rounded-full">
-										<div className="border border-border bg-primary h-[40px] rounded-full flex items-center justify-center text-primary-foreground">
+								<Link href="/signup">
+									<div className="group cursor-pointer border border-border bg-card gap-2 h-15 flex items-center p-2.5 rounded-full">
+										<div className="border border-border bg-primary h-10 rounded-full flex items-center justify-center text-primary-foreground">
 											<p className="font-medium tracking-tight mr-3 ml-3 flex items-center gap-2 justify-center text-base">
 												<House className="size-5" />
 												Get started today
 											</p>
 										</div>
-										<div className="text-muted-foreground group-hover:ml-4 ease-in-out transition-all size-[24px] flex items-center justify-center rounded-full border-2 border-border">
+										<div className="text-muted-foreground group-hover:ml-4 ease-in-out transition-all size-6 flex items-center justify-center rounded-full border-2 border-border">
 											<motion.div
 												animate={{ x: [0, 5, 0] }}
 												transition={{
@@ -115,7 +116,7 @@ export default function Hero() {
 											</motion.div>
 										</div>
 									</div>
-								</a>
+								</Link>
 							</div>
 						</motion.div>
 					</div>

@@ -26,20 +26,20 @@ async function main() {
 			schema.lease,
 			schema.tenant,
 			schema.unit,
-			schema.invitation,
-			schema.member,
-			schema.organization,
-			schema.verification,
-			schema.account,
-			schema.session,
-			schema.user,
+			// schema.invitation,
+			// schema.member,
+			// schema.organization,
+			// schema.verification,
+			// schema.account,
+			// schema.session,
+			// schema.user,
 		]) {
 			await resetTable(db, table);
 		}
 
 		console.log("\n✅ Database reset completed!\n");
 
-		await seeds.auth(db);
+		// await seeds.auth(db);
 		await seeds.units(db);
 		await seeds.tenants(db);
 		await seeds.leases(db);

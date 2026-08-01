@@ -31,7 +31,7 @@ export const tenant = pgTable(
 		firstName: text("first_name").notNull(),
 		lastName: text("last_name"),
 		nickname: text("nickname").unique(),
-		address: text("address"),
+		address: text("address").notNull(),
 		nic: text("nic").notNull().unique(),
 		phoneNumber: text("phone_number").notNull().unique(),
 		occupation: text("occupation"),

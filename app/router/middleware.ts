@@ -5,6 +5,7 @@ import { db } from "@/db/db";
 import { member } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { statement } from "@/lib/auth/permissions";
+import { getServerSession } from "@/lib/get-server";
 
 export interface AuthedUser {
 	userId: string;
@@ -25,9 +26,7 @@ const os = implement(contract).$context<BaseContext>();
 export const authMiddleware = os
 	.$context<BaseContext>()
 	.middleware(async ({ context, next, errors }) => {
-		const session = await auth.api.getSession({
-			headers: context.headers,
-		});
+		const session = await getServerSession();
 
 		if (!session?.user || !session?.session) {
 			throw errors.UNAUTHORIZED();

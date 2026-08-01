@@ -6,7 +6,8 @@ import { leaseRentStatusEnum } from "@/db/schema/enums";
 export const leaseRentOutput = z.object({
 	id: z.number().min(1, "Id is required"),
 	leaseId: z.number().min(1, "Lease id is required"),
-	rentAmount: z.string(),
+	agreedPaymentDay: z.number().int().min(1).max(31),
+	rentAmount: z.number(),
 	effectiveDate: z.string(),
 	description: z
 		.string()
@@ -27,11 +28,9 @@ export const listLeaseRentOutput = z.object({
 
 export const leaseRentSchema = z.object({
 	leaseId: z.number().min(1, "Lease id is required"),
-	rentAmount: z
-		.number()
-		.int()
-		.nonnegative()
-		.transform((val) => String(val)),
+	agreedPaymentDay: z.number().int().min(1).max(31),
+	rentAmount: z.number().int().nonnegative(),
+	// .transform((val) => String(val)),
 	effectiveDate: z.date().transform((val) => String(val)),
 	description: z
 		.string()

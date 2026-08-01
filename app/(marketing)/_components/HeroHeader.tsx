@@ -1,26 +1,28 @@
 "use client";
 import menu2 from "react-useanimations/lib/menu2";
 import Link from "next/link";
-import { Logo } from "@/app/(marketing)/_components/logo";
-import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import React from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import UseAnimations from "react-useanimations";
+import { authClient } from "@/lib/auth-client";
+import { LayoutDashboard } from "lucide-react";
+import Image from "next/image";
+import { ModeToggle } from "@/components/mode-toggle";
 
 const menuItems = [
 	{ name: "Features", href: "#features" },
-	// { name: "Solution", href: "#" },
 	{ name: "FAQ", href: "#faq" },
-	// { name: "About", href: "#about" },
 	{ name: "Contact Us", href: "#contact-us" },
 ];
 
 export const HeroHeader = () => {
-	const [menuState, setMenuState] = React.useState(false);
-	const [isScrolled, setIsScrolled] = React.useState(false);
+	const [menuState, setMenuState] = useState(false);
+	const [isScrolled, setIsScrolled] = useState(false);
 
-	React.useEffect(() => {
+	const { data: session } = authClient.useSession();
+
+	useEffect(() => {
 		const handleScroll = () => {
 			setIsScrolled(window.scrollY > 50);
 		};
@@ -36,7 +38,7 @@ export const HeroHeader = () => {
 				<div
 					className={cn(
 						"mx-auto mt-4 max-w-5xl shadow-lg px-6 border transition-all duration-300 lg:px-3 rounded-md lg:rounded-full bg-background/50 backdrop-blur-2xl",
-						isScrolled && "max-w-3xl  lg:px-3"
+						isScrolled && "max-w-3xl  lg:px-3",
 					)}
 				>
 					<div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-2">
@@ -45,9 +47,16 @@ export const HeroHeader = () => {
 							<Link
 								href="/"
 								aria-label="home"
-								className="flex items-center space-x-2"
+								className="flex items-center justify-between self-center gap-2 font-medium"
 							>
-								<Logo />
+								<Image
+									src="/logo.svg"
+									alt="Logo"
+									width={30}
+									height={30}
+									priority
+								/>
+								rently
 							</Link>
 
 							{/* <button
@@ -87,7 +96,7 @@ export const HeroHeader = () => {
 						</div>
 
 						{/* Buttons */}
-						<div className="bg-background/50 in-data-[state=active]:block lg:in-data-[state=active]:flex mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border p-6 shadow-2xl shadow-zinc-300/20 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none dark:shadow-none dark:lg:bg-transparent">
+						<div className="bg-background/50 lg:in-data-[state=active]:flex mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border p-6 shadow-2xl shadow-zinc-300/20 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none dark:lg:bg-transparent">
 							<div className="lg:hidden">
 								<ul className="space-y-6 text-base">
 									{menuItems.map((item, index) => (
@@ -102,38 +111,51 @@ export const HeroHeader = () => {
 									))}
 								</ul>
 							</div>
+							<ModeToggle variant="ghost" />
+
 							<div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-								<Button
-									asChild
-									variant="outline"
-									size="sm"
-									className={cn(isScrolled && "lg:hidden")}
-								>
-									<Link href="/login">
-										<span>Login</span>
-									</Link>
-								</Button>
-								<Button
-									asChild
-									size="sm"
-									className={cn(isScrolled && "lg:hidden")}
-								>
-									<Link href="/signup">
-										<span>Sign Up</span>
-									</Link>
-								</Button>
-								<Button
-									asChild
-									size="sm"
-									className={cn(
-										"hidden",
-										isScrolled ? "lg:inline-flex" : "hidden"
-									)}
-								>
-									<Link href="/signup">
-										<span>Get Started</span>
-									</Link>
-								</Button>
+								{session ? (
+									<Button asChild size="sm">
+										<Link href="/dashboard" className="flex items-center gap-2">
+											<LayoutDashboard size={16} />
+											<span>Dashboard</span>
+										</Link>
+									</Button>
+								) : (
+									<>
+										<Button
+											asChild
+											variant="outline"
+											size="sm"
+											className={cn(isScrolled && "lg:hidden")}
+										>
+											<Link href="/login">
+												<span>Login</span>
+											</Link>
+										</Button>
+										<Button
+											asChild
+											size="sm"
+											className={cn(isScrolled && "lg:hidden")}
+										>
+											<Link href="/signup">
+												<span>Sign Up</span>
+											</Link>
+										</Button>
+										<Button
+											asChild
+											size="sm"
+											className={cn(
+												"hidden",
+												isScrolled ? "lg:inline-flex" : "hidden",
+											)}
+										>
+											<Link href="/signup">
+												<span>Get Started</span>
+											</Link>
+										</Button>
+									</>
+								)}
 							</div>
 						</div>
 					</div>
