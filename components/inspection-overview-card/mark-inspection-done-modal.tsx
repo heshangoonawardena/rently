@@ -72,7 +72,6 @@ export function MarkInspectionDoneModal({
 	);
 
 	function onSubmit(values: CompleteInspection) {
-		console.log(values);
 		completeInspectionMutation.mutate(values);
 	}
 

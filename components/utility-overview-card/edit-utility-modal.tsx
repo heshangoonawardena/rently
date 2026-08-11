@@ -75,7 +75,6 @@ export function EditUtilityModal({ data, children }: EditUtilityModalProps) {
 	);
 
 	function onSubmit(values: UpdateUtility) {
-		console.log("Submitting form with values:", values);
 		updateUtilityMutation.mutate(values);
 	}
 

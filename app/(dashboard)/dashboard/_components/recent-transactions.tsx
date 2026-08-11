@@ -64,8 +64,6 @@ export default function RecentTransactions() {
 		[fromDate, paymentTypeFilter, toDate],
 	);
 
-	console.log("period : ", queryInput);
-
 	const { data, isLoading, isFetching } = useQuery(
 		orpc.report.paymentOverview.queryOptions({
 			input: queryInput,

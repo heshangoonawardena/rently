@@ -40,14 +40,14 @@ async function main() {
 		console.log("\n✅ Database reset completed!\n");
 
 		// await seeds.auth(db);
-		// await seeds.units(db);
-		// await seeds.tenants(db);
-		// await seeds.leases(db);
-		// await seeds.payments(db);
-		// await seeds.utilities(db);
-		// await seeds.repairs(db);
-		// await seeds.inspections(db);
-		// await seeds.documents(db);
+		await seeds.units(db);
+		await seeds.tenants(db);
+		await seeds.leases(db);
+		await seeds.payments(db);
+		await seeds.utilities(db);
+		await seeds.repairs(db);
+		await seeds.inspections(db);
+		await seeds.documents(db);
 
 		console.log("🌱 Database seeding completed successfully!");
 	} catch (error) {

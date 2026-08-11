@@ -84,8 +84,6 @@ export function RenewLeaseModal({ data, children }: RenewLeaseModalProps) {
 	);
 
 	function onSubmit(values: RenewLease) {
-		console.log(values);
-
 		renewLeaseMutation.mutate(values);
 	}
 

@@ -105,8 +105,6 @@ export function AddLeaseModal() {
 	);
 
 	function onSubmit(values: CreateLease) {
-		console.log(values);
-
 		createLeaseMutation.mutate(values);
 	}
 

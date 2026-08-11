@@ -116,14 +116,10 @@ export function EditLeaseModal({ data, children }: EditLeaseModalProps) {
 	);
 
 	function onSubmit(values: UpdateLease) {
-		console.log(values);
-
 		updateLeaseMutation.mutate(values);
 	}
 
 	function onError(errors: FieldErrors<UpdateLease>) {
-		console.log(data);
-
 		console.log("Form errors:", errors);
 	}
 

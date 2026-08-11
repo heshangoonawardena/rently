@@ -273,7 +273,6 @@ export const addRepairUpdate = os.repair.addUpdate
 	.handler(async ({ input, errors, context }) => {
 		const { repairRequestId, newStatus, ...rest } = input;
 		const { userId } = context.user;
-console.log("came in");
 
 		const [current] = await db
 			.select({
@@ -371,7 +370,6 @@ export const listRepairUpdates = os.repair.listUpdates
 
 		const hasMore = rows.length > limit;
 		const items = hasMore ? rows.slice(0, limit) : rows;
-		console.log(items);
 
 		return {
 			items,

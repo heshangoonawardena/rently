@@ -78,8 +78,6 @@ export function AddUtilityModal({ unitId, children }: AddUtilityModalProps) {
 	);
 
 	function onSubmit(values: CreateUtility) {
-		console.log(values);
-
 		createUtilityMutation.mutate(values);
 	}
 

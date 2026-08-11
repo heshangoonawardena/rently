@@ -104,7 +104,6 @@ export default function NotificationSettings() {
 
 	function onSubmit(data: NotificationsFormValues) {
 		console.log("Notifications settings submitted:", data);
-		// Here you would typically save the settings
 	}
 
 	return (
