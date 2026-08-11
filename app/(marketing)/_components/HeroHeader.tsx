@@ -67,15 +67,18 @@ export const HeroHeader = () => {
 								<Menu className="in-data-[state=active]:rotate-180 in-data-[state=active]:scale-0 in-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
 								<X className="in-data-[state=active]:rotate-0 in-data-[state=active]:scale-100 in-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
 							</button> */}
-							<div className="lg:hidden relative z-20  -m-2.5 -mr-4 block">
-								<UseAnimations
-									speed={1}
-									animation={menu2}
-									strokeColor="currentColor"
-									size={36}
-									onClick={() => setMenuState(!menuState)}
-									aria-label="Toggle menu"
-								/>
+							<div className="flex items-center gap-1 lg:hidden">
+								<ModeToggle variant="ghost" />
+								<div className="relative z-20 -m-2.5 -mr-4">
+									<UseAnimations
+										speed={1}
+										animation={menu2}
+										strokeColor="currentColor"
+										size={36}
+										onClick={() => setMenuState(!menuState)}
+										aria-label="Toggle menu"
+									/>
+								</div>
 							</div>
 						</div>
 
@@ -111,7 +114,7 @@ export const HeroHeader = () => {
 									))}
 								</ul>
 							</div>
-							<ModeToggle variant="ghost" />
+							<ModeToggle variant="ghost" className="hidden lg:flex" />
 
 							<div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
 								{session ? (

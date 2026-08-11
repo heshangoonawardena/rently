@@ -6,13 +6,15 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { useCircularTransition } from "@/hooks/use-circular-transition";
 import { useTheme } from "@/hooks/use-theme";
+import { cn } from "@/lib/utils";
 import "./theme-customizer/circular-transition.css";
 
 interface ModeToggleProps {
 	variant?: "outline" | "ghost" | "default";
+	className?: string;
 }
 
-export function ModeToggle({ variant = "outline" }: ModeToggleProps) {
+export function ModeToggle({ variant = "outline", className }: ModeToggleProps) {
 	const { theme } = useTheme();
 	const { toggleTheme } = useCircularTransition();
 
@@ -60,7 +62,7 @@ export function ModeToggle({ variant = "outline" }: ModeToggleProps) {
 			variant={variant}
 			size="icon"
 			onClick={handleToggle}
-			className=" mode-toggle-button relative overflow-hidden"
+			className={cn("mode-toggle-button relative overflow-hidden", className)}
 		>
 			{/* Show the icon for the mode you can switch TO */}
 			{isDarkMode ? (
