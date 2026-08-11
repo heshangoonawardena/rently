@@ -1,25 +1,24 @@
 "use server";
-import { auth } from "@/lib/auth";
-import {
-	forgotPasswordSchema,
-	ForgotPasswordSchemaType,
-	resetPasswordSchema,
-	ResetPasswordSchemaType,
-	signInformSchema,
-	SignInFormSchemaType,
-	signupFormSchema,
-	SignupFormSchemaType,
-} from "@/lib/zodSchemas";
-import { APIError } from "better-auth";
+import type { APIError } from "better-auth";
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db/db";
 import { member, user } from "@/db/schema/auth";
-import { and, eq } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import {
+	type ForgotPasswordSchemaType,
+	forgotPasswordSchema,
+	type ResetPasswordSchemaType,
+	resetPasswordSchema,
+	type SignInFormSchemaType,
+	type SignupFormSchemaType,
+	signInformSchema,
+	signupFormSchema,
+} from "@/lib/zodSchemas";
 
 const DEFAULT_ORGANIZATION_ID = "org_1";
 
 export const signIn = async (values: SignInFormSchemaType) => {
-	// validate input using the Zod schema
 	const result = signInformSchema.safeParse(values);
 	if (!result.success) {
 		return {
@@ -28,10 +27,8 @@ export const signIn = async (values: SignInFormSchemaType) => {
 		};
 	}
 
-	// destructure validated values
 	const { email, password } = values;
 
-	// proceed with sign-in
 	try {
 		const [portalUser] = await db
 			.select({ id: user.id })
@@ -75,7 +72,6 @@ export const signIn = async (values: SignInFormSchemaType) => {
 };
 
 export const signUp = async (values: SignupFormSchemaType) => {
-	// validate input using the Zod schema
 	const result = signupFormSchema.safeParse(values);
 	if (!result.success) {
 		return {
@@ -84,14 +80,12 @@ export const signUp = async (values: SignupFormSchemaType) => {
 		};
 	}
 
-	// destructure validated values
 	const {
 		name,
 		email,
 		password: { password },
 	} = values;
 
-	// proceed with sign-up
 	try {
 		await auth.api.signUpEmail({
 			body: {
@@ -112,29 +106,6 @@ export const signUp = async (values: SignupFormSchemaType) => {
 		throw new Error(e.message || "An unknown error occurred");
 	}
 };
-
-// export const signUpTest = async () => {
-// 	try {
-// 		await auth.api.signUpEmail({
-// 			body: {
-// 				name: "Heshan", // required
-// 				email: "heshangoonawardena@gmail.com", // required
-// 				password: "password", // required
-// 			},
-// 		});
-// 		return {
-// 			success: true,
-// 			message:
-// 				"Account created successfully <br /> Please verify your email before signing in",
-// 		};
-// 	} catch (error) {
-// 		const e = error as APIError;
-// 		return {
-// 			success: false,
-// 			message: e.message || "An unknown error occurred",
-// 		};
-// 	}
-// };
 
 export const signOut = async () => {
 	await auth.api.signOut({
@@ -158,7 +129,6 @@ export const deleteUser = async (
 export const requestPasswordReset = async (
 	values: ForgotPasswordSchemaType,
 ) => {
-	// validate input using the Zod schema
 	const result = forgotPasswordSchema.safeParse(values);
 	if (!result.success) {
 		return {
@@ -167,10 +137,8 @@ export const requestPasswordReset = async (
 		};
 	}
 
-	// destructure validated values
 	const { email } = values;
 
-	// proceed with password reset request
 	try {
 		const result = await auth.api.requestPasswordReset({
 			body: {
@@ -188,7 +156,6 @@ export const requestPasswordReset = async (
 };
 
 export const resetPassword = async (values: ResetPasswordSchemaType) => {
-	// validate input using the Zod schema
 	const result = resetPasswordSchema.safeParse(values);
 	if (!result.success) {
 		return {
@@ -197,13 +164,11 @@ export const resetPassword = async (values: ResetPasswordSchemaType) => {
 		};
 	}
 
-	// destructure validated values
 	const {
 		password: { newPassword },
 		token,
 	} = values;
 
-	// proceed with password reset
 	try {
 		await auth.api.resetPassword({
 			body: {
@@ -219,5 +184,3 @@ export const resetPassword = async (values: ResetPasswordSchemaType) => {
 		throw new Error(e.message || "An unknown error occurred");
 	}
 };
-
-// change password function has to be implemented later

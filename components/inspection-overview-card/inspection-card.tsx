@@ -1,4 +1,16 @@
 "use client";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import {
+	CheckCircle2,
+	CircleHelp,
+	CircleX,
+	ClipboardCheck,
+	Edit,
+	MoreHorizontal,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -6,41 +18,20 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import {
-	CheckCircle2,
-	CircleHelp,
-	CircleX,
-	ClipboardCheck,
-	Edit,
-	HelpCircle,
-	MoreHorizontal,
-	Trash2,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
-	DropdownMenuTrigger,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { format } from "date-fns";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { Separator } from "@/components/ui/separator";
+import { INSPECTION_STATUS_FILTER_OPTIONS } from "@/config/table-facet-meta";
 import { orpc } from "@/lib/orpc";
+import type { Role } from "@/types/role";
 import { AddInspectionModal } from "./add-inspection-modal";
+import { DeleteInspectionModal } from "./delete-inspection-modal";
 import { EditInspectionModal } from "./edit-inspection-modal";
 import { MarkInspectionDoneModal } from "./mark-inspection-done-modal";
-import { Role } from "@/types/role";
-import { DeleteInspectionModal } from "./delete-inspection-modal";
-import { INSPECTION_STATUS_FILTER_OPTIONS } from "@/config/table-facet-meta";
-
-const inspectionColors: Record<string, string> = {
-	completed: "text-chart-2",
-	skipped: "text-chart-3",
-	scheduled: "text-chart-2",
-	cancelled: "text-chart-3",
-};
 
 type InspectionCardProps = {
 	unitId?: number;
@@ -66,7 +57,7 @@ export function InspectionsCard({
 	} = useSuspenseQuery(
 		orpc.inspection.list.queryOptions({
 			input: {
-				unitId: unitId!,
+				unitId: unitId,
 			},
 		}),
 	);
@@ -157,18 +148,14 @@ export function InspectionsCard({
 													<div>
 														<DropdownMenu>
 															<DropdownMenuTrigger asChild>
-																<Button
-																	variant="outline"
-																	size="sm"
-																	className="cursor-pointer"
-																>
+																<Button variant="outline" size="sm">
 																	<MoreHorizontal className="size-4 mr-2" />
 																	Actions
 																</Button>
 															</DropdownMenuTrigger>
 
 															<DropdownMenuContent align="end">
-																<EditInspectionModal inspection={inspection}>
+																<EditInspectionModal data={inspection}>
 																	<DropdownMenuItem
 																		onSelect={(e) => e.preventDefault()}
 																	>

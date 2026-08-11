@@ -1,9 +1,9 @@
+import { SmartCoercionPlugin } from "@orpc/json-schema";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
-import { SmartCoercionPlugin } from "@orpc/json-schema";
-import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { CORSPlugin } from "@orpc/server/plugins";
 import { onError } from "@orpc/server";
+import { CORSPlugin } from "@orpc/server/plugins";
+import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { router } from "@/app/router";
 
 const schemaConverters = [new ZodToJsonSchemaConverter()];

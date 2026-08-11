@@ -1,21 +1,21 @@
 import { relations } from "drizzle-orm";
 import {
+	index,
+	integer,
 	pgTable,
+	serial,
 	text,
 	timestamp,
-	index,
-	serial,
-	integer,
 } from "drizzle-orm/pg-core";
-import { unit } from "./unit";
-import { user } from "./auth";
-import { repairTypeEnum, repairPriorityEnum, repairStatusEnum } from "./enums";
-import z from "zod";
 import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
 } from "drizzle-zod";
+import type z from "zod";
+import { user } from "./auth";
+import { repairPriorityEnum, repairStatusEnum, repairTypeEnum } from "./enums";
+import { unit } from "./unit";
 
 export const repairRequest = pgTable(
 	"repair_request",

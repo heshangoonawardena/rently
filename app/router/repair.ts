@@ -1,16 +1,16 @@
 import { implement } from "@orpc/server";
-import { contract } from "../contract";
+import { and, asc, desc, eq, gt, inArray } from "drizzle-orm";
 import { db } from "@/db/db";
 import { user } from "@/db/schema/auth";
+import { lease } from "@/db/schema/lease";
 import { repairRequest, repairUpdate } from "@/db/schema/repair";
-import { and, asc, desc, eq, gt, inArray } from "drizzle-orm";
+import { tenant } from "@/db/schema/tenant";
+import { contract } from "../contract";
 import {
 	authMiddleware,
-	BaseContext,
+	type BaseContext,
 	permissionMiddleware,
 } from "./middleware";
-import { lease } from "@/db/schema/lease";
-import { tenant } from "@/db/schema/tenant";
 
 const os = implement(contract).$context<BaseContext>();
 
@@ -102,7 +102,7 @@ export const updateRepairRequest = os.repair.update
 		if (existing.status === "resolved" || existing.status === "cancelled") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "REPAIR_REQUEST_ALREADY_RESOLVED" },
-				cause: "Repair request is already resolved",
+				message: "Repair request is already resolved",
 			});
 		}
 
@@ -141,7 +141,7 @@ export const deleteRepairRequest = os.repair.delete
 		if (existing.status === "resolved" || existing.status === "cancelled") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "REPAIR_REQUEST_ALREADY_RESOLVED" },
-				cause: "Repair request is already resolved",
+				message: "Repair request is already resolved/ cancelled",
 			});
 		}
 
@@ -200,14 +200,27 @@ export const listRepairRequest = os.repair.list
 		const { role, userId } = context.user;
 
 		const tenantId = await resolveTenantId(role, userId);
+
 		let tenantUnitIds: number[] | undefined;
+
 		if (role === "tenant") {
-			if (tenantId === undefined) throw errors.FORBIDDEN();
+			if (tenantId === undefined) {
+				throw errors.FORBIDDEN();
+			}
+
 			const leaseRows = await db
 				.select({ unitId: lease.unitId })
 				.from(lease)
 				.where(and(eq(lease.tenantId, tenantId), eq(lease.status, "active")));
+
 			tenantUnitIds = leaseRows.map((row) => row.unitId);
+
+			if (tenantUnitIds.length === 0) {
+				return {
+					items: [],
+					nextCursor: null,
+				};
+			}
 		}
 
 		const rows = await db
@@ -234,9 +247,7 @@ export const listRepairRequest = os.repair.list
 					repairType ? eq(repairRequest.repairType, repairType) : undefined,
 					cursor ? gt(repairRequest.id, cursor) : undefined,
 					role === "tenant" && tenantUnitIds
-						? tenantUnitIds.length > 0
-							? inArray(repairRequest.unitId, tenantUnitIds)
-							: undefined
+						? inArray(repairRequest.unitId, tenantUnitIds)
 						: undefined,
 				),
 			)
@@ -262,6 +273,7 @@ export const addRepairUpdate = os.repair.addUpdate
 	.handler(async ({ input, errors, context }) => {
 		const { repairRequestId, newStatus, ...rest } = input;
 		const { userId } = context.user;
+console.log("came in");
 
 		const [current] = await db
 			.select({
@@ -354,11 +366,12 @@ export const listRepairUpdates = os.repair.listUpdates
 					cursor ? gt(repairUpdate.id, cursor) : undefined,
 				),
 			)
-			.orderBy(desc(repairUpdate.createdAt))
+			.orderBy(asc(repairUpdate.createdAt))
 			.limit(limit + 1);
 
 		const hasMore = rows.length > limit;
 		const items = hasMore ? rows.slice(0, limit) : rows;
+		console.log(items);
 
 		return {
 			items,

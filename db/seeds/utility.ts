@@ -1,6 +1,6 @@
-import { DB } from "@/db/db";
-import { utility, utilityBill } from "@/db/schema/utility";
 import { format } from "date-fns";
+import type { DB } from "@/db/db";
+import { utility, utilityBill } from "@/db/schema/utility";
 
 export const utilities = async (db: DB) => {
 	const unitData = await db.query.unit.findMany();
@@ -11,30 +11,52 @@ export const utilities = async (db: DB) => {
 			{
 				unitId: unitData[0].id,
 				utilityType: "electricity",
-				holderName: "A B Perera",
-				accountNumber: "12345678",
-				address: "456 Oak Ave, Springfield, IL 62702",
+				holderName: "B K J R V R W Goonawardena",
+				accountNumber: "2790590710",
+				address: "85/C Carmel Mawatha, Palliyawatta Wattala",
 			},
 			{
 				unitId: unitData[0].id,
 				utilityType: "water",
-				holderName: "A B Perera",
+				holderName: "B K J R V R W Goonawardena",
 				accountNumber: "67129380",
-				address: "456 Oak Ave, Springfield, IL 62702",
+				address: "85/C Carmel Mawatha, Palliyawatta Wattala",
 			},
 			{
 				unitId: unitData[0].id,
 				utilityType: "tax",
-				holderName: "A B Perera",
+				holderName: "B K J R V R W Goonawardena",
 				accountNumber: "82647103",
-				address: "456 Oak Ave, Springfield, IL 62702",
+				address: "85/A Carmel Mawatha, Palliyawatta Wattala",
 			},
 			{
 				unitId: unitData[1].id,
 				utilityType: "water",
-				holderName: "Y Z Silva",
-				accountNumber: "67129381",
-				address: "456 Oak Ave, Springfield, IL 62702",
+				holderName: "B K J R V R W Goonawardena",
+				accountNumber: "10/28/654/725/12",
+				address: "85/A Carmel Mawatha, Palliyawatta Wattala",
+			},
+			{
+				unitId: unitData[1].id,
+				utilityType: "electricity",
+				holderName: "B K J R V R W Goonawardena",
+				accountNumber: "2790742812",
+				address: "85/B Carmel Mawatha, Palliyawatta Wattala",
+			},
+
+			{
+				unitId: unitData[2].id,
+				utilityType: "electricity",
+				holderName: "B K J R V R W Goonawardena",
+				accountNumber: "2790546118",
+				address: "94/3 Carmel Mawatha, Palliyawatta Wattala",
+			},
+			{
+				unitId: unitData[2].id,
+				utilityType: "water",
+				holderName: "B K J R V R W Goonawardena",
+				accountNumber: "10/28/513/173/14",
+				address: "94/3 Carmel Mawatha, Palliyawatta Wattala",
 			},
 		])
 		.returning();
@@ -43,13 +65,6 @@ export const utilities = async (db: DB) => {
 		{
 			utilityId: utilityData[0].id,
 			billAmount: "5000",
-			periodStart: format(new Date(), "yyyy-MM-dd"),
-			periodEnd: format(new Date(), "yyyy-MM-dd"),
-			status: "issued",
-		},
-		{
-			utilityId: utilityData[1].id,
-			billAmount: "2000",
 			periodStart: format(new Date(), "yyyy-MM-dd"),
 			periodEnd: format(new Date(), "yyyy-MM-dd"),
 			status: "issued",

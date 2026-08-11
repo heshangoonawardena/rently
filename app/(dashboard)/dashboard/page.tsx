@@ -1,14 +1,15 @@
-import KpiCards from "./_components/kpi-cards";
-import RecentTransactions from "./_components/recent-transactions";
-import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
 import { orpc } from "@/lib/orpc";
-import PropertyOccupancy from "./_components/property-occupancy";
+import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
+import KpiCards from "./_components/kpi-cards";
 import MaintenanceOverview from "./_components/maintenance-overview";
-import UpcomingInspections from "./_components/upcoming-inspections";
+import PropertyOccupancy from "./_components/property-occupancy";
 import QuickActions from "./_components/quick-actions";
+import RecentTransactions from "./_components/recent-transactions";
+import UpcomingInspections from "./_components/upcoming-inspections";
 
 export default async function Page() {
 	const queryClient = getQueryClient();
+	const initialRefreshedAt = new Date().toISOString();
 
 	// usePrefetchQuery
 	await queryClient.prefetchQuery(orpc.report.occupancySummary.queryOptions());
@@ -20,7 +21,9 @@ export default async function Page() {
 		orpc.report.repairSummary.queryOptions({ input: {} }),
 	);
 	await queryClient.prefetchQuery(
-		orpc.report.paymentOverview.queryOptions({ input: { limit: 4 } }),
+		orpc.report.paymentOverview.queryOptions({
+			input: { limit: 5 },
+		}),
 	);
 	await queryClient.prefetchQuery(
 		orpc.report.expiringLeases.queryOptions({ input: {} }),
@@ -39,7 +42,7 @@ export default async function Page() {
 							Monitor your rental portfolio
 						</p>
 					</div>
-					<QuickActions />
+					<QuickActions initialRefreshedAt={initialRefreshedAt} />
 				</div>
 
 				<KpiCards />

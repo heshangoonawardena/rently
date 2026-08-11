@@ -1,22 +1,22 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-    createTenant,
-    tenantOutput,
-    updateTenant,
-    deleteTenant,
-    tenantInput,
-    listTenantInput,
-    listTenantOutput
-} from "../schemas/tenant.schema";
-import {
-    createTenantOccupant,
-    deleteTenantOccupant,
-    listTenantOccupantInput,
-    listTenantOccupantOutput,
-    tenantOccupantOutput,
-    updateTenantOccupant
+	createTenantOccupant,
+	deleteTenantOccupant,
+	listTenantOccupantInput,
+	listTenantOccupantOutput,
+	tenantOccupantOutput,
+	updateTenantOccupant,
 } from "../schemas/tenant.occupant.schema";
+import {
+	createTenant,
+	deleteTenant,
+	listTenantInput,
+	listTenantOutput,
+	tenantInput,
+	tenantOutput,
+	updateTenant,
+} from "../schemas/tenant.schema";
 
 export const base = oc.errors({
 	UNAUTHORIZED: {

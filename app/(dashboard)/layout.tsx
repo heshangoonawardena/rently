@@ -1,7 +1,7 @@
-import React from "react";
+import type React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getServerRole, getServerSession } from "@/lib/get-server";
 
 export default async function DashboardLayout({

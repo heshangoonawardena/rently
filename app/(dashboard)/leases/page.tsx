@@ -1,12 +1,13 @@
+import { getServerRole } from "@/lib/get-server";
+import { orpc } from "@/lib/orpc";
+import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
 import KpiCards from "./_components/kpi-cards";
 import LeasesTable from "./_components/leases-table";
-import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
-import { orpc } from "@/lib/orpc";
 import QuickActions from "./_components/quick-actions";
-import { getServerRole } from "@/lib/get-server";
 
 export default async function Page() {
 	const queryClient = getQueryClient();
+	const initialRefreshedAt = new Date().toISOString();
 	const role = await getServerRole();
 
 	await queryClient.prefetchQuery(orpc.report.occupancySummary.queryOptions());
@@ -17,7 +18,9 @@ export default async function Page() {
 		orpc.report.expiringLeases.queryOptions({ input: {} }),
 	);
 	await queryClient.prefetchQuery(
-		orpc.lease.list.queryOptions({ input: { status: "active" } }),
+		orpc.lease.list.queryOptions({
+			input: { limit: 10, cursor: undefined },
+		}),
 	);
 
 	return (
@@ -30,7 +33,7 @@ export default async function Page() {
 						<h1 className="text-2xl font-bold tracking-tight">Leases</h1>
 						<p className="text-muted-foreground">Manage all lease agreements</p>
 					</div>
-					<QuickActions role={role} />
+					<QuickActions role={role} initialRefreshedAt={initialRefreshedAt} />
 				</div>
 
 				{role !== "tenant" && <KpiCards />}

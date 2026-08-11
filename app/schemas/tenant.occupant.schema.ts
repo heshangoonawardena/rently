@@ -21,6 +21,8 @@ export const listTenantOccupantOutput = z.object({
 	nextCursor: z.number().positive().nullable(),
 });
 
+export type ListTenantOccupantOutput = z.infer<typeof listTenantOccupantOutput>;
+
 // ── Input schemas ──
 
 export const tenantOccupantSchema = z.object({
@@ -67,6 +69,8 @@ export type CreateTenantOccupant = z.infer<typeof createTenantOccupant>;
 export const updateTenantOccupant = tenantOccupantSchema.extend({
 	id: z.number().min(1, "Id is required"),
 });
+
+export type UpdateTenantOccupant = z.infer<typeof updateTenantOccupant>;
 
 export const deleteTenantOccupant = z.object({
 	tenantId: z.number().min(1, "tenant id is required"),

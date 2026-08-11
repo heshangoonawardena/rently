@@ -1,9 +1,11 @@
 "use client";
-import { Card, CardContent } from "@/components/ui/card";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { columns } from "./columns";
+import type { Table } from "@tanstack/react-table";
+import { useState } from "react";
+import type { ListRepairRequestOutput } from "@/app/schemas/repair.request.schema";
 import { DataTable } from "@/components/data-table";
-import { orpc } from "@/lib/orpc";
+import { ExportButtons } from "@/components/export/export-buttons";
+import { Card, CardContent } from "@/components/ui/card";
 import {
 	REPAIR_PRIORITY_FILTER_OPTIONS,
 	REPAIR_PRIORITY_META,
@@ -12,23 +14,36 @@ import {
 	REPAIR_TYPE_FILTER_OPTIONS,
 	REPAIR_TYPE_META,
 } from "@/config/table-facet-meta";
-import RepairUpdatesTable from "./repair-updates-table";
-import { Role } from "@/types/role";
 import { exportCsv } from "@/lib/exports/csv";
-import { exportPdf } from "@/lib/exports/pdf";
 import { formatExportDate } from "@/lib/exports/formatters";
-import { ExportButtons } from "@/components/export/export-buttons";
-import type { ListRepairRequestOutput } from "@/app/schemas/repair.request.schema";
-import type { Table } from "@tanstack/react-table";
+import { exportPdf } from "@/lib/exports/pdf";
+import { orpc } from "@/lib/orpc";
+import type { Role } from "@/types/role";
+import { columns } from "./columns";
+import RepairUpdatesTable from "./repair-updates-table";
+
+const DEFAULT_PAGE_SIZE = 10;
 
 export type RepairsTableProps = {
 	role: Role;
 };
 
 export default function RepairsTable({ role }: RepairsTableProps) {
-	const { data: { items: repairs } = { items: [] } } = useSuspenseQuery(
-		orpc.repair.list.queryOptions({ input: {} }),
+	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+	const [cursorHistory, setCursorHistory] = useState<(number | null)[]>([]);
+	const [currentCursor, setCurrentCursor] = useState<number | null>(null);
+
+	const { data } = useSuspenseQuery(
+		orpc.repair.list.queryOptions({
+			input: {
+				limit: pageSize,
+				cursor: currentCursor ?? undefined,
+			},
+		}),
 	);
+
+	const repairs = data.items;
+	const nextCursor = data.nextCursor;
 
 	const facetedFilters = [
 		{
@@ -75,31 +90,45 @@ export default function RepairsTable({ role }: RepairsTableProps) {
 		const globalSearch = String(table.getState().globalFilter ?? "").trim();
 		if (globalSearch) filterParts.push(`Search: ${globalSearch}`);
 
-		const typeFilter = table.getColumn("repairType")?.getFilterValue() as string[] | undefined;
+		const typeFilter = table.getColumn("repairType")?.getFilterValue() as
+			| string[]
+			| undefined;
 		if (typeFilter?.length) {
 			const typeLabels = typeFilter.map(
-				(value) => REPAIR_TYPE_META[value as keyof typeof REPAIR_TYPE_META]?.label ?? value,
+				(value) =>
+					REPAIR_TYPE_META[value as keyof typeof REPAIR_TYPE_META]?.label ??
+					value,
 			);
 			filterParts.push(`Type: ${typeLabels.join(", ")}`);
 		}
 
-		const priorityFilter = table.getColumn("priority")?.getFilterValue() as string[] | undefined;
+		const priorityFilter = table.getColumn("priority")?.getFilterValue() as
+			| string[]
+			| undefined;
 		if (priorityFilter?.length) {
 			const priorityLabels = priorityFilter.map(
-				(value) => REPAIR_PRIORITY_META[value as keyof typeof REPAIR_PRIORITY_META]?.label ?? value,
+				(value) =>
+					REPAIR_PRIORITY_META[value as keyof typeof REPAIR_PRIORITY_META]
+						?.label ?? value,
 			);
 			filterParts.push(`Priority: ${priorityLabels.join(", ")}`);
 		}
 
-		const statusFilter = table.getColumn("status")?.getFilterValue() as string[] | undefined;
+		const statusFilter = table.getColumn("status")?.getFilterValue() as
+			| string[]
+			| undefined;
 		if (statusFilter?.length) {
 			const statusLabels = statusFilter.map(
-				(value) => REPAIR_STATUS_META[value as keyof typeof REPAIR_STATUS_META]?.label ?? value,
+				(value) =>
+					REPAIR_STATUS_META[value as keyof typeof REPAIR_STATUS_META]?.label ??
+					value,
 			);
 			filterParts.push(`Status: ${statusLabels.join(", ")}`);
 		}
 
-		const filterText = filterParts.length ? filterParts.join(" | ") : "All records";
+		const filterText = filterParts.length
+			? filterParts.join(" | ")
+			: "All records";
 
 		return (
 			<ExportButtons
@@ -110,7 +139,17 @@ export default function RepairsTable({ role }: RepairsTableProps) {
 						filename: "repairs",
 						title: "Repairs Report",
 						filters: filterText,
-						headers: ["Repair ID", "Unit", "Title", "Type", "Priority", "Status", "Description", "Created", "Updated"],
+						headers: [
+							"Repair ID",
+							"Unit",
+							"Title",
+							"Type",
+							"Priority",
+							"Status",
+							"Description",
+							"Created",
+							"Updated",
+						],
 						rows: exportRows.map((row) => [
 							row.repairId,
 							row.unitId,
@@ -122,11 +161,35 @@ export default function RepairsTable({ role }: RepairsTableProps) {
 							row.createdAt,
 							row.updatedAt,
 						]),
-						summary: [{ metric: "Repairs in scope", value: `${exportRows.length}` }],
+						summary: [
+							{ metric: "Repairs in scope", value: `${exportRows.length}` },
+						],
 					})
 				}
 			/>
 		);
+	};
+
+	const handlePageSizeChange = (nextPageSize: number) => {
+		setPageSize(nextPageSize);
+		setCursorHistory([]);
+		setCurrentCursor(null);
+	};
+
+	const handlePreviousPage = () => {
+		setCursorHistory((history) => {
+			if (history.length === 0) return history;
+			const nextHistory = history.slice(0, -1);
+			setCurrentCursor(history[history.length - 1]);
+			return nextHistory;
+		});
+	};
+
+	const handleNextPage = () => {
+		if (nextCursor === null) return;
+
+		setCursorHistory((history) => [...history, currentCursor]);
+		setCurrentCursor(nextCursor);
 	};
 
 	return (
@@ -134,9 +197,19 @@ export default function RepairsTable({ role }: RepairsTableProps) {
 			<CardContent>
 				<DataTable
 					data={repairs}
-					columns={columns}
+					columns={columns(role)}
 					facetedFilters={facetedFilters}
 					renderToolbarActions={renderToolbarActions}
+					pagination={{
+						mode: "cursor",
+						currentPage: cursorHistory.length + 1,
+						pageSize,
+						canPreviousPage: cursorHistory.length > 0,
+						canNextPage: nextCursor !== null,
+						onPageSizeChange: handlePageSizeChange,
+						onPreviousPage: handlePreviousPage,
+						onNextPage: handleNextPage,
+					}}
 					renderRowSubComponent={(row) => (
 						<RepairUpdatesTable
 							role={role}

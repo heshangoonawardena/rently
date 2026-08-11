@@ -1,8 +1,8 @@
-import { sql, Table } from "drizzle-orm";
+import { sql, type Table } from "drizzle-orm";
 
-import { db, DB } from "@/db/db";
-import * as seeds from "@/db/seeds";
+import { type DB, db } from "@/db/db";
 import * as schema from "@/db/schema/index";
+import * as seeds from "@/db/seeds";
 
 async function resetTable(db: DB, table: Table) {
 	return db.execute(sql`truncate table ${table} restart identity cascade`);
@@ -40,14 +40,14 @@ async function main() {
 		console.log("\n✅ Database reset completed!\n");
 
 		// await seeds.auth(db);
-		await seeds.units(db);
-		await seeds.tenants(db);
-		await seeds.leases(db);
-		await seeds.payments(db);
-		await seeds.utilities(db);
-		await seeds.repairs(db);
-		await seeds.inspections(db);
-		await seeds.documents(db);
+		// await seeds.units(db);
+		// await seeds.tenants(db);
+		// await seeds.leases(db);
+		// await seeds.payments(db);
+		// await seeds.utilities(db);
+		// await seeds.repairs(db);
+		// await seeds.inspections(db);
+		// await seeds.documents(db);
 
 		console.log("🌱 Database seeding completed successfully!");
 	} catch (error) {

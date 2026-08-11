@@ -1,8 +1,8 @@
 "use client";
 
-import { orpc } from "@/lib/orpc";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { KpiCard, type KpiCardData } from "@/components/kpi-card";
+import { orpc } from "@/lib/orpc";
 
 export default function KpiCards() {
 	const { data: report } = useSuspenseQuery(

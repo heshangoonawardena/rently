@@ -1,4 +1,9 @@
 "use client";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { IdCard, MoreHorizontal, Phone, Users } from "lucide-react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -6,22 +11,18 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Phone, Users, CreditCard, MoreHorizontal } from "lucide-react";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { orpc } from "@/lib/orpc";
-import { AddOccupantModal } from "./add-occupant-modal";
-import { DeleteOccupantButton } from "./delete-occupant-modal";
-import { Role } from "@/types/role";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { orpc } from "@/lib/orpc";
+import type { Role } from "@/types/role";
+import { AddOccupantModal } from "./add-occupant-modal";
+import { DeleteOccupantButton } from "./delete-occupant-modal";
+import { EditOccupantModal } from "./edit-occupant-modal";
 
 type TenantOccupantsCardProps = {
 	id: number;
@@ -86,7 +87,7 @@ export function TenantOccupantsCard({ id, role }: TenantOccupantsCardProps) {
 				</div>
 			</CardHeader>
 
-			<CardContent className="space-y-4 max-h-96 overflow-auto">
+			<CardContent className="space-y-4 max-h-96 overflow-auto capitalize">
 				{occupants.map((occupant, index) => {
 					const firstName = occupant.firstName?.trim();
 					const lastName = occupant.lastName?.trim() || "";
@@ -125,17 +126,24 @@ export function TenantOccupantsCard({ id, role }: TenantOccupantsCardProps) {
 											<div>
 												<DropdownMenu>
 													<DropdownMenuTrigger asChild>
-														<Button
-															variant="outline"
-															size="sm"
-															className="cursor-pointer"
-														>
+														<Button variant="outline" size="sm">
 															<MoreHorizontal className="size-4 mr-2" />
 															Actions
 														</Button>
 													</DropdownMenuTrigger>
 
 													<DropdownMenuContent align="end">
+														<EditOccupantModal
+															tenantId={id}
+															occupant={occupant}
+														>
+															<DropdownMenuItem
+																onSelect={(e) => e.preventDefault()}
+															>
+																Edit
+															</DropdownMenuItem>
+														</EditOccupantModal>
+
 														<DeleteOccupantButton
 															tenantId={id}
 															occupantId={occupant.id}
@@ -164,17 +172,26 @@ export function TenantOccupantsCard({ id, role }: TenantOccupantsCardProps) {
 								</div>
 
 								<div className="grid gap-4 text-sm sm:grid-cols-2">
-									<div className="flex items-center gap-2">
-										<CreditCard className="h-4 w-4 text-muted-foreground" />
-										<span>{occupant.nic?.trim() || "NIC not provided"}</span>
-									</div>
+									{occupant?.nic && (
+										<div className="flex items-center gap-2">
+											<IdCard className="size-4 text-muted-foreground" />
+											<span>{occupant.nic?.trim()}</span>
+										</div>
+									)}
 
-									<div className="flex items-center gap-2">
-										<Phone className="h-4 w-4 text-muted-foreground" />
-										<span>
-											{occupant.phone?.trim() || "Phone not provided"}
-										</span>
-									</div>
+									{occupant?.phone && (
+										<div className="flex items-center gap-2">
+											<Phone className="size-4 shrink-0" />
+
+											<Link
+												href={`tel:${occupant?.phone}`}
+												className="flex-1  hover:underline"
+												title={`Call ${occupant.firstName}`}
+											>
+												{occupant?.phone}
+											</Link>
+										</div>
+									)}
 								</div>
 							</div>
 

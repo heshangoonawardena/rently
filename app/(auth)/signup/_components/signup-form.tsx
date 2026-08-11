@@ -1,5 +1,11 @@
 "use client";
-import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -17,15 +23,9 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { cn } from "@/lib/utils";
+import { type SignupFormSchemaType, signupFormSchema } from "@/lib/zodSchemas";
 import { signUp } from "@/server/users";
-import { toast } from "sonner";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { signupFormSchema, SignupFormSchemaType } from "@/lib/zodSchemas";
 
 export function SignupForm({
 	className,
@@ -142,9 +142,9 @@ export function SignupForm({
 													onClick={() => setShowPassword((prev) => !prev)}
 												>
 													{showPassword ? (
-														<EyeOff className="h-4 w-4" />
+														<EyeOff className="size-4" />
 													) : (
-														<Eye className="h-4 w-4" />
+														<Eye className="size-4" />
 													)}
 													<span className="sr-only">
 														{showPassword ? "Hide password" : "Show password"}
@@ -206,9 +206,9 @@ export function SignupForm({
 													onClick={() => setShowPassword((prev) => !prev)}
 												>
 													{showPassword ? (
-														<EyeOff className="h-4 w-4" />
+														<EyeOff className="size-4" />
 													) : (
-														<Eye className="h-4 w-4" />
+														<Eye className="size-4" />
 													)}
 													<span className="sr-only">
 														{showPassword ? "Hide password" : "Show password"}

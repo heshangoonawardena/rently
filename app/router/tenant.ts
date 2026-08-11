@@ -1,14 +1,14 @@
 import { implement } from "@orpc/server";
-import { contract } from "../contract";
+import { and, desc, eq, gt, ilike, or } from "drizzle-orm";
 import { db } from "@/db/db";
-import { and, asc, desc, eq, gt, ilike, or } from "drizzle-orm";
+import { lease } from "@/db/schema/lease";
+import { tenant, tenantOccupant } from "@/db/schema/tenant";
+import { contract } from "../contract";
 import {
 	authMiddleware,
-	BaseContext,
+	type BaseContext,
 	permissionMiddleware,
 } from "./middleware";
-import { tenant, tenantOccupant } from "@/db/schema/tenant";
-import { lease } from "@/db/schema/lease";
 
 const os = implement(contract).$context<BaseContext>();
 

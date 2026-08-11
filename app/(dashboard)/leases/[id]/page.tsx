@@ -1,13 +1,13 @@
-import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
-import { orpc } from "@/lib/orpc";
-import { LeaseHeader } from "./_components/lease-header";
-import { LeaseOverviewCard } from "./_components/lease-overview-card";
+import { notFound } from "next/navigation";
+import { InspectionsCard } from "@/components/inspection-overview-card/inspection-card";
 import { UtilityCard } from "@/components/utility-overview-card/utility-card";
 import { getServerRole } from "@/lib/get-server";
-import { TenantOverviewCard } from "./_components/tenant-overview-card";
-import { notFound } from "next/navigation";
+import { orpc } from "@/lib/orpc";
+import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
+import { LeaseHeader } from "./_components/lease-header";
+import { LeaseOverviewCard } from "./_components/lease-overview-card";
 import LeasePaymentsTable from "./_components/lease-payments/lease-payments-table";
-import { InspectionsCard } from "@/components/inspection-overview-card/inspection-card";
+import { TenantOverviewCard } from "./_components/tenant-overview-card";
 
 export default async function Page({
 	params,
@@ -23,22 +23,12 @@ export default async function Page({
 		notFound();
 	}
 
-	// await queryClient.prefetchQuery(
-	// 	orpc.lease.get.queryOptions({ input: { id } }),
-	// );
-	// await queryClient.prefetchQuery(
-	// 	orpc.payment.list.queryOptions({
-	// 		input: {
-	// 			leaseId: id,
-	// 			limit: 100,
-	// 		},
-	// 	}),
-	// );
-
 	await Promise.all([
 		queryClient.prefetchQuery(orpc.lease.get.queryOptions({ input: { id } })),
 		queryClient.prefetchQuery(
-			orpc.payment.list.queryOptions({ input: { leaseId: id, limit: 100 } }),
+			orpc.payment.list.queryOptions({
+				input: { leaseId: id, limit: 10, cursor: undefined },
+			}),
 		),
 	]);
 

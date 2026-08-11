@@ -1,16 +1,18 @@
 "use client";
 
-import * as React from "react";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+	useMutation,
+	useQueryClient,
+	useSuspenseQuery,
+} from "@tanstack/react-query";
+import { Check, ShieldCheck } from "lucide-react";
+import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Check, ShieldCheck } from "lucide-react";
-
-import { orpc } from "@/lib/orpc";
 import {
-	approveUser,
 	type ApproveUser,
+	approveUser,
 	type ListUsersOutput,
 } from "@/app/schemas/user.schema";
 import { Button } from "@/components/ui/button";
@@ -37,6 +39,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { orpc } from "@/lib/orpc";
 
 type UserRow = ListUsersOutput["items"][number];
 
@@ -48,10 +51,24 @@ type ApproveUserModalProps = {
 export function ApproveUserModal({ user, children }: ApproveUserModalProps) {
 	const [open, setOpen] = React.useState(false);
 	const queryClient = useQueryClient();
+	const usersQueryKey = orpc.user.list.queryKey({ input: {} });
+	const availableTenantsQueryKey = orpc.user.listAvailableTenants.queryKey({
+		input: {},
+	});
 
 	const {
 		data: { items: availableTenants },
-	} = useSuspenseQuery(orpc.user.listAvailableTenants.queryOptions({ input: {} }));
+	} = useSuspenseQuery(
+		orpc.user.listAvailableTenants.queryOptions({ input: {} }),
+	);
+
+	const {
+		data: { items: users },
+	} = useSuspenseQuery(
+		orpc.user.list.queryOptions({
+			input: {},
+		}),
+	);
 
 	const form = useForm<ApproveUser>({
 		resolver: zodResolver(approveUser),
@@ -63,6 +80,7 @@ export function ApproveUserModal({ user, children }: ApproveUserModalProps) {
 	});
 
 	const watchedRole = form.watch("role");
+	const watchedTenantId = form.watch("tenantId");
 
 	React.useEffect(() => {
 		if (watchedRole !== "tenant") {
@@ -74,12 +92,21 @@ export function ApproveUserModal({ user, children }: ApproveUserModalProps) {
 		orpc.user.approve.mutationOptions({
 			onSuccess: (data) => {
 				toast.success(`${data.name} approved as ${data.role}`);
+				queryClient.setQueryData<ListUsersOutput>(usersQueryKey, (current) => {
+					if (!current) {
+						return current;
+					}
 
-				queryClient.invalidateQueries({
-					queryKey: orpc.user.list.queryKey({ input: {} }),
+					return {
+						items: current.items.map((item) =>
+							item.id === data.id ? { ...item, ...data } : item,
+						),
+					};
 				});
-				queryClient.invalidateQueries({
-					queryKey: orpc.user.listAvailableTenants.queryKey({ input: {} }),
+
+				void queryClient.invalidateQueries({ queryKey: usersQueryKey });
+				void queryClient.invalidateQueries({
+					queryKey: availableTenantsQueryKey,
 				});
 
 				form.reset({
@@ -100,7 +127,11 @@ export function ApproveUserModal({ user, children }: ApproveUserModalProps) {
 	};
 
 	const tenantRequiredAndMissing =
-		watchedRole === "tenant" && !form.getValues("tenantId");
+		watchedRole === "tenant" && !watchedTenantId;
+	const ownerCount = users.filter(
+		(item) => item.approvalStatus === "approved" && item.role === "owner",
+	).length;
+	const ownerSelectionDisabled = ownerCount >= 2;
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
@@ -141,11 +172,21 @@ export function ApproveUserModal({ user, children }: ApproveUserModalProps) {
 											<SelectValue placeholder="Select role" />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="owner">Owner</SelectItem>
+											<SelectItem
+												value="owner"
+												disabled={ownerSelectionDisabled}
+											>
+												Owner
+											</SelectItem>
 											<SelectItem value="manager">Manager</SelectItem>
 											<SelectItem value="tenant">Tenant</SelectItem>
 										</SelectContent>
 									</Select>
+									{ownerSelectionDisabled && (
+										<FieldDescription className="text-destructive">
+											Only 2 owners are allowed at a time.
+										</FieldDescription>
+									)}
 									{fieldState.invalid && (
 										<FieldError errors={[fieldState.error]} />
 									)}
@@ -176,11 +217,13 @@ export function ApproveUserModal({ user, children }: ApproveUserModalProps) {
 											</SelectContent>
 										</Select>
 										<FieldDescription>
-											Tenant users must be linked to an existing tenant profile before approval.
+											Tenant users must be linked to an existing tenant profile
+											before approval.
 										</FieldDescription>
 										{availableTenants.length === 0 && (
 											<FieldDescription className="text-destructive">
-												No unlinked tenants are available. Create or free a tenant profile first.
+												No unlinked tenants are available. Create or free a
+												tenant profile first.
 											</FieldDescription>
 										)}
 										{fieldState.invalid && (

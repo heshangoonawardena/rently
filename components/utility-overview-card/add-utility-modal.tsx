@@ -1,40 +1,42 @@
 "use client";
 
-import * as React from "react";
-import { Plus } from "lucide-react";
-import { Controller, FieldErrors, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import * as React from "react";
+import { Controller, type FieldErrors, useForm } from "react-hook-form";
 import { toast } from "sonner";
-
+import {
+	type CreateUtility,
+	createUtility,
+} from "@/app/schemas/utility.schema";
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
+	Field,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
 } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { UTILITY_TYPE_FILTER_OPTIONS } from "@/config/table-facet-meta";
 import { orpc } from "@/lib/orpc";
-import { createUtility, CreateUtility } from "@/app/schemas/utility.schema";
 
 type AddUtilityModalProps = {
 	unitId: number;

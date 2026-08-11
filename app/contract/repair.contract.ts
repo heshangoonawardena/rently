@@ -1,19 +1,19 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-    createRepairRequest,
-    deleteRepairRequest,
-    listRepairRequestInput,
-    listRepairRequestOutput,
-    repairRequestInput,
-    repairRequestOutput,
-    updateRepairRequest
+	createRepairRequest,
+	deleteRepairRequest,
+	listRepairRequestInput,
+	listRepairRequestOutput,
+	repairRequestInput,
+	repairRequestOutput,
+	updateRepairRequest,
 } from "../schemas/repair.request.schema";
 import {
-    createRepairUpdate,
-    listRepairUpdateInput,
-    listRepairUpdateOutput,
-    repairUpdateOutput
+	createRepairUpdate,
+	listRepairUpdateInput,
+	listRepairUpdateOutput,
+	repairUpdateOutput,
 } from "../schemas/repair.update.schema";
 
 export const base = oc.errors({
@@ -80,7 +80,7 @@ export const updateRepairRequestContract = base
 export const deleteRepairRequestContract = base
 	.route({
 		method: "DELETE",
-		path: "/units/{unitId}/repairs/{id}",
+		path: "/units/repairs/{id}",
 		summary: "Delete a repair request",
 		description:
 			"Deletes an open repair request. Resolved requests cannot be deleted.",

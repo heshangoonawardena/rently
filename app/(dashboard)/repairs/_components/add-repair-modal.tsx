@@ -1,10 +1,15 @@
 "use client";
 
-import * as React from "react";
-import { Plus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, FieldErrors, useForm } from "react-hook-form";
-
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import * as React from "react";
+import { Controller, type FieldErrors, useForm } from "react-hook-form";
+import { toast } from "sonner";
+import {
+	type CreateRepairRequest,
+	createRepairRequest,
+} from "@/app/schemas/repair.request.schema";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -15,10 +20,13 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-
+import {
+	Field,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-
 import {
 	Select,
 	SelectContent,
@@ -26,25 +34,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	createRepairRequest,
-	CreateRepairRequest,
-} from "@/app/schemas/repair.request.schema";
-import { repairPriorityEnum, repairTypeEnum } from "@/db/schema/enums";
-import {
-	Field,
-	FieldError,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@/lib/orpc";
-import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 import {
 	REPAIR_PRIORITY_FILTER_OPTIONS,
-	REPAIR_PRIORITY_META,
 	REPAIR_TYPE_FILTER_OPTIONS,
 } from "@/config/table-facet-meta";
+import { repairPriorityEnum, repairTypeEnum } from "@/db/schema/enums";
+import { orpc } from "@/lib/orpc";
 
 export function AddRepairRequestModal() {
 	const [open, setOpen] = React.useState(false);
@@ -93,7 +89,7 @@ export function AddRepairRequestModal() {
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button className="cursor-pointer">
+				<Button>
 					<Plus className="size-4" />
 					Add Repair Request
 				</Button>

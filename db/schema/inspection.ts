@@ -1,22 +1,22 @@
 import { relations } from "drizzle-orm";
 import {
-	pgTable,
-	text,
-	timestamp,
 	date,
 	index,
-	serial,
 	integer,
+	pgTable,
+	serial,
+	text,
+	timestamp,
 } from "drizzle-orm/pg-core";
-import { unit } from "./unit";
-import { user } from "./auth";
-import { inspectionStatusEnum } from "./enums";
 import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
 } from "drizzle-zod";
-import z from "zod";
+import type z from "zod";
+import { user } from "./auth";
+import { inspectionStatusEnum } from "./enums";
+import { unit } from "./unit";
 
 export const inspection = pgTable(
 	"inspection",

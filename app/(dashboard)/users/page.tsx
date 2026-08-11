@@ -1,11 +1,15 @@
-import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
 import { orpc } from "@/lib/orpc";
+import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
 import UsersTable from "./_components/users-table";
 
 export default async function Page() {
 	const queryClient = getQueryClient();
 
-	await queryClient.prefetchQuery(orpc.user.list.queryOptions({ input: {} }));
+	await queryClient.prefetchQuery(
+		orpc.user.list.queryOptions({
+			input: {},
+		}),
+	);
 	await queryClient.prefetchQuery(
 		orpc.user.listAvailableTenants.queryOptions({ input: {} }),
 	);

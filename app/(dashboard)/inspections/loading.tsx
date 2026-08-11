@@ -58,7 +58,7 @@ export default function Loading() {
 								<Skeleton className="h-4 w-24" />
 								<Skeleton className="h-6 w-20 rounded-full" />
 								<Skeleton className="h-4 w-20" />
-								<Skeleton className="ml-auto h-8 w-8 rounded-md" />
+								<Skeleton className="ml-auto size-8 rounded-md" />
 							</div>
 						))}
 					</div>

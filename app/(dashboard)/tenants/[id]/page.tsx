@@ -1,10 +1,10 @@
-import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
-import { orpc } from "@/lib/orpc";
-import { TenantHeader } from "./_components/tenant-header";
-import { TenantOccupantsCard } from "./_components/tenant-occupants-card";
-import { TenantLeasesCard } from "./_components/tenant-leases-card";
-import { getServerRole } from "@/lib/get-server";
 import { notFound } from "next/navigation";
+import { getServerRole } from "@/lib/get-server";
+import { orpc } from "@/lib/orpc";
+import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
+import { TenantHeader } from "./_components/tenant-header";
+import { TenantLeasesCard } from "./_components/tenant-leases-card";
+import { TenantOccupantsCard } from "./_components/tenant-occupants-card";
 import { TenantOverviewCard } from "./_components/tenant-overview-card";
 
 export default async function Page({

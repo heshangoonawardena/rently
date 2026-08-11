@@ -1,12 +1,12 @@
 import { betterAuth } from "better-auth";
-import { organization } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "@/db/db";
-import * as schema from "@/db/schema/auth";
 import { nextCookies } from "better-auth/next-js";
+import { organization } from "better-auth/plugins";
 import { Resend } from "resend";
 import { ForgotPasswordEmail } from "@/components/emails/reset-password";
 import { EmailVerification } from "@/components/emails/verify-email";
+import { db } from "@/db/db";
+import * as schema from "@/db/schema/auth";
 import { ac, manager, owner, tenant } from "./auth/permissions";
 
 const resend = new Resend(process.env.RESEND_API_KEY);

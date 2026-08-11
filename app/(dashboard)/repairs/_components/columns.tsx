@@ -1,11 +1,18 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
+import {
+	Building,
+	ChevronDown,
+	Edit,
+	MoreHorizontal,
+	RotateCcw,
+} from "lucide-react";
 import Link from "next/link";
-
+import type { ListRepairRequestOutput } from "@/app/schemas/repair.request.schema";
+import { DataTableColumnHeader } from "@/components/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -14,25 +21,24 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-import { Building, Edit, MoreHorizontal } from "lucide-react";
-import { ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ListRepairRequestOutput } from "@/app/schemas/repair.request.schema";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { DataTableColumnHeader } from "@/components/data-table-column-header";
 import {
 	REPAIR_PRIORITY_META,
 	REPAIR_STATUS_META,
 	REPAIR_TYPE_META,
 } from "@/config/table-facet-meta";
+import { cn } from "@/lib/utils";
+import type { Role } from "@/types/role";
+import AddRepairReopenModal from "./add-repair-reopen-modal copy";
 import { EditRepairRequestModal } from "./edit-repair-modal";
 
-export const columns: ColumnDef<ListRepairRequestOutput["items"][number]>[] = [
+export const columns = (
+	role: Role,
+): ColumnDef<ListRepairRequestOutput["items"][number]>[] => [
 	// Expander
 	{
 		id: "expander",
@@ -203,8 +209,11 @@ export const columns: ColumnDef<ListRepairRequestOutput["items"][number]>[] = [
 	{
 		id: "actions",
 		cell: ({ row }) => {
+			const isNotTenant = role !== "tenant";
+
 			const repair = row.original;
 			const createdAtMs = new Date(repair.createdAt).getTime();
+			const isResolved = row.original.status === "resolved";
 			const isEditLocked =
 				Number.isFinite(createdAtMs) &&
 				Date.now() - createdAtMs > 10 * 60 * 1000;
@@ -235,13 +244,26 @@ export const columns: ColumnDef<ListRepairRequestOutput["items"][number]>[] = [
 								</DropdownMenuItem>
 							</EditRepairRequestModal>
 						)}
+						{isResolved && (
+							<AddRepairReopenModal
+								repairRequestId={repair.id}
+								currentStatus="resolved"
+							>
+								<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+									<RotateCcw className="mr-2 size-4" />
+									Reopen Request
+								</DropdownMenuItem>
+							</AddRepairReopenModal>
+						)}
 
-						<Link href={`/units/${repair.unitId}`}>
-							<DropdownMenuItem>
-								<Building className="mr-2 size-4" />
-								View Unit
-							</DropdownMenuItem>
-						</Link>
+						{isNotTenant && (
+							<Link href={`/units/${repair.unitId}`}>
+								<DropdownMenuItem>
+									<Building className="mr-2 size-4" />
+									View Unit
+								</DropdownMenuItem>
+							</Link>
+						)}
 					</DropdownMenuContent>
 				</DropdownMenu>
 			);

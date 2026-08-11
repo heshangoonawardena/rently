@@ -1,24 +1,24 @@
 import {
+	boolean,
+	index,
+	integer,
 	pgTable,
+	serial,
 	text,
 	timestamp,
-	index,
-	serial,
-	integer,
-	boolean,
 } from "drizzle-orm/pg-core";
+import {
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
+} from "drizzle-zod";
+import type z from "zod";
 import { user } from "./auth";
 import {
 	notificationChannelEnum,
 	notificationEventEnum,
 	notificationStatusEnum,
 } from "./enums";
-import z from "zod";
-import {
-	createInsertSchema,
-	createSelectSchema,
-	createUpdateSchema,
-} from "drizzle-zod";
 
 export const notificationPreference = pgTable(
 	"notification_preference",
@@ -103,7 +103,11 @@ export const selectNotificationLogSchema = createSelectSchema(notificationLog);
 export type NotificationLogType = z.infer<typeof selectNotificationLogSchema>;
 
 export const insertNotificationLogSchema = createInsertSchema(notificationLog);
-export type InsertNotificationLogType = z.infer<typeof insertNotificationLogSchema>;
+export type InsertNotificationLogType = z.infer<
+	typeof insertNotificationLogSchema
+>;
 
 export const updateNotificationLogSchema = createUpdateSchema(notificationLog);
-export type UpdateNotificationLogType = z.infer<typeof updateNotificationLogSchema>;
+export type UpdateNotificationLogType = z.infer<
+	typeof updateNotificationLogSchema
+>;

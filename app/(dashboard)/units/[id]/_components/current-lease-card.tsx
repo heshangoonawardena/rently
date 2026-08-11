@@ -1,26 +1,25 @@
 "use client";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import {
+	CalendarDays,
+	FileText,
+	ShieldCheck,
+	User,
+	Wallet,
+} from "lucide-react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import {
-	CalendarDays,
-	User,
-	Wallet,
-	ShieldCheck,
-	FileText,
-	Plus,
-} from "lucide-react";
-import { format } from "date-fns";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { orpc } from "@/lib/orpc";
-import Link from "next/link";
 
 export function CurrentLeaseCard({ id }: { id: number }) {
 	const {
@@ -153,7 +152,7 @@ export function CurrentLeaseCard({ id }: { id: number }) {
 					</div>
 
 					<div>
-						<p className="text-sm text-muted-foreground">Security Deposit</p>
+						<p className="text-sm text-muted-foreground">Deposit</p>
 
 						<div className="mt-1 flex items-center gap-2 font-medium">
 							<ShieldCheck className="size-4" />

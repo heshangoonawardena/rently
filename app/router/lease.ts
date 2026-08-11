@@ -1,17 +1,58 @@
 import { implement } from "@orpc/server";
-import { contract } from "../contract";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	gt,
+	ilike,
+	inArray,
+	isNotNull,
+	ne,
+} from "drizzle-orm";
 import { db } from "@/db/db";
-import { and, asc, desc, eq, gt, inArray, or } from "drizzle-orm";
+import {
+	lease,
+	leaseRent,
+	leaseSettlement,
+	leaseSettlementExpense,
+} from "@/db/schema/lease";
+import { payment } from "@/db/schema/payment";
+import { tenant } from "@/db/schema/tenant";
+import { unit } from "@/db/schema/unit";
+import { generateNextReceiptNumber } from "@/lib/receipt-number";
+import { contract } from "../contract";
 import {
 	authMiddleware,
-	BaseContext,
+	type BaseContext,
 	permissionMiddleware,
 } from "./middleware";
-import { lease, leaseRent } from "@/db/schema/lease";
-import { unit } from "@/db/schema/unit";
-import { tenant } from "@/db/schema/tenant";
 
 const os = implement(contract).$context<BaseContext>();
+
+async function generateReceiptNumber(): Promise<string> {
+	const year = new Date().getFullYear();
+	const [latestReceipt] = await db
+		.select({ receiptNumber: payment.receiptNumber })
+		.from(payment)
+		.where(
+			and(
+				isNotNull(payment.receiptNumber),
+				ilike(payment.receiptNumber, `RCP-${year}-%`),
+			),
+		)
+		.orderBy(desc(payment.createdAt), desc(payment.id))
+		.limit(1);
+
+	return generateNextReceiptNumber(
+		latestReceipt?.receiptNumber,
+		new Date(year, 0, 1),
+	);
+}
+
+function toDateOnly(dateValue: string): string {
+	return dateValue.slice(0, 10);
+}
 
 // ── Lease handlers ──
 
@@ -22,7 +63,7 @@ export const createLease = os.lease.create
 		const { rentAmount, agreedPaymentDay, ...leaseData } = input;
 		const { organizationId } = context.user;
 
-		// Check the unit exists and belongs to this org
+		// Check the unit exists and belongs to this org.
 		const [targetUnit] = await db
 			.select({ id: unit.id, status: unit.status })
 			.from(unit)
@@ -49,35 +90,49 @@ export const createLease = os.lease.create
 				data: {
 					rule: "UNIT_NOT_AVAILABLE",
 				},
-				cause: `Unit is currently '${targetUnit.status}' — only 'available' units can be leased`,
+				message: `Unit is currently '${targetUnit.status}' — only 'available' units can be leased`,
 			});
 		}
 
-		// Insert lease
-		const [newLease] = await db.insert(lease).values(leaseData).returning();
+		const { newLease, currentRent } = await db.transaction(async (tx) => {
+			const [newLease] = await tx.insert(lease).values(leaseData).returning();
 
-		// Seed first rent row
-		const [currentRent] = await db
-			.insert(leaseRent)
-			.values({
+			const [currentRent] = await tx
+				.insert(leaseRent)
+				.values({
+					leaseId: newLease.id,
+					rentAmount,
+					agreedPaymentDay,
+					effectiveDate: leaseData.startDate,
+				})
+				.returning();
+
+			const receiptNumber = await generateReceiptNumber();
+
+			await tx.insert(payment).values({
 				leaseId: newLease.id,
-				rentAmount,
-				agreedPaymentDay,
-				effectiveDate: leaseData.startDate,
-			})
-			.returning();
+				paymentType: "deposit",
+				paymentMethod: "cash",
+				paymentDate: toDateOnly(leaseData.startDate),
+				paymentAmount: leaseData.depositAmount,
+				periodStart: null,
+				periodEnd: null,
+				receiptNumber,
+				description: "Initial lease deposit",
+			});
 
-		// Update unit status
-		await db
-			.update(unit)
-			.set({ status: "occupied" })
-			.where(eq(unit.id, leaseData.unitId));
+			await tx
+				.update(unit)
+				.set({ status: "occupied" })
+				.where(eq(unit.id, leaseData.unitId));
 
-		// Update tenant status
-		await db
-			.update(tenant)
-			.set({ status: "active" })
-			.where(eq(tenant.id, leaseData.tenantId));
+			await tx
+				.update(tenant)
+				.set({ status: "active" })
+				.where(eq(tenant.id, leaseData.tenantId));
+
+			return { newLease, currentRent };
+		});
 
 		// Fetch updated related records
 		const [updatedUnit, updatedTenant] = await Promise.all([
@@ -106,7 +161,7 @@ export const createLease = os.lease.create
 export const updateLease = os.lease.update
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["update"] }))
-	.handler(async ({ input, errors, context }) => {
+	.handler(async ({ input, errors }) => {
 		const { id, ...updates } = input;
 
 		const [existing] = await db
@@ -165,14 +220,8 @@ export const renewLease = os.lease.renew
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["update"] }))
 	.handler(async ({ input, errors }) => {
-		const {
-			id,
-			newEndDate,
-			depositAmount,
-			rentAmount,
-			effectiveDate,
-			agreedPaymentDay,
-		} = input;
+		const { id, newEndDate, rentAmount, effectiveDate, agreedPaymentDay } =
+			input;
 
 		const [existing] = await db
 			.select({
@@ -200,7 +249,7 @@ export const renewLease = os.lease.renew
 		if (existing.status !== "active" && existing.status !== "extended") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "LEASE_NOT_RENEWABLE" },
-				cause: `Lease has status '${existing.status}' — only 'active' or 'extended' leases can be renewed`,
+				message: `Lease has status '${existing.status}' — only 'active' or 'extended' leases can be renewed`,
 			});
 		}
 
@@ -216,7 +265,6 @@ export const renewLease = os.lease.renew
 			.set({
 				status: "extended",
 				endDate: newEndDate,
-				depositAmount,
 			})
 			.where(eq(lease.id, id))
 			.returning();
@@ -253,8 +301,9 @@ export const renewLease = os.lease.renew
 export const deleteLease = os.lease.delete
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["delete"] }))
-	.handler(async ({ input, errors }) => {
+	.handler(async ({ input, errors, context }) => {
 		const { id, endDate } = input;
+		const terminationDate = toDateOnly(endDate);
 
 		const [existing] = await db
 			.select({
@@ -262,6 +311,7 @@ export const deleteLease = os.lease.delete
 				unitId: lease.unitId,
 				tenantId: lease.tenantId,
 				status: lease.status,
+				depositAmount: lease.depositAmount,
 			})
 			.from(lease)
 			.where(eq(lease.id, id))
@@ -280,24 +330,150 @@ export const deleteLease = os.lease.delete
 		if (existing.status !== "active" && existing.status !== "extended") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "LEASE_NOT_TERMINABLE" },
-				cause: `Lease has status '${existing.status}' — only 'active' or 'extended' leases can be terminated`,
+				message: `Lease has status '${existing.status}' — only 'active' or 'extended' leases can be terminated`,
 			});
 		}
 
-		const [updatedLease] = await db
-			.update(lease)
-			.set({
-				status: "terminated",
-				endDate,
-			})
-			.where(eq(lease.id, id))
-			.returning();
+		const [existingSettlement] = await db
+			.select({ id: leaseSettlement.id })
+			.from(leaseSettlement)
+			.where(eq(leaseSettlement.leaseId, id))
+			.limit(1);
 
-		// Free up the unit
-		await db
-			.update(unit)
-			.set({ status: "available" })
-			.where(eq(unit.id, existing.unitId));
+		if (existingSettlement) {
+			throw errors.CONFLICT({
+				data: { field: "leaseId", value: String(id) },
+				message: "This lease already has a settlement",
+			});
+		}
+
+		const expenses = input.expenses ?? [];
+		const totalDeductions = Number(
+			expenses.reduce((sum, item) => sum + item.amount, 0).toFixed(2),
+		);
+		const depositAtTermination = Number(existing.depositAmount);
+		const refundAmount = Number(
+			Math.max(depositAtTermination - totalDeductions, 0).toFixed(2),
+		);
+		const outstandingAmount = Number(
+			Math.max(totalDeductions - depositAtTermination, 0).toFixed(2),
+		);
+
+		const { updatedLease, settlementWithExpenses } = await db.transaction(
+			async (tx) => {
+				const [nextLease] = await tx
+					.update(lease)
+					.set({
+						status: "terminated",
+						endDate: terminationDate,
+					})
+					.where(eq(lease.id, id))
+					.returning();
+
+				await tx
+					.update(unit)
+					.set({ status: "available" })
+					.where(eq(unit.id, existing.unitId));
+
+				const [otherActiveLease] = await tx
+					.select({ id: lease.id })
+					.from(lease)
+					.where(
+						and(
+							eq(lease.tenantId, existing.tenantId),
+							inArray(lease.status, ["active", "extended"]),
+							ne(lease.id, id),
+						),
+					)
+					.limit(1);
+
+				if (!otherActiveLease) {
+					await tx
+						.update(tenant)
+						.set({ status: "inactive" })
+						.where(eq(tenant.id, existing.tenantId));
+				}
+
+				const [newSettlement] = await tx
+					.insert(leaseSettlement)
+					.values({
+						leaseId: id,
+						createdBy: context.user.userId,
+						terminationDate,
+						depositAtTermination,
+						totalDeductions,
+						refundAmount,
+						outstandingAmount,
+						notes: input.notes ?? null,
+					})
+					.returning();
+
+				const insertedExpenses =
+					expenses.length > 0
+						? await tx
+								.insert(leaseSettlementExpense)
+								.values(
+									expenses.map((expense) => ({
+										settlementId: newSettlement.id,
+										label: expense.label,
+										category: expense.category ?? null,
+										amount: expense.amount,
+										notes: expense.notes ?? null,
+									})),
+								)
+								.returning()
+						: [];
+
+				const receiptNumber =
+					expenses.length > 0 || refundAmount > 0
+						? await generateReceiptNumber()
+						: null;
+
+				if (expenses.length > 0 && receiptNumber) {
+					await tx.insert(payment).values(
+						expenses.map((expense) => ({
+							leaseId: id,
+							paymentType: "deposit_deduction" as const,
+							paymentMethod: "other" as const,
+							paymentDate: terminationDate,
+							paymentAmount: expense.amount,
+							periodStart: null,
+							periodEnd: null,
+							receiptNumber,
+							description: [
+								"Lease settlement deduction",
+								expense.category ? `(${expense.category})` : null,
+								expense.label,
+							]
+								.filter(Boolean)
+								.join(" - "),
+						})),
+					);
+				}
+
+				if (refundAmount > 0 && receiptNumber) {
+					await tx.insert(payment).values({
+						leaseId: id,
+						paymentType: "refund" as const,
+						paymentMethod: "other" as const,
+						paymentDate: terminationDate,
+						paymentAmount: refundAmount,
+						periodStart: null,
+						periodEnd: null,
+						receiptNumber,
+						description: "Refund to tenant from the lease deposit",
+					});
+				}
+
+				return {
+					updatedLease: nextLease,
+					settlementWithExpenses: {
+						...newSettlement,
+						expenses: insertedExpenses,
+					},
+				};
+			},
+		);
 
 		const [[updatedUnit], [updatedTenant], [currentRent]] = await Promise.all([
 			db.select().from(unit).where(eq(unit.id, existing.unitId)).limit(1),
@@ -317,6 +493,7 @@ export const deleteLease = os.lease.delete
 			unit: updatedUnit,
 			tenant: updatedTenant,
 			currentRent: currentRent ?? null,
+			settlement: settlementWithExpenses,
 		};
 	});
 
@@ -359,29 +536,54 @@ export const getLease = os.lease.get
 			});
 		}
 
-		const [[unitRow], [tenantRow], [currentRent]] = await Promise.all([
-			db.select().from(unit).where(eq(unit.id, leaseRow.unitId)).limit(1),
+		const [[unitRow], [tenantRow], [currentRent], [settlementRow]] =
+			await Promise.all([
+				db.select().from(unit).where(eq(unit.id, leaseRow.unitId)).limit(1),
 
-			db.select().from(tenant).where(eq(tenant.id, leaseRow.tenantId)).limit(1),
+				db
+					.select()
+					.from(tenant)
+					.where(eq(tenant.id, leaseRow.tenantId))
+					.limit(1),
 
-			db
-				.select()
-				.from(leaseRent)
-				.where(
-					and(
-						eq(leaseRent.leaseId, leaseRow.id),
-						eq(leaseRent.status, "active"),
-					),
-				)
-				.orderBy(desc(leaseRent.effectiveDate))
-				.limit(1),
-		]);
+				db
+					.select()
+					.from(leaseRent)
+					.where(
+						and(
+							eq(leaseRent.leaseId, leaseRow.id),
+							eq(leaseRent.status, "active"),
+						),
+					)
+					.orderBy(desc(leaseRent.effectiveDate))
+					.limit(1),
+
+				db
+					.select()
+					.from(leaseSettlement)
+					.where(eq(leaseSettlement.leaseId, leaseRow.id))
+					.limit(1),
+			]);
+
+		const settlementExpenses = settlementRow
+			? await db
+					.select()
+					.from(leaseSettlementExpense)
+					.where(eq(leaseSettlementExpense.settlementId, settlementRow.id))
+					.orderBy(asc(leaseSettlementExpense.id))
+			: [];
 
 		return {
 			...leaseRow,
 			unit: unitRow,
 			tenant: tenantRow,
 			currentRent: currentRent ?? null,
+			settlement: settlementRow
+				? {
+						...settlementRow,
+						expenses: settlementExpenses,
+					}
+				: null,
 		};
 	});
 
@@ -414,7 +616,7 @@ export const listLease = os.lease.list
 					cursor ? gt(lease.id, cursor) : undefined,
 				),
 			)
-			.orderBy(desc(lease.startDate), desc(lease.updatedAt))
+			.orderBy(asc(lease.status), desc(lease.startDate), desc(lease.updatedAt))
 			.limit(limit + 1);
 
 		const hasMore = rows.length > limit;
@@ -498,7 +700,8 @@ export const createLeaseRent = os.lease.createRent
 		if (parentLease.status !== "active" && parentLease.status !== "extended") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "LEASE_NOT_ACTIVE" },
-				cause: "Rent revisions can only be added to active or extended leases",
+				message:
+					"Rent revisions can only be added to active or extended leases",
 			});
 		}
 

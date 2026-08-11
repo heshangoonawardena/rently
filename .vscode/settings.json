@@ -2,5 +2,9 @@
 	"cSpell.words": ["Rently"],
 	"chat.tools.terminal.autoApprove": {
 		"pnpm": true
+	},
+	"editor.codeActionsOnSave": {
+		"source.action.useSortedKeys.biome": "explicit",
+		"source.fixAll.biome": "explicit"
 	}
 }

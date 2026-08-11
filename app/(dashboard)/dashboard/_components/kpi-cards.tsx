@@ -1,8 +1,8 @@
 "use client";
 
-import { orpc } from "@/lib/orpc";
-import { useSuspenseQueries } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { KpiCard, type KpiCardData } from "@/components/kpi-card";
+import { orpc } from "@/lib/orpc";
 
 function formatLkr(value: number): string {
 	return new Intl.NumberFormat("en-US", {
@@ -20,19 +20,46 @@ function safeRatioPct(part: number, total: number): number {
 }
 
 export default function KpiCards() {
-	const [
-		{ data: occupancy },
-		{ data: rent },
-		{ data: arrears },
-		{ data: repairs },
-	] = useSuspenseQueries({
-		queries: [
-			orpc.report.occupancySummary.queryOptions(),
-			orpc.report.rentCollection.queryOptions({ input: {} }),
-			orpc.report.arrearsOverview.queryOptions(),
-			orpc.report.repairSummary.queryOptions({ input: {} }),
-		],
-	});
+	const occupancyQuery = useQuery(orpc.report.occupancySummary.queryOptions());
+	const rentQuery = useQuery(
+		orpc.report.rentCollection.queryOptions({ input: {} }),
+	);
+	const arrearsQuery = useQuery(orpc.report.arrearsOverview.queryOptions());
+	const repairsQuery = useQuery(
+		orpc.report.repairSummary.queryOptions({ input: {} }),
+	);
+
+	const isLoading = [
+		occupancyQuery,
+		rentQuery,
+		arrearsQuery,
+		repairsQuery,
+	].some((query) => query.isLoading || query.isFetching);
+
+	const occupancy = occupancyQuery.data ?? {
+		occupancyRate: 0,
+		available: 0,
+		total: 1,
+		occupied: 0,
+		maintenance: 0,
+		inactive: 0,
+	};
+	const rent = rentQuery.data ?? {
+		totalCollected: 0,
+		totalExpected: 0,
+		totalOutstanding: 0,
+	};
+	const arrears = arrearsQuery.data ?? {
+		totalArrears: 0,
+		tenantsInTotal: 0,
+		tenantsInArrears: 0,
+	};
+	const repairs = repairsQuery.data ?? {
+		open: 0,
+		inProgress: 0,
+		resolved: 0,
+		cancelled: 0,
+	};
 
 	const totalRepairs = repairs.open + repairs.inProgress + repairs.resolved;
 	const healthyTenants = Math.max(
@@ -104,5 +131,5 @@ export default function KpiCards() {
 		},
 	];
 
-	return <KpiCard cards={cards} />;
+	return <KpiCard cards={cards} isLoading={isLoading} />;
 }

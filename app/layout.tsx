@@ -1,11 +1,11 @@
 import "@/lib/orpc.server"; // for pre-rendering
-import { Toaster } from "sonner";
 import type { Metadata } from "next";
+import { Toaster } from "sonner";
 import "./globals.css";
+import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarConfigProvider } from "@/contexts/sidebar-context";
 import { Providers } from "@/lib/providers";
-import localFont from "next/font/local";
 
 export const metadata: Metadata = {
 	title: "Rently",

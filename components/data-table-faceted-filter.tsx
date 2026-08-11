@@ -1,8 +1,8 @@
 "use client";
 
-import * as React from "react";
 import type { Column } from "@tanstack/react-table";
 import { PlusCircle } from "lucide-react";
+import type * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -104,7 +104,6 @@ export function DataTableFacetedFilter<TData, TValue>({
 												filterValues.length ? filterValues : undefined,
 											);
 										}}
-										className="cursor-pointer"
 									>
 										<Checkbox checked={isSelected} className="mr-2" />
 										{option.icon && (
@@ -126,7 +125,7 @@ export function DataTableFacetedFilter<TData, TValue>({
 								<CommandGroup>
 									<CommandItem
 										onSelect={() => column?.setFilterValue(undefined)}
-										className="justify-center text-center cursor-pointer"
+										className="justify-center text-center "
 									>
 										Clear filters
 									</CommandItem>

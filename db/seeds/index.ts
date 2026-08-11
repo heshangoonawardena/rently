@@ -6,13 +6,12 @@
 
 // Better Auth
 export * from "./auth";
-
-// Rently domain
-export * from "./unit";
-export * from "./tenant";
+export * from "./document";
+export * from "./inspection";
 export * from "./lease";
 export * from "./payment";
-export * from "./utility";
 export * from "./repair";
-export * from "./inspection";
-export * from "./document";
+export * from "./tenant";
+// Rently domain
+export * from "./unit";
+export * from "./utility";

@@ -29,14 +29,14 @@ import {
 import {
 	createLeaseContract,
 	createLeaseRentContract,
+	deleteLeaseContract,
 	deleteLeaseRentContract,
 	getLeaseContract,
 	listLeaseContract,
 	listLeaseRentContract,
-	deleteLeaseContract,
+	renewLeaseContract,
 	updateLeaseContract,
 	updateLeaseRentContract,
-	renewLeaseContract,
 } from "./lease.contract";
 import {
 	bulkUpsertNotificationPreferencesContract,
@@ -50,9 +50,7 @@ import {
 import {
 	createPaymentContract,
 	getPaymentContract,
-	getReceiptContract,
 	listPaymentContract,
-	listReceiptsContract,
 	nextRentMonthContract,
 	updatePaymentContract,
 } from "./payment.contract";
@@ -79,14 +77,14 @@ import {
 } from "./report.contract";
 import {
 	createTenantContract,
+	createTenantOccupantContract,
 	deleteTenantContract,
+	deleteTenantOccupantContract,
 	getTenantContract,
 	listTenantContract,
-	updateTenantContract,
-	createTenantOccupantContract,
-	updateTenantOccupantContract,
-	deleteTenantOccupantContract,
 	listTenantOccupantContract,
+	updateTenantContract,
+	updateTenantOccupantContract,
 } from "./tenant.contract";
 import {
 	createUnitContract,
@@ -95,6 +93,16 @@ import {
 	listUnitContract,
 	updateUnitContract,
 } from "./unit.contract";
+import {
+	approveUserContract,
+	deleteUserAccountContract,
+	getMyUserProfileContract,
+	listAvailableTenantsForApprovalContract,
+	listUsersContract,
+	revokeUserAccessContract,
+	updateMyUserProfileContract,
+	updateUserRoleContract,
+} from "./user.contract";
 import {
 	createUtilityBillContract,
 	createUtilityContract,
@@ -107,13 +115,6 @@ import {
 	updateUtilityBillContract,
 	updateUtilityContract,
 } from "./utility.contract";
-import {
-	approveUserContract,
-	listAvailableTenantsForApprovalContract,
-	listUsersContract,
-	revokeUserAccessContract,
-	updateUserRoleContract,
-} from "./user.contract";
 
 export const contract = {
 	unit: {
@@ -152,8 +153,6 @@ export const contract = {
 		get: getPaymentContract,
 		list: listPaymentContract,
 		nextRentMonth: nextRentMonthContract,
-		getReceipt: getReceiptContract,
-		listReceipts: listReceiptsContract,
 	},
 	utility: {
 		create: createUtilityContract,
@@ -227,9 +226,12 @@ export const contract = {
 	},
 	user: {
 		list: listUsersContract,
+		me: getMyUserProfileContract,
+		updateMe: updateMyUserProfileContract,
 		approve: approveUserContract,
 		updateRole: updateUserRoleContract,
 		revokeAccess: revokeUserAccessContract,
+		delete: deleteUserAccountContract,
 		listAvailableTenants: listAvailableTenantsForApprovalContract,
 	},
 };

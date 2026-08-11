@@ -1,27 +1,32 @@
 "use client";
 
-import * as React from "react";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MoreHorizontal, ShieldAlert, UserCog } from "lucide-react";
+import {
+	useMutation,
+	useQueryClient,
+	useSuspenseQuery,
+} from "@tanstack/react-query";
+import { MoreHorizontal, ShieldAlert, Trash2, UserCog } from "lucide-react";
+import * as React from "react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-
-import { orpc } from "@/lib/orpc";
 import {
 	type ListUsersOutput,
 	type UpdateUserRole,
 	updateUserRole,
 } from "@/app/schemas/user.schema";
-import { Button } from "@/components/ui/button";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -30,6 +35,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	Field,
 	FieldDescription,
@@ -44,17 +57,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { orpc } from "@/lib/orpc";
 
 type UserRow = ListUsersOutput["items"][number];
 
@@ -64,11 +67,28 @@ type ManageUserActionsProps = {
 
 export function ManageUserActions({ user }: ManageUserActionsProps) {
 	const [roleOpen, setRoleOpen] = React.useState(false);
+	const [confirmRoleOpen, setConfirmRoleOpen] = React.useState(false);
+	const [pendingRoleChange, setPendingRoleChange] =
+		React.useState<UpdateUserRole | null>(null);
 	const queryClient = useQueryClient();
+	const usersQueryKey = orpc.user.list.queryKey({ input: {} });
+	const availableTenantsQueryKey = orpc.user.listAvailableTenants.queryKey({
+		input: {},
+	});
 
 	const {
 		data: { items: availableTenants },
-	} = useSuspenseQuery(orpc.user.listAvailableTenants.queryOptions({ input: {} }));
+	} = useSuspenseQuery(
+		orpc.user.listAvailableTenants.queryOptions({ input: {} }),
+	);
+
+	const {
+		data: { items: users },
+	} = useSuspenseQuery(
+		orpc.user.list.queryOptions({
+			input: {},
+		}),
+	);
 
 	const form = useForm<UpdateUserRole>({
 		resolver: zodResolver(updateUserRole),
@@ -86,6 +106,8 @@ export function ManageUserActions({ user }: ManageUserActionsProps) {
 				role: user.role ?? "manager",
 				tenantId: user.tenantId,
 			});
+			setConfirmRoleOpen(false);
+			setPendingRoleChange(null);
 		}
 	}, [form, roleOpen, user.id, user.role, user.tenantId]);
 
@@ -101,11 +123,20 @@ export function ManageUserActions({ user }: ManageUserActionsProps) {
 		orpc.user.updateRole.mutationOptions({
 			onSuccess: (data) => {
 				toast.success(`${data.name} is now ${data.role}`);
-				queryClient.invalidateQueries({
-					queryKey: orpc.user.list.queryKey({ input: {} }),
+				queryClient.setQueryData<ListUsersOutput>(usersQueryKey, (current) => {
+					if (!current) {
+						return current;
+					}
+
+					return {
+						items: current.items.map((item) =>
+							item.id === data.id ? { ...item, ...data } : item,
+						),
+					};
 				});
-				queryClient.invalidateQueries({
-					queryKey: orpc.user.listAvailableTenants.queryKey({ input: {} }),
+				void queryClient.invalidateQueries({ queryKey: usersQueryKey });
+				void queryClient.invalidateQueries({
+					queryKey: availableTenantsQueryKey,
 				});
 				setRoleOpen(false);
 			},
@@ -119,11 +150,44 @@ export function ManageUserActions({ user }: ManageUserActionsProps) {
 		orpc.user.revokeAccess.mutationOptions({
 			onSuccess: (data) => {
 				toast.success(`Access revoked for ${data.name}`);
-				queryClient.invalidateQueries({
-					queryKey: orpc.user.list.queryKey({ input: {} }),
+				queryClient.setQueryData<ListUsersOutput>(usersQueryKey, (current) => {
+					if (!current) {
+						return current;
+					}
+
+					return {
+						items: current.items.map((item) =>
+							item.id === data.id ? { ...item, ...data } : item,
+						),
+					};
 				});
-				queryClient.invalidateQueries({
-					queryKey: orpc.user.listAvailableTenants.queryKey({ input: {} }),
+				void queryClient.invalidateQueries({ queryKey: usersQueryKey });
+				void queryClient.invalidateQueries({
+					queryKey: availableTenantsQueryKey,
+				});
+			},
+			onError: (error) => {
+				toast.error(error.message);
+			},
+		}),
+	);
+
+	const deleteUserMutation = useMutation(
+		orpc.user.delete.mutationOptions({
+			onSuccess: (data) => {
+				toast.success(`${data.name} was deleted from the system`);
+				queryClient.setQueryData<ListUsersOutput>(usersQueryKey, (current) => {
+					if (!current) {
+						return current;
+					}
+
+					return {
+						items: current.items.filter((item) => item.id !== data.id),
+					};
+				});
+				void queryClient.invalidateQueries({ queryKey: usersQueryKey });
+				void queryClient.invalidateQueries({
+					queryKey: availableTenantsQueryKey,
 				});
 			},
 			onError: (error) => {
@@ -133,11 +197,39 @@ export function ManageUserActions({ user }: ManageUserActionsProps) {
 	);
 
 	const onSubmit = (values: UpdateUserRole) => {
-		updateRoleMutation.mutate(values);
+		setPendingRoleChange(values);
+		setConfirmRoleOpen(true);
+	};
+
+	const handleConfirmRoleChange = () => {
+		if (!pendingRoleChange) {
+			return;
+		}
+
+		updateRoleMutation.mutate(pendingRoleChange);
+		setConfirmRoleOpen(false);
 	};
 
 	const tenantRequiredAndMissing =
 		watchedRole === "tenant" && !form.getValues("tenantId");
+	const ownerCount = users.filter(
+		(item) => item.approvalStatus === "approved" && item.role === "owner",
+	).length;
+	const ownerLimitReached = watchedRole === "owner" && user.role !== "owner";
+	const ownerSelectionDisabled = user.role !== "owner" && ownerCount >= 2;
+	const roleChangeBlocked = ownerLimitReached && ownerSelectionDisabled;
+
+	const selectedTenantLabel =
+		availableTenants.find((item) => item.id === form.getValues("tenantId")) ??
+		null;
+	const tenantOptions = React.useMemo(() => {
+		return Array.from(
+			new Map(availableTenants.map((item) => [item.id, item])).values(),
+		);
+	}, [availableTenants]);
+	const hasCurrentTenantInOptions =
+		Boolean(user.tenantId) &&
+		tenantOptions.some((item) => item.id === user.tenantId);
 
 	return (
 		<>
@@ -171,19 +263,61 @@ export function ManageUserActions({ user }: ManageUserActionsProps) {
 								<AlertDialogHeader>
 									<AlertDialogTitle>Revoke User Access?</AlertDialogTitle>
 									<AlertDialogDescription>
-										{user.name} will immediately lose access to this organization.
+										{user.name} will immediately lose access to this
+										organization.
 									</AlertDialogDescription>
 								</AlertDialogHeader>
 								<AlertDialogFooter>
-									<AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
+									<AlertDialogCancel variant="outline">
+										Cancel
+									</AlertDialogCancel>
 									<AlertDialogAction
 										variant="destructive"
-										onClick={() => revokeAccessMutation.mutate({ userId: user.id })}
+										onClick={() =>
+											revokeAccessMutation.mutate({ userId: user.id })
+										}
 										disabled={revokeAccessMutation.isPending}
 									>
 										{revokeAccessMutation.isPending
 											? "Revoking..."
 											: "Revoke Access"}
+									</AlertDialogAction>
+								</AlertDialogFooter>
+							</AlertDialogContent>
+						</AlertDialog>
+
+						<AlertDialog>
+							{/* <AlertDialogTrigger asChild>
+								<DropdownMenuItem
+									variant="destructive"
+									onSelect={(event) => event.preventDefault()}
+								>
+									<Trash2 className="mr-2 size-4" />
+									Delete User
+								</DropdownMenuItem>
+							</AlertDialogTrigger> */}
+							<AlertDialogContent size="sm">
+								<AlertDialogHeader>
+									<AlertDialogTitle>Delete User Account?</AlertDialogTitle>
+									<AlertDialogDescription>
+										This permanently deletes {user.name} from the system and
+										removes all access.
+									</AlertDialogDescription>
+								</AlertDialogHeader>
+								<AlertDialogFooter>
+									<AlertDialogCancel variant="outline">
+										Cancel
+									</AlertDialogCancel>
+									<AlertDialogAction
+										variant="destructive"
+										onClick={() =>
+											deleteUserMutation.mutate({ userId: user.id })
+										}
+										disabled={deleteUserMutation.isPending}
+									>
+										{deleteUserMutation.isPending
+											? "Deleting..."
+											: "Delete User"}
 									</AlertDialogAction>
 								</AlertDialogFooter>
 							</AlertDialogContent>
@@ -219,11 +353,31 @@ export function ManageUserActions({ user }: ManageUserActionsProps) {
 												<SelectValue placeholder="Select role" />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value="owner">Owner</SelectItem>
+												<SelectItem
+													value="owner"
+													disabled={ownerSelectionDisabled}
+												>
+													Owner
+												</SelectItem>
 												<SelectItem value="manager">Manager</SelectItem>
-												<SelectItem value="tenant">Tenant</SelectItem>
+												<SelectItem
+													value="tenant"
+													disabled={user.role === "owner"}
+												>
+													Tenant
+												</SelectItem>
 											</SelectContent>
 										</Select>
+										{ownerSelectionDisabled && (
+											<FieldDescription className="text-destructive">
+												Only 2 owners are allowed at a time.
+											</FieldDescription>
+										)}
+										{user.role === "owner" && (
+											<FieldDescription className="text-destructive">
+												Owner role cannot be changed directly to tenant.
+											</FieldDescription>
+										)}
 										{fieldState.invalid && (
 											<FieldError errors={[fieldState.error]} />
 										)}
@@ -246,16 +400,22 @@ export function ManageUserActions({ user }: ManageUserActionsProps) {
 													<SelectValue placeholder="Select a tenant" />
 												</SelectTrigger>
 												<SelectContent>
-													{availableTenants.map((item) => (
+													{tenantOptions.map((item) => (
 														<SelectItem key={item.id} value={String(item.id)}>
-															{item.firstName} {item.lastName ?? ""} ({item.nic})
+															{item.firstName} {item.lastName ?? ""} ({item.nic}
+															)
 														</SelectItem>
 													))}
-													{user.tenantId && user.tenantName && (
-														<SelectItem value={String(user.tenantId)}>
-															{user.tenantName} (current)
-														</SelectItem>
-													)}
+													{user.tenantId &&
+														user.tenantName &&
+														!hasCurrentTenantInOptions && (
+															<SelectItem
+																key={`current-${user.tenantId}`}
+																value={String(user.tenantId)}
+															>
+																{user.tenantName} (current)
+															</SelectItem>
+														)}
 												</SelectContent>
 											</Select>
 											<FieldDescription>
@@ -275,13 +435,43 @@ export function ManageUserActions({ user }: ManageUserActionsProps) {
 						<Button
 							type="submit"
 							form="update-user-role-form"
-							disabled={updateRoleMutation.isPending || tenantRequiredAndMissing}
+							disabled={
+								updateRoleMutation.isPending ||
+								tenantRequiredAndMissing ||
+								roleChangeBlocked
+							}
 						>
 							{updateRoleMutation.isPending ? "Saving..." : "Save Changes"}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			<AlertDialog open={confirmRoleOpen} onOpenChange={setConfirmRoleOpen}>
+				<AlertDialogContent size="sm">
+					<AlertDialogHeader>
+						<AlertDialogTitle>Confirm Role Change?</AlertDialogTitle>
+						<AlertDialogDescription>
+							{pendingRoleChange
+								? `Set ${user.name} to ${pendingRoleChange.role}${
+										pendingRoleChange.role === "tenant" && selectedTenantLabel
+											? ` (${selectedTenantLabel.firstName} ${selectedTenantLabel.lastName ?? ""})`
+											: ""
+									}`
+								: "Confirm this role change."}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleConfirmRoleChange}
+							disabled={updateRoleMutation.isPending}
+						>
+							{updateRoleMutation.isPending ? "Applying..." : "Confirm"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</>
 	);
 }

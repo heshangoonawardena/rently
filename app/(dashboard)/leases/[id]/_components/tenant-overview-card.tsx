@@ -1,4 +1,7 @@
 "use client";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { Briefcase, CreditCard, Phone, User, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import {
 	Card,
 	CardContent,
@@ -6,29 +9,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-	Briefcase,
-	CreditCard,
-	MapPin,
-	Phone,
-	User,
-	Users,
-} from "lucide-react";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { orpc } from "@/lib/orpc";
-import { Role } from "@/types/role";
-
-interface Tenant {
-	firstName: string;
-	lastName: string;
-	nickname: string | null;
-	nic: string;
-	occupation: string | null;
-	phoneNumber: string | null;
-	address: string | null;
-	status: string;
-}
+import type { Role } from "@/types/role";
 
 type TenantOverviewCardProps = {
 	leaseId: number;

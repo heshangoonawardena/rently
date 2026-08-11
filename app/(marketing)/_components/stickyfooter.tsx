@@ -1,7 +1,7 @@
 "use client";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
 
 export function StickyFooter() {
 	const [isAtBottom, setIsAtBottom] = useState(false);
@@ -52,10 +52,7 @@ export function StickyFooter() {
 										Home
 									</Button>
 									<Button variant={"ghost"} size={"lg"}>
-										Docs*
-									</Button>
-									<Button variant={"ghost"} size={"lg"}>
-										Components*
+										Docs
 									</Button>
 								</div>
 								<div className="flex flex-col items-start">

@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export type KpiSegment = {
 	label: string;
@@ -34,6 +35,7 @@ export type KpiCardsProps = {
 	cards: KpiCardData[];
 	/** Override the grid's column classes per use case. */
 	className?: string;
+	isLoading?: boolean;
 };
 
 /** Returns 0 instead of NaN/Infinity when total is 0 or inputs are bad. */
@@ -50,7 +52,28 @@ function safePct(part: number, total: number): number {
  * `KpiCardData[]` wherever your data lives (a query hook, a server
  * component, a test fixture) and hand it to this component.
  */
-export function KpiCard({ cards }: KpiCardsProps) {
+export function KpiCard({ cards, isLoading }: KpiCardsProps) {
+	if (isLoading) {
+		return (
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+				{Array.from({ length: 4 }).map((_, index) => (
+					<Card key={`kpi-card-skeleton-${index}`} className="p-4">
+						<CardContent className="space-y-4">
+							<Skeleton className="h-4 w-24" />
+							<Skeleton className="h-9 w-28" />
+							<div className="flex justify-between gap-2">
+								<Skeleton className="h-10 flex-1" />
+								<Skeleton className="h-10 flex-1" />
+							</div>
+							<Skeleton className="h-2 w-full rounded-full" />
+							<Skeleton className="h-3 w-32" />
+						</CardContent>
+					</Card>
+				))}
+			</div>
+		);
+	}
+
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 			{cards.map((card) => {

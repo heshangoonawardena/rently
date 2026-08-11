@@ -1,12 +1,23 @@
 "use client";
 
-import * as React from "react";
-import { CalendarIcon, CircleHelp, Edit } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, FieldErrors, useForm } from "react-hook-form";
-
-import type { VariantProps } from "class-variance-authority";
-import { Button, buttonVariants } from "@/components/ui/button";
+import {
+	useMutation,
+	useQueryClient,
+	useSuspenseQuery,
+} from "@tanstack/react-query";
+import { format } from "date-fns";
+import { CalendarIcon, CircleHelp, Edit } from "lucide-react";
+import * as React from "react";
+import { Controller, type FieldErrors, useForm } from "react-hook-form";
+import { toast } from "sonner";
+import {
+	type ListLeaseOutput,
+	type UpdateLease,
+	updateLease,
+} from "@/app/schemas/lease.schema";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	Dialog,
 	DialogContent,
@@ -16,7 +27,18 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-
+import {
+	Field,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -25,49 +47,19 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
-	Field,
-	FieldError,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
-import {
-	useMutation,
-	useQueryClient,
-	useSuspenseQuery,
-} from "@tanstack/react-query";
-import { orpc } from "@/lib/orpc";
-import { toast } from "sonner";
-import {
-	ListLeaseOutput,
-	updateLease,
-	UpdateLease,
-} from "@/app/schemas/lease.schema";
-import { format } from "date-fns";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { formatDateOnly } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import {
 	TENANT_STATUS_META,
 	UNIT_STATUS_META,
 	UNIT_TYPE_META,
 } from "@/config/table-facet-meta";
+import { orpc } from "@/lib/orpc";
+import { formatDateOnly } from "@/lib/utils";
 
 type EditLeaseModalProps = {
 	data: ListLeaseOutput["items"][number];
-	triggerVariant?: VariantProps<typeof buttonVariants>["variant"];
 	children?: React.ReactNode;
 };
 
-export function EditLeaseModal({
-	data,
-	triggerVariant = "ghost",
-	children,
-}: EditLeaseModalProps) {
+export function EditLeaseModal({ data, children }: EditLeaseModalProps) {
 	const [open, setOpen] = React.useState(false);
 	const queryClient = useQueryClient();
 
@@ -82,6 +74,7 @@ export function EditLeaseModal({
 			depositAmount: data.depositAmount,
 			agreedPaymentDay: data.currentRent?.agreedPaymentDay,
 			status: data.status,
+			rentAmount: data.currentRent?.rentAmount,
 		},
 	});
 
@@ -129,6 +122,8 @@ export function EditLeaseModal({
 	}
 
 	function onError(errors: FieldErrors<UpdateLease>) {
+		console.log(data);
+
 		console.log("Form errors:", errors);
 	}
 
@@ -136,7 +131,7 @@ export function EditLeaseModal({
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
 				{children ?? (
-					<Button variant={triggerVariant} className="w-full justify-start">
+					<Button className="w-full justify-start">
 						<Edit className="mr-2 size-4" />
 						Edit Lease
 					</Button>
@@ -291,7 +286,7 @@ export function EditLeaseModal({
 													id="date-0"
 													name=""
 												>
-													<CalendarIcon className="mr-2 h-4 w-4" />
+													<CalendarIcon className="mr-2 size-4" />
 													{field.value ? (
 														format(field.value, "d MMM yyyy")
 													) : (
@@ -334,7 +329,7 @@ export function EditLeaseModal({
 													id="date-0"
 													name=""
 												>
-													<CalendarIcon className="mr-2 h-4 w-4" />
+													<CalendarIcon className="mr-2 size-4" />
 													{field.value ? (
 														format(field.value, "d MMM yyyy")
 													) : (

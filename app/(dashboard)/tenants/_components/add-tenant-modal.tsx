@@ -1,10 +1,12 @@
 "use client";
 
-import * as React from "react";
-import { Plus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
-
+import { toast } from "sonner";
+import { type TenantSchema, tenantSchema } from "@/app/schemas/tenant.schema";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -15,20 +17,15 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
-import { TenantSchema, tenantSchema } from "@/app/schemas/tenant.schema";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { orpc } from "@/lib/orpc";
-import { toast } from "sonner";
 
 export function AddTenantModal() {
 	const [open, setOpen] = React.useState(false);
@@ -74,7 +71,7 @@ export function AddTenantModal() {
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button className="cursor-pointer">
+				<Button>
 					<Plus className="size-4" />
 					Add Tenant
 				</Button>

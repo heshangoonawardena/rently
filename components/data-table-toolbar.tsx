@@ -2,11 +2,10 @@
 
 import type { Table } from "@tanstack/react-table";
 import { RefreshCcw, Search } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { DataTableFacetedFilter } from "@/components/data-table-faceted-filter";
 import { DataTableViewOptions } from "@/components/data-table-view-options";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export interface FacetedFilterOption {
 	title: string;

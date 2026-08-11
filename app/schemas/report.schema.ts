@@ -1,10 +1,10 @@
+import z from "zod";
 import {
 	inspectionStatusEnum,
 	leaseStatusEnum,
 	paymentMethodEnum,
 	paymentTypeEnum,
 } from "@/db/schema/enums";
-import z from "zod";
 
 // ── Shared primitives ──
 
@@ -82,8 +82,8 @@ export const paymentOverviewInput = z.object({
 	limit: z.number().int().min(1).max(100).default(5),
 
 	// Filters — all optional, omit for dashboard defaults
-	from: z.iso.date("from must be a valid ISO date (YYYY-MM-DD)").optional(),
-	to: z.iso.date("to must be a valid ISO date (YYYY-MM-DD)").optional(),
+	from: z.iso.datetime("from must be a valid ISO date (YYYY-MM-DD)").optional(),
+	to: z.iso.datetime("to must be a valid ISO date (YYYY-MM-DD)").optional(),
 	unitId: z.number().int().positive().optional(),
 	paymentType: z.enum(paymentTypeEnum.enumValues).optional(),
 	paymentMethod: z.enum(paymentMethodEnum.enumValues).optional(),

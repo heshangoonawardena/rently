@@ -1,8 +1,11 @@
 "use client";
 
-import { ListUnitOutput } from "@/app/schemas/unit.schema";
 import type { ColumnDef } from "@tanstack/react-table";
-
+import { Building, Edit, MoreHorizontal, Trash2 } from "lucide-react";
+import Link from "next/link";
+import type { ListUnitOutput } from "@/app/schemas/unit.schema";
+import { DataTableColumnHeader } from "@/components/data-table-column-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -12,24 +15,20 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Building, Edit, Eye, MoreHorizontal, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { DeleteUnitModal } from "./delete-unit-modal";
-import Link from "next/link";
-import { EditUnitModal } from "./edit-unit-modal";
-import { Role } from "@/types/role";
-import { DataTableColumnHeader } from "@/components/data-table-column-header";
 import {
 	UNIT_STATUS_META,
 	UNIT_TYPE_META,
 	UTILITY_BILLING_MODE_META,
 } from "@/config/table-facet-meta";
+import { cn } from "@/lib/utils";
+import type { Role } from "@/types/role";
+import { DeleteUnitModal } from "./delete-unit-modal";
+import { EditUnitModal } from "./edit-unit-modal";
 
 export type Payment = {
 	id: string;
@@ -214,7 +213,13 @@ export const columns = (
 
 			return (
 				<div>
-					<div>{endDate}</div>
+					<div>
+						{new Date(endDate).toLocaleDateString("en-GB", {
+							day: "2-digit",
+							month: "short",
+							year: "numeric",
+						})}
+					</div>
 					<div className={cn("text-xs", color)}>
 						expires in {diffDays >= 0 ? diffDays : Math.abs(diffDays)} days
 						{diffDays < 0 ? " ago" : ""}

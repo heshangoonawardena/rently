@@ -1,26 +1,41 @@
 "use client";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { columns } from "./columns";
-import { DataTable } from "@/components/data-table";
-import { orpc } from "@/lib/orpc";
-import { exportCsv } from "@/lib/exports/csv";
-import { exportPdf } from "@/lib/exports/pdf";
-import { formatCurrency, formatExportDate } from "@/lib/exports/formatters";
-import { ExportButtons } from "@/components/export/export-buttons";
-import {
-	PAYMENT_METHOD_META,
-	PAYMENT_METHOD_FILTER_OPTIONS,
-	PAYMENT_TYPE_META,
-	PAYMENT_TYPE_FILTER_OPTIONS,
-} from "@/config/table-facet-meta";
-import type { ListPaymentOutput } from "@/app/schemas/payment.schema";
 import type { Table } from "@tanstack/react-table";
+import type { ListPaymentOutput } from "@/app/schemas/payment.schema";
+import { DataTable } from "@/components/data-table";
+import { ExportButtons } from "@/components/export/export-buttons";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+	PAYMENT_METHOD_FILTER_OPTIONS,
+	PAYMENT_METHOD_META,
+	PAYMENT_TYPE_FILTER_OPTIONS,
+	PAYMENT_TYPE_META,
+} from "@/config/table-facet-meta";
+import { exportCsv } from "@/lib/exports/csv";
+import { formatCurrency, formatExportDate } from "@/lib/exports/formatters";
+import { exportPdf } from "@/lib/exports/pdf";
+import { orpc } from "@/lib/orpc";
+import { columns } from "./columns";
+
+const DEFAULT_PAGE_SIZE = 10;
 
 export default function PaymentsTable() {
-	const { data: { items: payments } = { items: [] } } = useSuspenseQuery(
-		orpc.payment.list.queryOptions({ input: {} }),
+	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+	const [cursorHistory, setCursorHistory] = useState<(number | null)[]>([]);
+	const [currentCursor, setCurrentCursor] = useState<number | null>(null);
+
+	const { data } = useSuspenseQuery(
+		orpc.payment.list.queryOptions({
+			input: {
+				limit: pageSize,
+				cursor: currentCursor ?? undefined,
+			},
+		}),
 	);
+
+	const payments = data.items;
+	const nextCursor = data.nextCursor;
 	type PaymentRow = ListPaymentOutput["items"][number];
 
 	const facetedFilters = [
@@ -40,8 +55,9 @@ export default function PaymentsTable() {
 		const sortedRows = table.getSortedRowModel().rows;
 
 		const exportRows = sortedRows.map(({ original: payment }) => ({
-			paymentId: payment.id,
-			leaseId: payment.leaseId,
+			receiptNumber: payment.receiptNumber,
+			unit: payment.leaseSummary?.unitName ?? "-",
+			tenant: payment.leaseSummary?.tenantName ?? "-",
 			type:
 				PAYMENT_TYPE_META[payment.paymentType as keyof typeof PAYMENT_TYPE_META]
 					?.label ?? payment.paymentType,
@@ -81,10 +97,10 @@ export default function PaymentsTable() {
 		if (paymentMethodFilter?.length) {
 			const paymentMethodLabels = paymentMethodFilter.map(
 				(value) =>
-					PAYMENT_METHOD_META[value as keyof typeof PAYMENT_METHOD_META]?.label ??
-					value,
+					PAYMENT_METHOD_META[value as keyof typeof PAYMENT_METHOD_META]
+						?.label ?? value,
 			);
-			filterParts.push(`Method: ${paymentMethodLabels.join(", ")}`);
+			filterParts.push(`Payment method: ${paymentMethodLabels.join(", ")}`);
 		}
 
 		const filterText = filterParts.length
@@ -101,8 +117,9 @@ export default function PaymentsTable() {
 						title: "Payments Report",
 						filters: filterText,
 						headers: [
-							"Payment ID",
-							"Lease",
+							"Receipt No",
+							"Unit",
+							"Tenant",
 							"Type",
 							"Method",
 							"Amount",
@@ -110,8 +127,9 @@ export default function PaymentsTable() {
 							"Description",
 						],
 						rows: exportRows.map((row) => [
-							row.paymentId,
-							row.leaseId,
+							row.receiptNumber,
+							row.unit,
+							row.tenant,
 							row.type,
 							row.method,
 							row.amount,
@@ -130,6 +148,28 @@ export default function PaymentsTable() {
 		);
 	};
 
+	const handlePageSizeChange = (nextPageSize: number) => {
+		setPageSize(nextPageSize);
+		setCursorHistory([]);
+		setCurrentCursor(null);
+	};
+
+	const handlePreviousPage = () => {
+		setCursorHistory((history) => {
+			if (history.length === 0) return history;
+			const nextHistory = history.slice(0, -1);
+			setCurrentCursor(history[history.length - 1]);
+			return nextHistory;
+		});
+	};
+
+	const handleNextPage = () => {
+		if (nextCursor === null) return;
+
+		setCursorHistory((history) => [...history, currentCursor]);
+		setCurrentCursor(nextCursor);
+	};
+
 	return (
 		<Card>
 			<CardContent>
@@ -138,6 +178,16 @@ export default function PaymentsTable() {
 					columns={columns}
 					facetedFilters={facetedFilters}
 					renderToolbarActions={renderToolbarActions}
+					pagination={{
+						mode: "cursor",
+						currentPage: cursorHistory.length + 1,
+						pageSize,
+						canPreviousPage: cursorHistory.length > 0,
+						canNextPage: nextCursor !== null,
+						onPageSizeChange: handlePageSizeChange,
+						onPreviousPage: handlePreviousPage,
+						onNextPage: handleNextPage,
+					}}
 				/>
 			</CardContent>
 		</Card>

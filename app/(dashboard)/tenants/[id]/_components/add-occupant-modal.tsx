@@ -1,13 +1,15 @@
 "use client";
 
-import * as React from "react";
-import { Plus, Users } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, FieldErrors, useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import * as React from "react";
+import { Controller, type FieldErrors, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
-
+import {
+	type CreateTenantOccupant,
+	createTenantOccupant,
+} from "@/app/schemas/tenant.occupant.schema";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -18,18 +20,14 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { orpc } from "@/lib/orpc";
-import {
-	CreateTenantOccupant,
-	createTenantOccupant,
-} from "@/app/schemas/tenant.occupant.schema";
 
 type AddOccupantModalProps = {
 	tenantId: number;
@@ -88,7 +86,7 @@ export function AddOccupantModal({
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
 				{children ?? (
-					<Button variant="outline" className="cursor-pointer" size="sm">
+					<Button variant="outline" size="sm">
 						<Plus className="mr-2 size-4" />
 						Add Occupant
 					</Button>

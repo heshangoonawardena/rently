@@ -1,5 +1,5 @@
-import { DB } from "@/db/db";
-import { user, organization, member, account, session } from "@/db/schema/auth";
+import type { DB } from "@/db/db";
+import { account, member, organization, user } from "@/db/schema/auth";
 
 export const auth = async (db: DB) => {
 	// Create user
@@ -16,7 +16,7 @@ export const auth = async (db: DB) => {
 			},
 			{
 				id: "3gcrOBz2grTR20amB6MlFesshy3Oon7G",
-				name: "John",
+				name: "Milan",
 				email: "heshangoonawardena2@gmail.com",
 				emailVerified: false,
 				createdAt: new Date(),
@@ -24,7 +24,7 @@ export const auth = async (db: DB) => {
 			},
 			{
 				id: "zP41e7ZCZBMFpOKA2CwIno0cHmulr9AQ",
-				name: "Marcus",
+				name: "Isuru",
 				email: "heshangoonawardena3@gmail.com",
 				emailVerified: false,
 				createdAt: new Date(),
@@ -32,37 +32,6 @@ export const auth = async (db: DB) => {
 			},
 		])
 		.returning();
-
-	// Create session
-	await db.insert(session).values([
-		{
-			id: "vGWDliHktzvXUcAb9kiNoWXj2QV9mdnO",
-			expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days from now
-			token: "x8zoEsWV0UNeH07UEEPRxyf8OOxk6FvI",
-			activeOrganizationId: "org_1",
-			createdAt: new Date(),
-			updatedAt: new Date(),
-			userId: users[0].id,
-		},
-		{
-			id: "glB404Fehyj2IK2Y3TRtn0xaDyYWAYs5",
-			expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days from now
-			token: "xQLZM0Oi5SBKI43oVpFo6pPfQloDoTZF",
-			activeOrganizationId: "org_1",
-			createdAt: new Date(),
-			updatedAt: new Date(),
-			userId: users[1].id,
-		},
-		{
-			id: "5ONSttp4imp98et8tyChyAT6F3xtL9K5",
-			expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days from now
-			token: "xPm0J4TxadiwN8sLUL6RqVaydESpP6Ol",
-			activeOrganizationId: "org_1",
-			createdAt: new Date(),
-			updatedAt: new Date(),
-			userId: users[2].id,
-		},
-	]);
 
 	// Create account
 	await db.insert(account).values([

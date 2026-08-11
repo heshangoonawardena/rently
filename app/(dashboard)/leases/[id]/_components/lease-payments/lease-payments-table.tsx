@@ -1,13 +1,23 @@
 "use client";
-import { Card, CardContent } from "@/components/ui/card";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { columns } from "./columns";
+import { useState } from "react";
 import { DataTable } from "@/components/data-table";
-import { orpc } from "@/lib/orpc";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+
+const DEFAULT_PAGE_SIZE = 10;
+
 import {
 	PAYMENT_METHOD_FILTER_OPTIONS,
 	PAYMENT_TYPE_FILTER_OPTIONS,
 } from "@/config/table-facet-meta";
+import { orpc } from "@/lib/orpc";
+import { columns } from "./columns";
 
 type LeasePaymentsTableProps = {
 	leaseId: number;
@@ -16,11 +26,42 @@ type LeasePaymentsTableProps = {
 export default function LeasePaymentsTable({
 	leaseId,
 }: LeasePaymentsTableProps) {
-	const { data: { items: payments } = { items: [] } } = useSuspenseQuery(
+	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+	const [cursorHistory, setCursorHistory] = useState<(number | null)[]>([]);
+	const [currentCursor, setCurrentCursor] = useState<number | null>(null);
+	const {
+		data: { items: payments, nextCursor },
+	} = useSuspenseQuery(
 		orpc.payment.list.queryOptions({
-			input: { leaseId },
+			input: {
+				leaseId,
+				limit: pageSize,
+				cursor: currentCursor ?? undefined,
+			},
 		}),
 	);
+
+	const handlePageSizeChange = (nextPageSize: number) => {
+		setPageSize(nextPageSize);
+		setCursorHistory([]);
+		setCurrentCursor(null);
+	};
+
+	const handlePreviousPage = () => {
+		setCursorHistory((history) => {
+			if (history.length === 0) return history;
+			const nextHistory = history.slice(0, -1);
+			setCurrentCursor(history[history.length - 1]);
+			return nextHistory;
+		});
+	};
+
+	const handleNextPage = () => {
+		if (nextCursor === null) return;
+
+		setCursorHistory((history) => [...history, currentCursor]);
+		setCurrentCursor(nextCursor);
+	};
 
 	const incomingTotal = payments
 		.filter(
@@ -63,6 +104,12 @@ export default function LeasePaymentsTable({
 
 	return (
 		<Card>
+			<CardHeader className="flex flex-row items-start justify-between">
+				<div>
+					<CardTitle>Payments Overview</CardTitle>
+					<CardDescription>All payments of the lease</CardDescription>
+				</div>
+			</CardHeader>
 			<CardContent>
 				<div className="grid gap-3 pb-4 sm:grid-cols-2 lg:grid-cols-4">
 					<div className="rounded-md border p-3">
@@ -99,6 +146,16 @@ export default function LeasePaymentsTable({
 					data={payments}
 					columns={columns}
 					facetedFilters={facetedFilters}
+					pagination={{
+						mode: "cursor",
+						currentPage: cursorHistory.length + 1,
+						pageSize,
+						canPreviousPage: cursorHistory.length > 0,
+						canNextPage: nextCursor !== null,
+						onPageSizeChange: handlePageSizeChange,
+						onPreviousPage: handlePreviousPage,
+						onNextPage: handleNextPage,
+					}}
 				/>
 			</CardContent>
 		</Card>

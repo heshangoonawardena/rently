@@ -47,11 +47,11 @@ const tenant = ac.newRole({
 	lease: ["read"],
 	payment: ["read"],
 	utility: ["read"],
-	repair: ["create", "read"],
+	repair: ["create", "read", "update"],
 	inspection: ["read"],
 	document: ["read"],
 	organization: ["read"],
 });
 
-export { owner, manager, tenant, ac, statement };
+export { ac, manager, owner, statement, tenant };
 // export type OrganizationRole = keyof typeof "owner" | "manager"	| "tenant";

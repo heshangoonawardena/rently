@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from "clsx";
+import { type ClassValue, clsx } from "clsx";
 import { format } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
@@ -23,11 +23,16 @@ export function getPastDate(daysToSubtract: number) {
 	targetDate.setDate(targetDate.getDate() - daysToSubtract);
 	return format(targetDate, "yyyy-MM-dd");
 }
+export function getPastDateTime(daysToSubtract: number) {
+	const targetDate = new Date();
+	targetDate.setDate(targetDate.getDate() - daysToSubtract);
+	return targetDate;
+}
 
 export function formatDateOnly(
 	date: Date | null | undefined,
 ): string | undefined {
-	if (!date || isNaN(date.getTime())) return undefined;
+	if (!date || Number.isNaN(date.getTime())) return undefined;
 
 	const year = date.getFullYear();
 	// Pad months and days with leading zeros if they are single digits

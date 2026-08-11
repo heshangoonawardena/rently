@@ -1,11 +1,17 @@
 "use client";
 
-import * as React from "react";
-import { Edit } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Edit } from "lucide-react";
+import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
-import type { VariantProps } from "class-variance-authority";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { toast } from "sonner";
+import {
+	type ListUnitOutput,
+	type UpdateUnit,
+	updateUnit,
+} from "@/app/schemas/unit.schema";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -15,10 +21,13 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-
+import {
+	Field,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-
 import {
 	Select,
 	SelectContent,
@@ -26,34 +35,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	ListUnitOutput,
-	updateUnit,
-	UpdateUnit,
-} from "@/app/schemas/unit.schema";
-import { utilityBillingModeEnum } from "@/db/schema/enums";
-import {
-	Field,
-	FieldError,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@/lib/orpc";
-import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 import { UNIT_TYPE_FILTER_OPTIONS } from "@/config/table-facet-meta";
+import { utilityBillingModeEnum } from "@/db/schema/enums";
+import { orpc } from "@/lib/orpc";
 
 type EditUnitModalProps = {
 	data: ListUnitOutput["items"][number];
-	triggerVariant?: VariantProps<typeof buttonVariants>["variant"];
 	children?: React.ReactNode;
 };
 
-export function EditUnitModal({
-	data,
-	triggerVariant = "ghost",
-	children,
-}: EditUnitModalProps) {
+export function EditUnitModal({ data, children }: EditUnitModalProps) {
 	const [open, setOpen] = React.useState(false);
 	const queryClient = useQueryClient();
 
@@ -99,10 +91,7 @@ export function EditUnitModal({
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
 				{children ?? (
-					<Button
-						className="w-full justify-start cursor-pointer"
-						variant={triggerVariant}
-					>
+					<Button className="w-full justify-start ">
 						<Edit className="mr-2 size-4" />
 						Edit Unit
 					</Button>

@@ -1,23 +1,28 @@
 "use client";
 
-import * as React from "react";
 import {
-	ColumnDef,
-	type Table as TableType,
+	type ColumnDef,
+	type ColumnFiltersState,
 	flexRender,
 	getCoreRowModel,
-	useReactTable,
-	SortingState,
-	getSortedRowModel,
-	ColumnFiltersState,
-	getFilteredRowModel,
-	getPaginationRowModel,
 	getExpandedRowModel,
 	//   type VisibilityState,
 	getFacetedRowModel,
 	getFacetedUniqueValues,
+	getFilteredRowModel,
+	getPaginationRowModel,
+	getSortedRowModel,
+	type Row,
+	type SortingState,
+	type Table as TableType,
+	useReactTable,
 } from "@tanstack/react-table";
-
+import * as React from "react";
+import { DataTablePagination } from "@/components/data-table-pagination";
+import {
+	DataTableToolbar,
+	type FacetedFilterOption,
+} from "@/components/data-table-toolbar";
 import {
 	Table,
 	TableBody,
@@ -27,18 +32,26 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 
-import { DataTablePagination } from "@/components/data-table-pagination";
-import {
-	DataTableToolbar,
-	type FacetedFilterOption,
-} from "@/components/data-table-toolbar";
-
 interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
 	data: TData[];
-	renderRowSubComponent?: (row: any) => React.ReactNode;
+	renderRowSubComponent?: (row: Row<TData>) => React.ReactNode;
 	facetedFilters?: FacetedFilterOption[];
 	renderToolbarActions?: (table: TableType<TData>) => React.ReactNode;
+	pagination?:
+		| {
+			mode: "client";
+		}
+		| {
+			mode: "cursor";
+			currentPage: number;
+			pageSize: number;
+			canPreviousPage: boolean;
+			canNextPage: boolean;
+			onPageSizeChange: (pageSize: number) => void;
+			onPreviousPage: () => void;
+			onNextPage: () => void;
+		};
 }
 
 export function DataTable<TData, TValue>({
@@ -47,6 +60,7 @@ export function DataTable<TData, TValue>({
 	renderRowSubComponent,
 	facetedFilters,
 	renderToolbarActions,
+	pagination,
 }: DataTableProps<TData, TValue>) {
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -70,7 +84,11 @@ export function DataTable<TData, TValue>({
 		getFilteredRowModel: getFilteredRowModel(),
 		globalFilterFn: "includesString",
 		onGlobalFilterChange: setGlobalFilter,
-		getPaginationRowModel: getPaginationRowModel(),
+		...(pagination?.mode === "client"
+			? {
+				getPaginationRowModel: getPaginationRowModel(),
+			}
+			: {}),
 		state: {
 			sorting,
 			columnFilters,
@@ -148,7 +166,9 @@ export function DataTable<TData, TValue>({
 					</TableBody>
 				</Table>
 			</div>
-			<DataTablePagination table={table} />
+			<DataTablePagination
+				{...(pagination?.mode === "cursor" ? { pagination } : { table })}
+			/>
 		</div>
 	);
 }

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { getServerRole, getServerSession } from "./lib/get-server";
 
 const rolePermissions = {
@@ -32,7 +32,7 @@ const rolePermissions = {
 
 	tenant: {
 		default: "/leases",
-		routes: ["/payments", "/repairs", "/profile", "/leases", "/inspections"],
+		routes: ["/payments", "/repairs", "/leases", "/inspections"],
 	},
 } as const;
 
@@ -81,6 +81,5 @@ export const config = {
 		"/repairs/:path*",
 		"/users/:path*",
 		"/inspections/:path*",
-		"/profile/:path*",
 	],
 };

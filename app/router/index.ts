@@ -1,69 +1,5 @@
 import { implement } from "@orpc/server";
 import { contract } from "../contract";
-import { BaseContext } from "./middleware";
-import { createUnit, deleteUnit, getUnit, listUnit, updateUnit } from "./unit";
-import {
-	createTenant,
-	deleteTenant,
-	getTenant,
-	listTenant,
-	updateTenant,
-	createTenantOccupant,
-	updateTenantOccupant,
-	deleteTenantOccupant,
-	listTenantOccupant,
-} from "./tenant";
-import {
-	createLease,
-	getLease,
-	listLease,
-	listLeaseRent,
-	deleteLease,
-	updateLease,
-	deleteLeaseRent,
-	createLeaseRent,
-	updateLeaseRent,
-	renewLease,
-} from "./lease";
-import {
-	createPayment,
-	getPayment,
-	getReceipt,
-	listPayment,
-	listReceipts,
-	nextRentMonth,
-	updatePayment,
-} from "./payment";
-import {
-	createUtility,
-	createUtilityBill,
-	deactivateUtility,
-	deleteUtility,
-	deleteUtilityBill,
-	listUtility,
-	listUtilityBill,
-	markUtilityBillPaid,
-	updateUtility,
-	updateUtilityBill,
-} from "./utility";
-import {
-	addRepairUpdate,
-	createRepairRequest,
-	deleteRepairRequest,
-	getRepairRequest,
-	listRepairRequest,
-	listRepairUpdates,
-	updateRepairRequest,
-} from "./repair";
-import {
-	completeInspection,
-	createInspection,
-	deleteInspection,
-	getInspection,
-	listInspection,
-	skipInspection,
-	updateInspection,
-} from "./inspection";
 import {
 	createLeaseDocument,
 	createTenantDocument,
@@ -84,6 +20,53 @@ import {
 	updateUnitDocument,
 } from "./document";
 import {
+	completeInspection,
+	createInspection,
+	deleteInspection,
+	getInspection,
+	listInspection,
+	skipInspection,
+	updateInspection,
+} from "./inspection";
+import {
+	createLease,
+	createLeaseRent,
+	deleteLease,
+	deleteLeaseRent,
+	getLease,
+	listLease,
+	listLeaseRent,
+	renewLease,
+	updateLease,
+	updateLeaseRent,
+} from "./lease";
+import type { BaseContext } from "./middleware";
+import {
+	bulkUpsertNotificationPreferences,
+	deleteNotificationPreference,
+	listNotificationLogs,
+	listNotificationPreferences,
+	markAllNotificationsRead,
+	markNotificationRead,
+	upsertNotificationPreference,
+} from "./notification";
+import {
+	createPayment,
+	getPayment,
+	listPayment,
+	nextRentMonth,
+	updatePayment,
+} from "./payment";
+import {
+	addRepairUpdate,
+	createRepairRequest,
+	deleteRepairRequest,
+	getRepairRequest,
+	listRepairRequest,
+	listRepairUpdates,
+	updateRepairRequest,
+} from "./repair";
+import {
 	arrearsOverview,
 	expiringDocuments,
 	expiringLeases,
@@ -96,21 +79,39 @@ import {
 	upcomingRentDue,
 } from "./report";
 import {
-	bulkUpsertNotificationPreferences,
-	deleteNotificationPreference,
-	listNotificationLogs,
-	listNotificationPreferences,
-	markAllNotificationsRead,
-	markNotificationRead,
-	upsertNotificationPreference,
-} from "./notification";
+	createTenant,
+	createTenantOccupant,
+	deleteTenant,
+	deleteTenantOccupant,
+	getTenant,
+	listTenant,
+	listTenantOccupant,
+	updateTenant,
+	updateTenantOccupant,
+} from "./tenant";
+import { createUnit, deleteUnit, getUnit, listUnit, updateUnit } from "./unit";
 import {
 	approveUser,
+	deleteUserAccount,
+	getMyUserProfile,
 	listAvailableTenantsForApproval,
 	listUsers,
 	revokeUserAccess,
+	updateMyUserProfile,
 	updateUserRole,
 } from "./user";
+import {
+	createUtility,
+	createUtilityBill,
+	deactivateUtility,
+	deleteUtility,
+	deleteUtilityBill,
+	listUtility,
+	listUtilityBill,
+	markUtilityBillPaid,
+	updateUtility,
+	updateUtilityBill,
+} from "./utility";
 
 const os = implement(contract).$context<BaseContext>();
 
@@ -151,8 +152,6 @@ export const router = os.router({
 		get: getPayment,
 		list: listPayment,
 		nextRentMonth: nextRentMonth,
-		getReceipt: getReceipt,
-		listReceipts: listReceipts,
 	},
 	utility: {
 		create: createUtility,
@@ -226,9 +225,12 @@ export const router = os.router({
 	},
 	user: {
 		list: listUsers,
+		me: getMyUserProfile,
+		updateMe: updateMyUserProfile,
 		approve: approveUser,
 		updateRole: updateUserRole,
 		revokeAccess: revokeUserAccess,
+		delete: deleteUserAccount,
 		listAvailableTenants: listAvailableTenantsForApproval,
 	},
 });

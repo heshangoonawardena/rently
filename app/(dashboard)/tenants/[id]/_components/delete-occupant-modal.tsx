@@ -1,11 +1,8 @@
 "use client";
 
-import * as React from "react";
-import { Trash2 } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@/lib/orpc";
+import { Trash2 } from "lucide-react";
+import * as React from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -18,6 +15,8 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { orpc } from "@/lib/orpc";
 
 type DeleteOccupantButtonProps = {
 	tenantId: number;
@@ -30,7 +29,7 @@ export function DeleteOccupantButton({
 	tenantId,
 	occupantId,
 	occupantName,
-	children
+	children,
 }: DeleteOccupantButtonProps) {
 	const [open, setOpen] = React.useState(false);
 	const queryClient = useQueryClient();

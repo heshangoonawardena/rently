@@ -1,5 +1,16 @@
 "use client";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
+import {
+	CircleHelp,
+	Copy,
+	Edit,
+	MoreHorizontal,
+	Trash2,
+	Zap,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -7,24 +18,19 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Zap, CircleHelp, MoreHorizontal, Edit, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
-	DropdownMenuTrigger,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { Separator } from "@/components/ui/separator";
 import { UTILITY_TYPE_FILTER_OPTIONS } from "@/config/table-facet-meta";
 import { orpc } from "@/lib/orpc";
+import type { Role } from "@/types/role";
 import { AddUtilityModal } from "./add-utility-modal";
-import { EditUtilityModal } from "./edit-utility-modal";
 import { DeleteUtilityModal } from "./delete-utility-modal";
-
-export type Role = "tenant" | "manager" | "owner" | undefined;
+import { EditUtilityModal } from "./edit-utility-modal";
 
 type UtilityCardProps = {
 	id: number;
@@ -132,11 +138,7 @@ export function UtilityCard({ id, role }: UtilityCardProps) {
 												<div>
 													<DropdownMenu>
 														<DropdownMenuTrigger asChild>
-															<Button
-																variant="outline"
-																size="sm"
-																className="cursor-pointer"
-															>
+															<Button variant="outline" size="sm">
 																<MoreHorizontal className="size-4 mr-2" />
 																Actions
 															</Button>
@@ -175,7 +177,20 @@ export function UtilityCard({ id, role }: UtilityCardProps) {
 									<div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
 										<div>
 											<p className="text-muted-foreground">Account Number</p>
-											<p className="font-medium">{utility.accountNumber}</p>
+											<div className="flex items-center gap-2 font-medium">
+												<span>{utility.accountNumber}</span>
+												<button
+													type="button"
+													onClick={() =>
+														navigator.clipboard.writeText(utility.accountNumber)
+													}
+													className="rounded-sm p-1 hover:bg-muted"
+													aria-label="Copy Acount Number"
+													title="Copy Account Number"
+												>
+													<Copy className="size-3.5" />
+												</button>
+											</div>
 										</div>
 
 										<div>
@@ -197,7 +212,6 @@ export function UtilityCard({ id, role }: UtilityCardProps) {
 									</div>
 								</div>
 							</div>
-
 							{index < utilities.length - 1 && <Separator className="mt-4" />}
 						</div>
 					);

@@ -1,14 +1,18 @@
 "use client";
 
-import * as React from "react";
-import { CalendarIcon, Plus } from "lucide-react";
-import { Controller, FieldErrors, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, format, startOfDay } from "date-fns";
+import { CalendarIcon, Plus } from "lucide-react";
+import * as React from "react";
+import { Controller, type FieldErrors, useForm } from "react-hook-form";
 import { toast } from "sonner";
-
+import {
+	type CreateInspection,
+	createInspection,
+} from "@/app/schemas/inspection.schema";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	Dialog,
 	DialogContent,
@@ -18,26 +22,18 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
-import { orpc } from "@/lib/orpc";
-import {
-	CreateInspection,
-	createInspection,
-} from "@/app/schemas/inspection.schema";
+import { Input } from "@/components/ui/input";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { formatDateOnly } from "@/lib/utils";
 import {
 	Select,
 	SelectContent,
@@ -45,6 +41,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { orpc } from "@/lib/orpc";
+import { formatDateOnly } from "@/lib/utils";
 
 type AddInspectionModalProps = {
 	unitId?: number;

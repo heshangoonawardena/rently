@@ -1,17 +1,34 @@
 import { implement } from "@orpc/server";
-import { contract } from "../contract";
+import { and, desc, eq, gt, inArray } from "drizzle-orm";
 import { db } from "@/db/db";
+import { lease } from "@/db/schema/lease";
+import { tenant } from "@/db/schema/tenant";
 import { utility, utilityBill } from "@/db/schema/utility";
-import { and, desc, eq, gt } from "drizzle-orm";
+import { contract } from "../contract";
 import {
 	authMiddleware,
-	BaseContext,
+	type BaseContext,
 	permissionMiddleware,
 } from "./middleware";
-import { tenant } from "@/db/schema/tenant";
-import { lease } from "@/db/schema/lease";
 
 const os = implement(contract).$context<BaseContext>();
+
+/**
+ * Returns the tenant.id for the authenticated user if role === 'tenant',
+ * otherwise undefined.
+ */
+async function resolveTenantId(
+	role: string,
+	userId: string,
+): Promise<number | undefined> {
+	if (role !== "tenant") return undefined;
+	const [self] = await db
+		.select({ id: tenant.id })
+		.from(tenant)
+		.where(eq(tenant.userId, userId))
+		.limit(1);
+	return self?.id;
+}
 
 /**
  * Verify a tenant user can access a specific unit — they must have an active
@@ -128,7 +145,7 @@ export const deactivateUtility = os.utility.deactivate
 		if (existing.status === "inactive") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "UTILITY_ALREADY_INACTIVE" },
-				cause: "Utility account is already inactive",
+				message: "Utility account is already inactive",
 			});
 		}
 
@@ -155,7 +172,7 @@ export const deleteUtility = os.utility.delete
 		if (bill) {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "UTILITY_HAS_BILLS" },
-				cause: "Cannot delete a utility account with attached bills",
+				message: "Cannot delete a utility account with attached bills",
 			});
 		}
 
@@ -184,10 +201,30 @@ export const listUtility = os.utility.list
 		const { unitId, cursor, limit, status } = input;
 		const { role, userId } = context.user;
 
-		// Tenants may only list utilities for units they actively lease
+		// // Tenants may only list utilities for units they actively lease
+		// if (role === "tenant") {
+		// 	const allowed = await assertTenantCanAccessUnit(userId, unitId);
+		// 	if (!allowed) throw errors.FORBIDDEN();
+		// }
+
+		const tenantId = await resolveTenantId(role, userId);
+		let tenantUnitIds: number[] | undefined;
 		if (role === "tenant") {
-			const allowed = await assertTenantCanAccessUnit(userId, unitId);
-			if (!allowed) throw errors.FORBIDDEN();
+			if (tenantId === undefined) {
+				throw errors.FORBIDDEN();
+			}
+
+			const leaseRows = await db
+				.select({ unitId: lease.unitId })
+				.from(lease)
+				.where(and(eq(lease.tenantId, tenantId), eq(lease.status, "active")));
+			tenantUnitIds = leaseRows.map((row) => row.unitId);
+			if (tenantUnitIds.length === 0) {
+				return {
+					items: [],
+					nextCursor: null,
+				};
+			}
 		}
 
 		const rows = await db
@@ -198,6 +235,9 @@ export const listUtility = os.utility.list
 					eq(utility.unitId, unitId),
 					status ? eq(utility.status, status) : undefined,
 					cursor ? gt(utility.id, cursor) : undefined,
+					role === "tenant" && tenantUnitIds
+						? inArray(utility.unitId, tenantUnitIds)
+						: undefined,
 				),
 			)
 			.orderBy(desc(utility.updatedAt))
@@ -272,7 +312,7 @@ export const updateUtilityBill = os.utility.updateBill
 		if (existing.status === "discarded") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "BILL_NOT_EDITABLE" },
-				cause: "Discarded bills are not editable",
+				message: "Discarded bills are not editable",
 			});
 		}
 
@@ -311,7 +351,7 @@ export const markUtilityBillPaid = os.utility.markBillPaid
 		if (existing.status !== "issued") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "BILL_NOT_PAYABLE" },
-				cause: "Only issued bills can be marked as paid",
+				message: "Only issued bills can be marked as paid",
 			});
 		}
 
@@ -350,7 +390,7 @@ export const deleteUtilityBill = os.utility.deleteBill
 		if (existing.status !== "issued") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "BILL_NOT_DELETABLE" },
-				cause: "Only issued bills can be deleted",
+				message: "Only issued bills can be deleted",
 			});
 		}
 
@@ -384,7 +424,7 @@ export const listUtilityBill = os.utility.listBills
 					cause: "UTILITY_NOT_FOUND",
 				});
 			}
-
+			// assertTenantCanAccessUnit needs correction
 			const allowed = await assertTenantCanAccessUnit(
 				userId,
 				parentUtility.unitId,

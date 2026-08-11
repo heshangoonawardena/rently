@@ -2,10 +2,14 @@ import { oc } from "@orpc/contract";
 import z from "zod";
 import {
 	approveUser,
+	deleteUserAccount,
+	deleteUserAccountOutput,
 	listAvailableTenantsOutput,
 	listUsersInput,
 	listUsersOutput,
+	myUserNameOutput,
 	revokeUserAccess,
+	updateMyUserName,
 	updateUserRole,
 	userOutput,
 } from "../schemas/user.schema";
@@ -56,6 +60,30 @@ export const listUsersContract = base
 	.input(listUsersInput)
 	.output(listUsersOutput);
 
+export const getMyUserProfileContract = base
+	.route({
+		method: "GET",
+		path: "/users/me",
+		summary: "Get my display name",
+		description: "Gets the current signed-in user's display name.",
+		tags: ["Users"],
+	})
+	.input(z.object({}))
+	.output(myUserNameOutput);
+
+export const updateMyUserProfileContract = base
+	.route({
+		method: "PATCH",
+		path: "/users/name",
+		summary: "Update my display name",
+		description: "Updates the current signed-in user's display name only.",
+		tags: ["Users"],
+	})
+	.input(updateMyUserName)
+	.output(myUserNameOutput);
+
+export const updateMyUserNameContract = updateMyUserProfileContract;
+
 export const approveUserContract = base
 	.route({
 		method: "PATCH",
@@ -103,3 +131,15 @@ export const revokeUserAccessContract = base
 	})
 	.input(revokeUserAccess)
 	.output(userOutput);
+
+export const deleteUserAccountContract = base
+	.route({
+		method: "DELETE",
+		path: "/users/{userId}",
+		summary: "Delete user from the system",
+		description:
+			"Permanently deletes a user account and removes all system access.",
+		tags: ["Users"],
+	})
+	.input(deleteUserAccount)
+	.output(deleteUserAccountOutput);

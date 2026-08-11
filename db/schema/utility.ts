@@ -1,26 +1,26 @@
 import { relations } from "drizzle-orm";
 import {
-	pgTable,
-	text,
-	timestamp,
-	numeric,
 	date,
 	index,
-	serial,
 	integer,
+	numeric,
+	pgTable,
+	serial,
+	text,
+	timestamp,
 } from "drizzle-orm/pg-core";
-import { unit } from "./unit";
-import {
-	utilityTypeEnum,
-	utilityStatusEnum,
-	utilityBillStatusEnum,
-} from "./enums";
 import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
 } from "drizzle-zod";
-import z from "zod";
+import type z from "zod";
+import {
+	utilityBillStatusEnum,
+	utilityStatusEnum,
+	utilityTypeEnum,
+} from "./enums";
+import { unit } from "./unit";
 
 // Represents a physical utility account on a unit (electricity, water account).
 // Tied to the unit, not the lease. When a tenant changes and the utility

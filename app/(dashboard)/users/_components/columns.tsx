@@ -2,12 +2,11 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { ShieldCheck } from "lucide-react";
-
+import type { ListUsersOutput } from "@/app/schemas/user.schema";
+import { DataTableColumnHeader } from "@/components/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DataTableColumnHeader } from "@/components/data-table-column-header";
 import { cn } from "@/lib/utils";
-import type { ListUsersOutput } from "@/app/schemas/user.schema";
 import { ApproveUserModal } from "./approve-user-modal";
 import { ManageUserActions } from "./manage-user-actions";
 
@@ -16,30 +15,30 @@ type UserRow = ListUsersOutput["items"][number];
 const statusMeta = {
 	pending_approval: {
 		label: "Pending Approval",
-		color: "text-amber-600 border-amber-300 bg-amber-50",
+		color: "text-foreground border-border bg-muted/40",
 	},
 	approved: {
 		label: "Approved",
-		color: "text-emerald-600 border-emerald-300 bg-emerald-50",
+		color: "text-foreground border-border bg-muted/40",
 	},
 } as const;
 
 const roleMeta = {
 	owner: {
 		label: "Owner",
-		color: "text-blue-700 border-blue-300 bg-blue-50",
+		color: "text-foreground border-border bg-muted/40",
 	},
 	manager: {
 		label: "Manager",
-		color: "text-indigo-700 border-indigo-300 bg-indigo-50",
+		color: "text-foreground border-border bg-muted/40",
 	},
 	tenant: {
 		label: "Tenant",
-		color: "text-sky-700 border-sky-300 bg-sky-50",
+		color: "text-foreground border-border bg-muted/40",
 	},
 	unassigned: {
 		label: "Unassigned",
-		color: "text-muted-foreground",
+		color: "text-muted-foreground border-border bg-muted/20",
 	},
 } as const;
 
@@ -85,7 +84,8 @@ export const columns: ColumnDef<UserRow>[] = [
 		),
 		cell: ({ row }) => {
 			const role = row.original.role ?? "unassigned";
-			const config = roleMeta[role as keyof typeof roleMeta] ?? roleMeta.unassigned;
+			const config =
+				roleMeta[role as keyof typeof roleMeta] ?? roleMeta.unassigned;
 
 			return (
 				<Badge variant="outline" className={cn("gap-1", config.color)}>
@@ -108,7 +108,33 @@ export const columns: ColumnDef<UserRow>[] = [
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Signed Up" />
 		),
-		cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
+		cell: ({ row }) =>
+			new Date(row.original.createdAt).toLocaleDateString("en-GB", {
+				day: "2-digit",
+				month: "short",
+				year: "numeric",
+			}),
+	},
+	{
+		id: "lastLoggedInAt",
+		accessorFn: (row) => row.lastLoggedInAt,
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title="Last Login" />
+		),
+		cell: ({ row }) => {
+			const value = row.original.lastLoggedInAt;
+			if (!value) {
+				return "-";
+			}
+
+			return new Date(value).toLocaleString(undefined, {
+				year: "numeric",
+				month: "short",
+				day: "2-digit",
+				hour: "2-digit",
+				minute: "2-digit",
+			});
+		},
 	},
 	{
 		id: "actions",

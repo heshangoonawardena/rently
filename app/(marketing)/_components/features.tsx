@@ -1,10 +1,10 @@
 "use client";
-import { Card, CardContent } from "@/components/ui/card";
-import { Shield, Users } from "lucide-react";
 import { motion, useInView } from "framer-motion";
-import BackgroundBlur from "./background-blur";
+import { Shield, Users } from "lucide-react";
 import { useRef } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import BackgroundBlur from "./background-blur";
 
 export default function FeaturesSection() {
 	const ref = useRef(null);
@@ -268,9 +268,8 @@ export default function FeaturesSection() {
 												Better experience for everyone
 											</h2>
 											<p className="text-foreground">
-												Centralized communication, instant notifications,
-												transparent issue tracking. Your tenants stay happy, and
-												you stay sane.
+												Centralized communication, transparent issue tracking.
+												Your tenants stay happy, and you stay sane.
 											</p>
 										</div>
 									</div>

@@ -1,18 +1,31 @@
 "use client";
 
-import * as React from "react";
-import type { ComponentType } from "react";
-import { CalendarIcon, Plus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-	Control,
+	useMutation,
+	useQuery,
+	useQueryClient,
+	useSuspenseQuery,
+} from "@tanstack/react-query";
+import { endOfMonth, format, parseISO, startOfMonth } from "date-fns";
+import { CalendarIcon, Plus } from "lucide-react";
+import type { ComponentType } from "react";
+import * as React from "react";
+import {
+	type Control,
 	Controller,
-	FieldPath,
-	FieldValues,
+	type FieldErrors,
+	type FieldPath,
+	type FieldValues,
 	useForm,
 } from "react-hook-form";
-import { endOfMonth, format, parseISO, startOfMonth } from "date-fns";
-
+import { toast } from "sonner";
+import {
+	type CreatePayment,
+	createPayment,
+} from "@/app/schemas/payment.schema";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	Dialog,
 	DialogContent,
@@ -22,11 +35,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-
 import {
 	Field,
 	FieldDescription,
@@ -34,15 +42,12 @@ import {
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
-
+import { Input } from "@/components/ui/input";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-
-import { Calendar } from "@/components/ui/calendar";
-
 import {
 	Select,
 	SelectContent,
@@ -50,22 +55,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-
-import {
-	useMutation,
-	useQuery,
-	useQueryClient,
-	useSuspenseQuery,
-} from "@tanstack/react-query";
-
-import { orpc } from "@/lib/orpc";
-import { toast } from "sonner";
-
-import { createPayment, CreatePayment } from "@/app/schemas/payment.schema";
+import { Textarea } from "@/components/ui/textarea";
 import {
 	MANUAL_PAYMENT_TYPE_FILTER_OPTIONS,
 	PAYMENT_METHOD_FILTER_OPTIONS,
 } from "@/config/table-facet-meta";
+import { orpc } from "@/lib/orpc";
 import { formatDateOnly } from "@/lib/utils";
 
 const NO_PENDING_RENT_MONTH_RULE = "NO_PENDING_RENT_MONTH";
@@ -164,11 +159,9 @@ export function MarkPaymentModal() {
 	const selectedPaymentDate = form.watch("paymentDate");
 	const isRentFlow =
 		selectedPaymentType === "rent" || selectedPaymentType === "rent_waiver";
-
-	// const selectedLease = React.useMemo(
-	// 	() => leases.find((lease) => lease.id === selectedLeaseId),
-	// 	[leases, selectedLeaseId],
-	// );
+	const isDepositFlow =
+		selectedPaymentType === "deposit" ||
+		selectedPaymentType === "deposit_deduction";
 
 	const paymentDate = React.useMemo(() => {
 		const parsed = new Date(selectedPaymentDate);
@@ -199,27 +192,32 @@ export function MarkPaymentModal() {
 	const hasNoPendingRentMonth =
 		nextRentMonthErrorRule === NO_PENDING_RENT_MONTH_RULE;
 
+	const isArrearsRecovery = React.useMemo(() => {
+		if (!isRentFlow || !nextRentMonthQuery.data || !paymentDate) {
+			return false;
+		}
+
+		return (
+			startOfMonth(parseISO(nextRentMonthQuery.data.periodStart)).getTime() <
+			startOfMonth(paymentDate).getTime()
+		);
+	}, [isRentFlow, nextRentMonthQuery.data, paymentDate]);
+
 	React.useEffect(() => {
-		if (selectedPaymentType === "deposit") {
+		if (isDepositFlow) {
 			form.setValue("paymentAmount", 0);
 			return;
 		}
 
 		if (isRentFlow && nextRentMonthQuery.data) {
-			form.setValue(
-				"periodStart",
-				formatDateOnly(parseISO(nextRentMonthQuery.data.periodStart))!,
-			);
-			form.setValue(
-				"periodEnd",
-				formatDateOnly(parseISO(nextRentMonthQuery.data.periodEnd))!,
-			);
+			form.setValue("periodStart", nextRentMonthQuery.data.periodStart);
+			form.setValue("periodEnd", nextRentMonthQuery.data.periodEnd);
 			form.setValue(
 				"paymentAmount",
 				Number(nextRentMonthQuery.data.rentAmount),
 			);
 		}
-	}, [selectedPaymentType, isRentFlow, nextRentMonthQuery.data, form]);
+	}, [isRentFlow, nextRentMonthQuery.data, form, isDepositFlow]);
 
 	const createPaymentMutation = useMutation(
 		orpc.payment.create.mutationOptions({
@@ -240,6 +238,10 @@ export function MarkPaymentModal() {
 			},
 		}),
 	);
+
+	function onError(errors: FieldErrors<CreatePayment>) {
+		console.log("Form errors:", errors);
+	}
 
 	function onSubmit(values: CreatePayment) {
 		const selectedDate = new Date(values.paymentDate);
@@ -262,18 +264,14 @@ export function MarkPaymentModal() {
 				return;
 			}
 
-			values.periodStart = formatDateOnly(
-				parseISO(nextRentMonthQuery.data.periodStart),
-			)!;
-			values.periodEnd = formatDateOnly(
-				parseISO(nextRentMonthQuery.data.periodEnd),
-			)!;
+			values.periodStart = nextRentMonthQuery.data.periodStart;
+			values.periodEnd = nextRentMonthQuery.data.periodEnd;
 		}
 
-		if (values.paymentType === "deposit") {
+		if (isDepositFlow) {
 			const monthStart = startOfMonth(selectedDate);
-			values.periodStart = formatDateOnly(monthStart)!;
-			values.periodEnd = formatDateOnly(endOfMonth(monthStart))!;
+			values.periodStart = format(monthStart, "yyyy-MM-dd");
+			values.periodEnd = format(endOfMonth(monthStart), "yyyy-MM-dd");
 		}
 
 		createPaymentMutation.mutate(values);
@@ -282,7 +280,7 @@ export function MarkPaymentModal() {
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button className="cursor-pointer">
+				<Button>
 					<Plus className="mr-2 size-4" />
 					Mark Payment
 				</Button>
@@ -298,7 +296,7 @@ export function MarkPaymentModal() {
 
 				<form
 					id="payment-form"
-					onSubmit={form.handleSubmit(onSubmit)}
+					onSubmit={form.handleSubmit(onSubmit, onError)}
 					className="space-y-6"
 					autoComplete="off"
 				>
@@ -381,7 +379,7 @@ export function MarkPaymentModal() {
 													variant="outline"
 													className="justify-start w-full"
 												>
-													<CalendarIcon className="mr-2 h-4 w-4" />
+													<CalendarIcon className="mr-2 size-4" />
 
 													{field.value
 														? format(new Date(field.value), "yyyy-MM-dd")
@@ -392,9 +390,7 @@ export function MarkPaymentModal() {
 											<PopoverContent className="w-auto p-0">
 												<Calendar
 													mode="single"
-													disabled={(date) =>
-														date.getTime() > new Date().getTime()
-													}
+													disabled={(date) => date.getTime() > Date.now()}
 													onSelect={(date) => {
 														if (!date) return;
 														field.onChange(formatDateOnly(date));
@@ -417,12 +413,14 @@ export function MarkPaymentModal() {
 										<Input
 											type="number"
 											value={field.value}
-											disabled={selectedPaymentType !== "deposit"}
+											disabled={!isDepositFlow}
 											onChange={(e) => field.onChange(Number(e.target.value))}
 										/>
 										<FieldDescription>
-											{selectedPaymentType === "deposit"
-												? "Deposit amount is editable and will be added to the lease deposit balance."
+											{isDepositFlow
+												? selectedPaymentType === "deposit_deduction"
+													? "Deposit deduction amount is editable and will reduce the lease deposit balance."
+													: "Deposit amount is editable and will be added to the lease deposit balance."
 												: "Amount is auto-filled from the lease rent for the next due month."}
 										</FieldDescription>
 										<FieldError errors={[fieldState.error]} />
@@ -432,9 +430,9 @@ export function MarkPaymentModal() {
 						</div>
 
 						<div className="grid md:grid-cols-2 gap-4">
-							{/* Period Start — read-only summary, not a real form field */}
+							{/* Payment Period — read-only summary, not a real form field */}
 							<Field>
-								<FieldLabel>Payment Month</FieldLabel>
+								<FieldLabel>Payment Period</FieldLabel>
 
 								<Input
 									readOnly
@@ -442,24 +440,21 @@ export function MarkPaymentModal() {
 									value={
 										isRentFlow
 											? nextRentMonthQuery.data
-												? format(
-														parseISO(nextRentMonthQuery.data.periodStart),
-														"MMMM yyyy",
-													)
+												? `${format(parseISO(nextRentMonthQuery.data.periodStart), "yyyy-MMM-dd")} to ${format(parseISO(nextRentMonthQuery.data.periodEnd), "yyyy-MMM-dd")}`
 												: nextRentMonthQuery.isFetching
-													? "Resolving next due month..."
-													: "No pending rent month"
+													? "Resolving next due period..."
+													: "No pending rent period"
 											: "Not applicable for deposit payments"
 									}
 								/>
 
 								<FieldDescription>
 									{isRentFlow
-										? nextRentMonthQuery.data?.isArrearsRecovery
+										? isArrearsRecovery
 											? "This will be recorded as arrears recovery."
 											: hasNoPendingRentMonth
 												? "All months up to the selected payment date are already settled."
-												: "Month is auto-assigned to the next unpaid month."
+												: "Period is auto-assigned to the next unpaid lease cycle."
 										: "Deposit payments do not use rent month assignment."}
 								</FieldDescription>
 							</Field>

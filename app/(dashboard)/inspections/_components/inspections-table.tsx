@@ -1,29 +1,43 @@
 "use client";
-import { Card, CardContent } from "@/components/ui/card";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { columns } from "./columns";
+import type { Table } from "@tanstack/react-table";
+import { useState } from "react";
+import type { ListInspectionOutput } from "@/app/schemas/inspection.schema";
 import { DataTable } from "@/components/data-table";
-import { orpc } from "@/lib/orpc";
-import { Role } from "@/types/role";
+import { ExportButtons } from "@/components/export/export-buttons";
+import { Card, CardContent } from "@/components/ui/card";
 import {
 	INSPECTION_STATUS_FILTER_OPTIONS,
 	INSPECTION_STATUS_META,
 } from "@/config/table-facet-meta";
 import { exportCsv } from "@/lib/exports/csv";
-import { exportPdf } from "@/lib/exports/pdf";
 import { formatExportDate } from "@/lib/exports/formatters";
-import { ExportButtons } from "@/components/export/export-buttons";
-import type { ListInspectionOutput } from "@/app/schemas/inspection.schema";
-import type { Table } from "@tanstack/react-table";
+import { exportPdf } from "@/lib/exports/pdf";
+import { orpc } from "@/lib/orpc";
+import type { Role } from "@/types/role";
+import { columns } from "./columns";
+
+const DEFAULT_PAGE_SIZE = 10;
 
 type InspectionsTableProps = {
 	role: Role;
 };
 
 export default function InspectionsTable({ role }: InspectionsTableProps) {
+	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+	const [cursorHistory, setCursorHistory] = useState<(number | null)[]>([]);
+	const [currentCursor, setCurrentCursor] = useState<number | null>(null);
+
 	const {
-		data: { items: inspections },
-	} = useSuspenseQuery(orpc.inspection.list.queryOptions({ input: {} }));
+		data: { items: inspections, nextCursor },
+	} = useSuspenseQuery(
+		orpc.inspection.list.queryOptions({
+			input: {
+				limit: pageSize,
+				cursor: currentCursor ?? undefined,
+			},
+		}),
+	);
 
 	const facetedFilters = [
 		{
@@ -55,15 +69,21 @@ export default function InspectionsTable({ role }: InspectionsTableProps) {
 		const globalSearch = String(table.getState().globalFilter ?? "").trim();
 		if (globalSearch) filterParts.push(`Search: ${globalSearch}`);
 
-		const statusFilter = table.getColumn("status")?.getFilterValue() as string[] | undefined;
+		const statusFilter = table.getColumn("status")?.getFilterValue() as
+			| string[]
+			| undefined;
 		if (statusFilter?.length) {
 			const statusLabels = statusFilter.map(
-				(value) => INSPECTION_STATUS_META[value as keyof typeof INSPECTION_STATUS_META]?.label ?? value,
+				(value) =>
+					INSPECTION_STATUS_META[value as keyof typeof INSPECTION_STATUS_META]
+						?.label ?? value,
 			);
 			filterParts.push(`Status: ${statusLabels.join(", ")}`);
 		}
 
-		const filterText = filterParts.length ? filterParts.join(" | ") : "All records";
+		const filterText = filterParts.length
+			? filterParts.join(" | ")
+			: "All records";
 
 		return (
 			<ExportButtons
@@ -74,7 +94,14 @@ export default function InspectionsTable({ role }: InspectionsTableProps) {
 						filename: "inspections",
 						title: "Inspections Report",
 						filters: filterText,
-						headers: ["Title", "Unit", "Scheduled", "Completed", "Status", "Created"],
+						headers: [
+							"Title",
+							"Unit",
+							"Scheduled",
+							"Completed",
+							"Status",
+							"Created",
+						],
 						rows: exportRows.map((row) => [
 							row.title,
 							row.unitId,
@@ -83,11 +110,35 @@ export default function InspectionsTable({ role }: InspectionsTableProps) {
 							row.status,
 							row.createdAt,
 						]),
-						summary: [{ metric: "Inspections in scope", value: `${exportRows.length}` }],
+						summary: [
+							{ metric: "Inspections in scope", value: `${exportRows.length}` },
+						],
 					})
 				}
 			/>
 		);
+	};
+
+	const handlePageSizeChange = (nextPageSize: number) => {
+		setPageSize(nextPageSize);
+		setCursorHistory([]);
+		setCurrentCursor(null);
+	};
+
+	const handlePreviousPage = () => {
+		setCursorHistory((history) => {
+			if (history.length === 0) return history;
+			const nextHistory = history.slice(0, -1);
+			setCurrentCursor(history[history.length - 1]);
+			return nextHistory;
+		});
+	};
+
+	const handleNextPage = () => {
+		if (nextCursor === null) return;
+
+		setCursorHistory((history) => [...history, currentCursor]);
+		setCurrentCursor(nextCursor);
 	};
 
 	return (
@@ -98,6 +149,16 @@ export default function InspectionsTable({ role }: InspectionsTableProps) {
 					columns={columns(role)}
 					facetedFilters={facetedFilters}
 					renderToolbarActions={renderToolbarActions}
+					pagination={{
+						mode: "cursor",
+						currentPage: cursorHistory.length + 1,
+						pageSize,
+						canPreviousPage: cursorHistory.length > 0,
+						canNextPage: nextCursor !== null,
+						onPageSizeChange: handlePageSizeChange,
+						onPreviousPage: handlePreviousPage,
+						onNextPage: handleNextPage,
+					}}
 				/>
 			</CardContent>
 		</Card>

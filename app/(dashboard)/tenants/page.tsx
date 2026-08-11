@@ -1,12 +1,13 @@
-import KpiCards from "./_components/kpi-cards";
-import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
+import { getServerRole } from "@/lib/get-server";
 import { orpc } from "@/lib/orpc";
+import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
+import KpiCards from "./_components/kpi-cards";
 import QuickActions from "./_components/quick-actions";
 import TenantsTable from "./_components/tenants-table";
-import { getServerRole } from "@/lib/get-server";
 
 export default async function Page() {
 	const queryClient = getQueryClient();
+	const initialRefreshedAt = new Date().toISOString();
 	const role = await getServerRole();
 
 	await queryClient.prefetchQuery(orpc.report.occupancySummary.queryOptions());
@@ -16,7 +17,11 @@ export default async function Page() {
 	await queryClient.prefetchQuery(
 		orpc.report.expiringLeases.queryOptions({ input: {} }),
 	);
-	await queryClient.prefetchQuery(orpc.lease.list.queryOptions({ input: {} }));
+	await queryClient.prefetchQuery(
+		orpc.tenant.list.queryOptions({
+			input: { limit: 10, cursor: undefined },
+		}),
+	);
 
 	return (
 		<HydrateClient client={queryClient}>
@@ -30,7 +35,7 @@ export default async function Page() {
 							Manage all tenant agreements
 						</p>
 					</div>
-					<QuickActions />
+					<QuickActions initialRefreshedAt={initialRefreshedAt} />
 				</div>
 
 				<KpiCards />

@@ -1,8 +1,8 @@
-import { DB } from "@/db/db";
+import type { DB } from "@/db/db";
 import {
-	unitDocument,
-	tenantDocument,
 	leaseDocument,
+	tenantDocument,
+	unitDocument,
 } from "@/db/schema/document";
 
 export const documents = async (db: DB) => {
@@ -17,14 +17,14 @@ export const documents = async (db: DB) => {
 			documentDate: "2023-12-01",
 			status: "active",
 		},
-		{
-			unitId: unitData[2].id,
-			documentType: "insurance",
-			label: "Insurance Certificate",
-			storageKey: "/documents/insurance-house-a.pdf",
-			documentDate: "2024-01-01",
-			status: "superseded",
-		},
+		// {
+		// 	unitId: unitData[2].id,
+		// 	documentType: "insurance",
+		// 	label: "Insurance Certificate",
+		// 	storageKey: "/documents/insurance-house-a.pdf",
+		// 	documentDate: "2024-01-01",
+		// 	status: "superseded",
+		// },
 	]);
 
 	const [tenantData, tenantOccupantData] = await Promise.all([

@@ -1,14 +1,6 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-	createUtility,
-	deleteUtility,
-	listUtilityInput,
-	listUtilityOutput,
-	updateUtility,
-	utilityOutput,
-} from "../schemas/utility.schema";
-import {
 	createUtilityBill,
 	deleteUtilityBill,
 	listUtilityBillInput,
@@ -16,6 +8,14 @@ import {
 	updateUtilityBill,
 	utilityBillOutput,
 } from "../schemas/utility.bill.schema";
+import {
+	createUtility,
+	deleteUtility,
+	listUtilityInput,
+	listUtilityOutput,
+	updateUtility,
+	utilityOutput,
+} from "../schemas/utility.schema";
 
 export const base = oc.errors({
 	UNAUTHORIZED: {

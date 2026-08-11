@@ -1,12 +1,9 @@
-import type { RouterClient } from "@orpc/server";
-import type { JsonifiedClient } from "@orpc/openapi-client";
-import { OpenAPILink } from "@orpc/openapi-client/fetch";
 import { createORPCClient } from "@orpc/client";
-import { contract } from "@/app/contract";
-import { router } from "@/app/router";
+import type { ContractRouterClient } from "@orpc/contract";
+import { OpenAPILink } from "@orpc/openapi-client/fetch";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
-import { ContractRouterClient } from "@orpc/contract";
-import { ResponseValidationPlugin } from "@orpc/contract/plugins";
+import { contract } from "@/app/contract";
+import type { router } from "@/app/router";
 
 declare global {
 	var $client: ContractRouterClient<typeof router> | undefined;

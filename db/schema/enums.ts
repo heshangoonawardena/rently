@@ -84,6 +84,19 @@ export const repairTypeEnum = pgEnum("repair_type", [
 	"other",
 ]);
 
+export const leaseSettlementExpenseCategoryEnum = pgEnum(
+	"lease_settlement_expense_category",
+	[
+		"rent_arrears",
+		"utility_arrears",
+		"cleaning",
+		"damage_charge",
+		"pet_damage",
+		"late_fee",
+		"extra_days",
+	],
+);
+
 export const repairPriorityEnum = pgEnum("repair_priority", [
 	"low",
 	"medium",
@@ -96,6 +109,7 @@ export const repairStatusEnum = pgEnum("repair_status", [
 	"in_progress",
 	"resolved",
 	"cancelled",
+	"reopened",
 ]);
 
 export const inspectionStatusEnum = pgEnum("inspection_status", [

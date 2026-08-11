@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
 	ArrowRight,
 	Bed,
@@ -12,7 +11,10 @@ import {
 	Wallet,
 	Warehouse,
 } from "lucide-react";
-
+import Link from "next/link";
+import type { ListLeaseOutput } from "@/app/schemas/lease.schema";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -20,18 +22,13 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ListTenantOutput } from "@/app/schemas/tenant.schema";
-import { ListLeaseOutput } from "@/app/schemas/lease.schema";
-import { cn } from "@/lib/utils";
 
 interface LeaseCardProps {
 	lease: ListLeaseOutput["items"][number];
 }
 
-const badgeVariant: Record<
+const _badgeVariant: Record<
 	string,
 	"default" | "secondary" | "destructive" | "outline"
 > = {

@@ -1,4 +1,3 @@
-import * as React from "react";
 import {
 	Body,
 	Button,
@@ -8,8 +7,8 @@ import {
 	Html,
 	Preview,
 	Section,
-	Text,
 	Tailwind,
+	Text,
 } from "@react-email/components";
 
 interface EmailVerificationProps {

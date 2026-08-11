@@ -1,32 +1,32 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-    createUnitDocument,
-    deleteUnitDocument,
-    listUnitDocumentInput,
-    listUnitDocumentOutput,
-    unitDocumentInput,
-    unitDocumentOutput,
-    updateUnitDocument,
-} from "../schemas/unit.document.schema";
+	createLeaseDocument,
+	deleteLeaseDocument,
+	leaseDocumentInput,
+	leaseDocumentOutput,
+	listLeaseDocumentInput,
+	listLeaseDocumentOutput,
+	updateLeaseDocument,
+} from "../schemas/lease.document.schema";
 import {
-    createTenantDocument,
-    deleteTenantDocument,
-    listTenantDocumentInput,
-    listTenantDocumentOutput,
-    tenantDocumentInput,
-    tenantDocumentOutput,
-    updateTenantDocument
+	createTenantDocument,
+	deleteTenantDocument,
+	listTenantDocumentInput,
+	listTenantDocumentOutput,
+	tenantDocumentInput,
+	tenantDocumentOutput,
+	updateTenantDocument,
 } from "../schemas/tenant.document.schema";
 import {
-    createLeaseDocument,
-    deleteLeaseDocument,
-    leaseDocumentInput,
-    leaseDocumentOutput,
-    listLeaseDocumentInput,
-    listLeaseDocumentOutput,
-    updateLeaseDocument
-} from "../schemas/lease.document.schema";
+	createUnitDocument,
+	deleteUnitDocument,
+	listUnitDocumentInput,
+	listUnitDocumentOutput,
+	unitDocumentInput,
+	unitDocumentOutput,
+	updateUnitDocument,
+} from "../schemas/unit.document.schema";
 
 export const base = oc.errors({
 	UNAUTHORIZED: {

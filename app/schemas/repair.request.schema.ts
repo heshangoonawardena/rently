@@ -62,6 +62,7 @@ export const deleteRepairRequest = z.object({
 
 export const repairRequestInput = z.object({
 	id: z.number(),
+	unitId: z.number().min(1, "Unit is required"),
 });
 
 export const listRepairRequestInput = z.object({

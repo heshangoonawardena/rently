@@ -1,15 +1,15 @@
 import { implement } from "@orpc/server";
-import { contract } from "../contract";
+import { and, asc, eq, gt, inArray } from "drizzle-orm";
 import { db } from "@/db/db";
 import { inspection } from "@/db/schema/inspection";
-import { and, asc, desc, eq, gt, inArray } from "drizzle-orm";
+import { lease } from "@/db/schema/lease";
+import { tenant } from "@/db/schema/tenant";
+import { contract } from "../contract";
 import {
 	authMiddleware,
-	BaseContext,
+	type BaseContext,
 	permissionMiddleware,
 } from "./middleware";
-import { tenant } from "@/db/schema/tenant";
-import { lease } from "@/db/schema/lease";
 
 const os = implement(contract).$context<BaseContext>();
 
@@ -33,7 +33,7 @@ async function resolveTenantId(
 /**
  * Returns true if the tenant (looked up by userId) has an active lease on unitId.
  */
-async function tenantCanAccessUnit(
+async function _tenantCanAccessUnit(
 	userId: string,
 	unitId: number,
 ): Promise<boolean> {
@@ -107,7 +107,7 @@ export const updateInspection = os.inspection.update
 		if (existing.status !== "scheduled" && existing.status !== "rescheduled") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "INSPECTION_NOT_EDITABLE" },
-				cause: "Only scheduled or rescheduled inspections can be updated",
+				message: "Only scheduled or rescheduled inspections can be updated",
 			});
 		}
 
@@ -194,7 +194,7 @@ export const skipInspection = os.inspection.skip
 		if (existing.status !== "scheduled") {
 			throw errors.DOMAIN_RULE_VIOLATION({
 				data: { rule: "INSPECTION_NOT_SKIPPABLE" },
-				cause: "Only scheduled inspections can be skipped",
+				message: "Only scheduled inspections can be skipped",
 			});
 		}
 
@@ -284,12 +284,21 @@ export const listInspection = os.inspection.list
 		const tenantId = await resolveTenantId(role, userId);
 		let tenantUnitIds: number[] | undefined;
 		if (role === "tenant") {
-			if (tenantId === undefined) throw errors.FORBIDDEN();
+			if (tenantId === undefined) {
+				throw errors.FORBIDDEN();
+			}
+
 			const leaseRows = await db
 				.select({ unitId: lease.unitId })
 				.from(lease)
 				.where(and(eq(lease.tenantId, tenantId), eq(lease.status, "active")));
 			tenantUnitIds = leaseRows.map((row) => row.unitId);
+			if (tenantUnitIds.length === 0) {
+				return {
+					items: [],
+					nextCursor: null,
+				};
+			}
 		}
 
 		const rows = await db
@@ -297,12 +306,11 @@ export const listInspection = os.inspection.list
 			.from(inspection)
 			.where(
 				and(
+					unitId ? eq(inspection.unitId, unitId) : undefined,
 					status ? eq(inspection.status, status) : undefined,
 					cursor ? gt(inspection.id, cursor) : undefined,
 					role === "tenant" && tenantUnitIds
-						? tenantUnitIds.length > 0
-							? inArray(inspection.unitId, tenantUnitIds)
-							: undefined
+						? inArray(inspection.unitId, tenantUnitIds)
 						: undefined,
 				),
 			)

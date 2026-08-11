@@ -1,12 +1,19 @@
 "use client";
 
-import * as React from "react";
-import { CalendarIcon, RefreshCw } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { CalendarIcon, RefreshCw } from "lucide-react";
+import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
-
-import type { VariantProps } from "class-variance-authority";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { toast } from "sonner";
+import {
+	type ListLeaseOutput,
+	type RenewLease,
+	renewLease,
+} from "@/app/schemas/lease.schema";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	Dialog,
 	DialogContent,
@@ -16,43 +23,27 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-
-import { Input } from "@/components/ui/input";
-
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@/lib/orpc";
-import { toast } from "sonner";
-import {
-	ListLeaseOutput,
-	RenewLease,
-	renewLease,
-} from "@/app/schemas/lease.schema";
-import { format } from "date-fns";
+import { Input } from "@/components/ui/input";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { orpc } from "@/lib/orpc";
 import { formatDateOnly } from "@/lib/utils";
 
 type RenewLeaseModalProps = {
 	data: ListLeaseOutput["items"][number];
-	triggerVariant?: VariantProps<typeof buttonVariants>["variant"];
 	children?: React.ReactNode;
 };
 
-export function RenewLeaseModal({
-	data,
-	triggerVariant = "ghost",
-	children,
-}: RenewLeaseModalProps) {
+export function RenewLeaseModal({ data, children }: RenewLeaseModalProps) {
 	const [open, setOpen] = React.useState(false);
 	const queryClient = useQueryClient();
 
@@ -64,7 +55,7 @@ export function RenewLeaseModal({
 			rentAmount: data.currentRent?.rentAmount,
 			agreedPaymentDay: data.currentRent?.agreedPaymentDay ?? 1,
 			effectiveDate: formatDateOnly(new Date()),
-			depositAmount: data.depositAmount,
+			// depositAmount: data.depositAmount,
 		},
 	});
 
@@ -102,7 +93,7 @@ export function RenewLeaseModal({
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
 				{children ?? (
-					<Button variant={triggerVariant} className="w-full justify-start">
+					<Button className="w-full justify-start">
 						<RefreshCw className="mr-2 size-4" />
 						Renew lease
 					</Button>
@@ -141,7 +132,7 @@ export function RenewLeaseModal({
 													id="date-0"
 													name=""
 												>
-													<CalendarIcon className="mr-2 h-4 w-4" />
+													<CalendarIcon className="mr-2 size-4" />
 													{field.value ? (
 														format(field.value, "d MMM yyyy")
 													) : (
@@ -184,7 +175,7 @@ export function RenewLeaseModal({
 													id="date-0"
 													name=""
 												>
-													<CalendarIcon className="mr-2 h-4 w-4" />
+													<CalendarIcon className="mr-2 size-4" />
 													{field.value ? (
 														format(field.value, "d MMM yyyy")
 													) : (
@@ -235,7 +226,7 @@ export function RenewLeaseModal({
 							/>
 
 							{/* Deposit */}
-							<Controller
+							{/* <Controller
 								name="depositAmount"
 								control={form.control}
 								render={({ field, fieldState }) => (
@@ -253,7 +244,7 @@ export function RenewLeaseModal({
 										)}
 									</Field>
 								)}
-							/>
+							/> */}
 
 							{/* Agreed Payment Day */}
 							<Controller

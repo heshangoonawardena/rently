@@ -1,15 +1,20 @@
-import KpiCards from "./_components/kpi-cards";
-import UnitsTable from "./_components/units-table";
-import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
-import { orpc } from "@/lib/orpc";
-import QuickActions from "./_components/quick-actions";
 import { getServerRole } from "@/lib/get-server";
+import { orpc } from "@/lib/orpc";
+import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
+import KpiCards from "./_components/kpi-cards";
+import QuickActions from "./_components/quick-actions";
+import UnitsTable from "./_components/units-table";
 
 export default async function Page() {
 	const queryClient = getQueryClient();
+	const initialRefreshedAt = new Date().toISOString();
 	const role = await getServerRole();
 
-	await queryClient.prefetchQuery(orpc.unit.list.queryOptions({ input: {} }));
+	await queryClient.prefetchQuery(
+		orpc.unit.list.queryOptions({
+			input: { limit: 10, cursor: undefined },
+		}),
+	);
 	await queryClient.prefetchQuery(orpc.report.occupancySummary.queryOptions());
 
 	return (
@@ -24,7 +29,7 @@ export default async function Page() {
 							Manage all properties and spaces
 						</p>
 					</div>
-					<QuickActions />
+					<QuickActions initialRefreshedAt={initialRefreshedAt} />
 				</div>
 
 				<KpiCards />

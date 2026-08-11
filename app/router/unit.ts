@@ -1,18 +1,17 @@
 import { implement } from "@orpc/server";
-import { contract } from "../contract";
-import { db } from "@/db/db";
-import { unit } from "@/db/schema/unit";
 import { and, desc, eq, gt, inArray, or } from "drizzle-orm";
-import {
-	authMiddleware,
-	BaseContext,
-	permissionMiddleware,
-} from "./middleware";
+import { db } from "@/db/db";
 import { lease, leaseRent } from "@/db/schema/lease";
 import { tenant } from "@/db/schema/tenant";
+import { unit } from "@/db/schema/unit";
+import { contract } from "../contract";
+import {
+	authMiddleware,
+	type BaseContext,
+	permissionMiddleware,
+} from "./middleware";
 
 const os = implement(contract).$context<BaseContext>();
-
 
 /**
  * Returns the tenant.id for the authenticated user if role === 'tenant',
@@ -34,7 +33,7 @@ async function resolveTenantId(
 /**
  * Verify that a tenant has an active lease on a given unit.
  */
-async function tenantHasLeaseOnUnit(
+async function _tenantHasLeaseOnUnit(
 	tenantId: number,
 	unitId: number,
 ): Promise<boolean> {
@@ -51,8 +50,6 @@ async function tenantHasLeaseOnUnit(
 		.limit(1);
 	return row !== undefined;
 }
-
-
 
 export const createUnit = os.unit.create
 	.use(authMiddleware)
@@ -116,7 +113,7 @@ export const updateUnit = os.unit.update
 export const deleteUnit = os.unit.delete
 	.use(authMiddleware)
 	.use(permissionMiddleware({ unit: ["delete"] }))
-	.handler(async ({ input, errors, context }) => {
+	.handler(async ({ input, errors }) => {
 		const [existing] = await db
 			.select()
 			.from(unit)
@@ -129,6 +126,25 @@ export const deleteUnit = os.unit.delete
 					resourceType: "Unit",
 				},
 				message: "Unit not found",
+			});
+		}
+
+		// Prevent deletion if active leases exist
+		const [activeLease] = await db
+			.select({ id: lease.id })
+			.from(lease)
+			.where(
+				and(
+					eq(lease.unitId, input.id),
+					or(eq(lease.status, "active"), eq(lease.status, "extended")),
+				),
+			)
+			.limit(1);
+
+		if (activeLease) {
+			throw errors.DOMAIN_RULE_VIOLATION({
+				data: { rule: "UNIT_HAS_ACTIVE_LEASE" },
+				message: "Cannot delete a unit with an active lease",
 			});
 		}
 

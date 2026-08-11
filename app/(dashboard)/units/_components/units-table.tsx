@@ -1,10 +1,11 @@
 "use client";
-import { Card, CardContent } from "@/components/ui/card";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { columns } from "./columns";
+import type { Table } from "@tanstack/react-table";
+import { useState } from "react";
+import type { ListUnitOutput } from "@/app/schemas/unit.schema";
 import { DataTable } from "@/components/data-table";
-import { orpc } from "@/lib/orpc";
-import { Role } from "@/types/role";
+import { ExportButtons } from "@/components/export/export-buttons";
+import { Card, CardContent } from "@/components/ui/card";
 import {
 	UNIT_STATUS_FILTER_OPTIONS,
 	UNIT_STATUS_META,
@@ -14,20 +15,34 @@ import {
 	UTILITY_BILLING_MODE_META,
 } from "@/config/table-facet-meta";
 import { exportCsv } from "@/lib/exports/csv";
-import { exportPdf } from "@/lib/exports/pdf";
 import { formatCurrency, formatExportDate } from "@/lib/exports/formatters";
-import { ExportButtons } from "@/components/export/export-buttons";
-import type { ListUnitOutput } from "@/app/schemas/unit.schema";
-import type { Table } from "@tanstack/react-table";
+import { exportPdf } from "@/lib/exports/pdf";
+import { orpc } from "@/lib/orpc";
+import type { Role } from "@/types/role";
+import { columns } from "./columns";
+
+const DEFAULT_PAGE_SIZE = 10;
 
 type UnitTableProps = {
 	role: Role;
 };
 
 export default function UnitsTable({ role }: UnitTableProps) {
-	const { data: { items: units } = { items: [] } } = useSuspenseQuery(
-		orpc.unit.list.queryOptions({ input: {} }),
+	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+	const [cursorHistory, setCursorHistory] = useState<(number | null)[]>([]);
+	const [currentCursor, setCurrentCursor] = useState<number | null>(null);
+
+	const { data } = useSuspenseQuery(
+		orpc.unit.list.queryOptions({
+			input: {
+				limit: pageSize,
+				cursor: currentCursor ?? undefined,
+			},
+		}),
 	);
+
+	const units = data.items;
+	const nextCursor = data.nextCursor;
 
 	const facetedFilters = [
 		{
@@ -83,25 +98,32 @@ export default function UnitsTable({ role }: UnitTableProps) {
 			filterParts.push(`Search: ${globalSearch}`);
 		}
 
-		const typeFilter = table.getColumn("type")?.getFilterValue() as string[] | undefined;
+		const typeFilter = table.getColumn("type")?.getFilterValue() as
+			| string[]
+			| undefined;
 		if (typeFilter?.length) {
 			const typeLabels = typeFilter.map(
-				(value) => UNIT_TYPE_META[value as keyof typeof UNIT_TYPE_META]?.label ?? value,
+				(value) =>
+					UNIT_TYPE_META[value as keyof typeof UNIT_TYPE_META]?.label ?? value,
 			);
 			filterParts.push(`Type: ${typeLabels.join(", ")}`);
 		}
 
-		const statusFilter = table.getColumn("status")?.getFilterValue() as string[] | undefined;
+		const statusFilter = table.getColumn("status")?.getFilterValue() as
+			| string[]
+			| undefined;
 		if (statusFilter?.length) {
 			const statusLabels = statusFilter.map(
-				(value) => UNIT_STATUS_META[value as keyof typeof UNIT_STATUS_META]?.label ?? value,
+				(value) =>
+					UNIT_STATUS_META[value as keyof typeof UNIT_STATUS_META]?.label ??
+					value,
 			);
 			filterParts.push(`Status: ${statusLabels.join(", ")}`);
 		}
 
-		const billingFilter = table
-			.getColumn("utilityBilling")
-			?.getFilterValue() as string[] | undefined;
+		const billingFilter = table.getColumn("utilityBilling")?.getFilterValue() as
+			| string[]
+			| undefined;
 		if (billingFilter?.length) {
 			const billingLabels = billingFilter.map(
 				(value) =>
@@ -112,7 +134,9 @@ export default function UnitsTable({ role }: UnitTableProps) {
 			filterParts.push(`Billing mode: ${billingLabels.join(", ")}`);
 		}
 
-		const filterText = filterParts.length ? filterParts.join(" | ") : "All records";
+		const filterText = filterParts.length
+			? filterParts.join(" | ")
+			: "All records";
 
 		return (
 			<ExportButtons
@@ -155,6 +179,28 @@ export default function UnitsTable({ role }: UnitTableProps) {
 		);
 	};
 
+	const handlePageSizeChange = (nextPageSize: number) => {
+		setPageSize(nextPageSize);
+		setCursorHistory([]);
+		setCurrentCursor(null);
+	};
+
+	const handlePreviousPage = () => {
+		setCursorHistory((history) => {
+			if (history.length === 0) return history;
+			const nextHistory = history.slice(0, -1);
+			setCurrentCursor(history[history.length - 1]);
+			return nextHistory;
+		});
+	};
+
+	const handleNextPage = () => {
+		if (nextCursor === null) return;
+
+		setCursorHistory((history) => [...history, currentCursor]);
+		setCurrentCursor(nextCursor);
+	};
+
 	return (
 		<Card>
 			<CardContent>
@@ -163,6 +209,16 @@ export default function UnitsTable({ role }: UnitTableProps) {
 					columns={columns(role)}
 					facetedFilters={facetedFilters}
 					renderToolbarActions={renderToolbarActions}
+					pagination={{
+						mode: "cursor",
+						currentPage: cursorHistory.length + 1,
+						pageSize,
+						canPreviousPage: cursorHistory.length > 0,
+						canNextPage: nextCursor !== null,
+						onPageSizeChange: handlePageSizeChange,
+						onPreviousPage: handlePreviousPage,
+						onNextPage: handleNextPage,
+					}}
 				/>
 			</CardContent>
 		</Card>

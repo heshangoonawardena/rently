@@ -16,14 +16,30 @@ export const userOutput = z.object({
 	approvalStatus: approvalStatus,
 	tenantId: z.number().nullable(),
 	tenantName: z.string().nullable(),
+	lastLoggedInAt: z.date().nullable(),
 });
+
+export const myUserNameOutput = z.object({
+	id: z.string().min(1),
+	name: z.string().min(1),
+});
+
+export const updateMyUserName = z.object({
+	name: z.string().trim().min(1, "Name is required"),
+});
+
+export type UpdateMyUserName = z.infer<typeof updateMyUserName>;
+
+// Backward-compatible aliases for existing imports.
+export const myUserProfileOutput = myUserNameOutput;
+export const updateMyUserProfile = updateMyUserName;
+export type UpdateMyUserProfile = UpdateMyUserName;
 
 export const listUsersOutput = z.object({
 	items: z.array(userOutput),
 });
 
 export type ListUsersOutput = z.infer<typeof listUsersOutput>;
-
 export const listUsersInput = z.object({
 	search: z.string().trim().optional(),
 });
@@ -86,6 +102,18 @@ export const revokeUserAccess = z.object({
 
 export type RevokeUserAccess = z.infer<typeof revokeUserAccess>;
 
+export const deleteUserAccount = z.object({
+	userId: z.string().min(1, "User ID is required"),
+});
+
+export type DeleteUserAccount = z.infer<typeof deleteUserAccount>;
+
+export const deleteUserAccountOutput = z.object({
+	id: z.string().min(1),
+	name: z.string().min(1),
+	deleted: z.literal(true),
+});
+
 export const availableTenantOutput = z.object({
 	id: z.number().positive(),
 	firstName: z.string().min(1),
@@ -98,4 +126,6 @@ export const listAvailableTenantsOutput = z.object({
 	items: z.array(availableTenantOutput),
 });
 
-export type ListAvailableTenantsOutput = z.infer<typeof listAvailableTenantsOutput>;
+export type ListAvailableTenantsOutput = z.infer<
+	typeof listAvailableTenantsOutput
+>;

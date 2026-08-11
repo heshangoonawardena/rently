@@ -1,8 +1,8 @@
 "use client";
 
-import { orpc } from "@/lib/orpc";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import { KpiCard, type KpiCardData } from "@/components/kpi-card";
+import { orpc } from "@/lib/orpc";
 
 function formatLkr(value: number): string {
 	return new Intl.NumberFormat("en-US", {

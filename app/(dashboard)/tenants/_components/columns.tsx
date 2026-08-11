@@ -2,20 +2,20 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import {
+	Copy,
+	Edit,
+	IdCard,
 	MoreHorizontal,
 	Phone,
-	IdCard,
 	Send,
-	Eye,
-	Edit,
 	Trash2,
 	Users,
 } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import type { ListTenantOutput } from "@/app/schemas/tenant.schema";
+import { DataTableColumnHeader } from "@/components/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -24,23 +24,19 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-import type { ListTenantOutput } from "@/app/schemas/tenant.schema";
-import { DeleteTenantModal } from "./delete-tenant-modal";
-import { EditTenantModal } from "./edit-tenant-modal";
-import Link from "next/link";
-import { Role } from "@/types/role";
-import { DataTableColumnHeader } from "@/components/data-table-column-header";
 import {
 	TENANT_PORTAL_META,
 	TENANT_STATUS_META,
 } from "@/config/table-facet-meta";
+import { cn } from "@/lib/utils";
+import type { Role } from "@/types/role";
+import { DeleteTenantModal } from "./delete-tenant-modal";
+import { EditTenantModal } from "./edit-tenant-modal";
 
 export const columns = (
 	role: Role,
@@ -78,8 +74,26 @@ export const columns = (
 						<div className="space-y-1 text-sm">
 							{user.phoneNumber && (
 								<div className="flex items-center gap-2">
-									<Phone className="size-3.5" />
-									<span>{user.phoneNumber}</span>
+									<Phone className="size-3.5 shrink-0" />
+
+									<Link
+										href={`tel:${user.phoneNumber}`}
+										className="flex-1  hover:underline"
+									>
+										{user.phoneNumber}
+									</Link>
+
+									<button
+										type="button"
+										onClick={() =>
+											navigator.clipboard.writeText(user.phoneNumber)
+										}
+										className="rounded-sm p-1 hover:bg-muted"
+										aria-label="Copy phone number"
+										title="Copy phone number"
+									>
+										<Copy className="size-3.5" />
+									</button>
 								</div>
 							)}
 
@@ -87,6 +101,15 @@ export const columns = (
 								<div className="flex items-center gap-2">
 									<IdCard className="size-3.5" />
 									<span>{user.nic}</span>
+									<button
+										type="button"
+										onClick={() => navigator.clipboard.writeText(user.nic)}
+										className="rounded-sm p-1 hover:bg-muted"
+										aria-label="Copy NIC"
+										title="Copy NIC"
+									>
+										<Copy className="size-3.5" />
+									</button>
 								</div>
 							)}
 						</div>
@@ -163,7 +186,12 @@ export const columns = (
 			<DataTableColumnHeader column={column} title="Created" />
 		),
 
-		cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
+		cell: ({ row }) =>
+			new Date(row.original.createdAt).toLocaleDateString("en-GB", {
+				day: "2-digit",
+				month: "short",
+				year: "numeric",
+			}),
 	},
 
 	// Actions
@@ -203,11 +231,6 @@ export const columns = (
 										Edit Tenant
 									</DropdownMenuItem>
 								</EditTenantModal>
-
-								<DropdownMenuItem>
-									<Send className="mr-2 size-4" />
-									Send Invitation
-								</DropdownMenuItem>
 
 								<DropdownMenuSeparator />
 

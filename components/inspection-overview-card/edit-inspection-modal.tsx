@@ -1,14 +1,19 @@
 "use client";
 
-import * as React from "react";
-import { CalendarIcon, Pencil } from "lucide-react";
-import { Controller, FieldErrors, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addDays, format, startOfDay } from "date-fns";
+import { CalendarIcon, Pencil } from "lucide-react";
+import * as React from "react";
+import { Controller, type FieldErrors, useForm } from "react-hook-form";
 import { toast } from "sonner";
-
+import {
+	type ListInspectionOutput,
+	type UpdateInspection,
+	updateInspection,
+} from "@/app/schemas/inspection.schema";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	Dialog,
 	DialogContent,
@@ -18,42 +23,29 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
-import { orpc } from "@/lib/orpc";
-import {
-	updateInspection,
-	UpdateInspection,
-} from "@/app/schemas/inspection.schema";
+import { Input } from "@/components/ui/input";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Textarea } from "@/components/ui/textarea";
+import { orpc } from "@/lib/orpc";
 import { formatDateOnly } from "@/lib/utils";
 
 type EditInspectionModalProps = {
-	inspection: {
-		id: number;
-		unitId: number;
-		title: string;
-		description?: string | null;
-		scheduledDate: string | Date;
-		status: string;
-		completedDate?: string | Date | null;
-	};
+	data: ListInspectionOutput["items"][number];
 	children?: React.ReactNode;
 };
 
 export function EditInspectionModal({
-	inspection,
+	data,
 	children,
 }: EditInspectionModalProps) {
 	const [open, setOpen] = React.useState(false);
@@ -63,11 +55,11 @@ export function EditInspectionModal({
 	const form = useForm<UpdateInspection>({
 		resolver: zodResolver(updateInspection),
 		defaultValues: {
-			id: inspection.id,
-			unitId: Number(inspection.unitId),
-			title: inspection.title,
-			description: inspection.description ?? "",
-			scheduledDate: formatDateOnly(new Date(inspection.scheduledDate)),
+			id: data.id,
+			unitId: Number(data.unitId),
+			title: data.title,
+			description: data.description ?? "",
+			scheduledDate: formatDateOnly(new Date(data.scheduledDate)),
 			status: "rescheduled",
 			completedDate: null,
 		},
@@ -102,7 +94,7 @@ export function EditInspectionModal({
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
 				{children ?? (
-					<Button variant="outline" size="sm" className="cursor-pointer">
+					<Button variant="outline" size="sm">
 						<Pencil className="mr-2 size-4" />
 						Edit
 					</Button>

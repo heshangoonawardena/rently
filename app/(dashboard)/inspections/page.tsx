@@ -1,16 +1,22 @@
-import KpiCards from "./_components/kpi-cards";
-import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
-import { orpc } from "@/lib/orpc";
-import QuickActions from "./_components/quick-actions";
-import InspectionsTable from "./_components/inspections-table";
 import { getServerRole } from "@/lib/get-server";
+import { orpc } from "@/lib/orpc";
+import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
+import InspectionsTable from "./_components/inspections-table";
+import KpiCards from "./_components/kpi-cards";
+import QuickActions from "./_components/quick-actions";
 
 export default async function Page() {
 	const queryClient = getQueryClient();
+	const initialRefreshedAt = new Date().toISOString();
 	const role = await getServerRole();
 
 	await queryClient.prefetchQuery(
 		orpc.report.upcomingInspections.queryOptions({ input: { daysAhead: 60 } }),
+	);
+	await queryClient.prefetchQuery(
+		orpc.inspection.list.queryOptions({
+			input: { limit: 10, cursor: undefined },
+		}),
 	);
 
 	return (
@@ -25,7 +31,7 @@ export default async function Page() {
 							Track and manage inspections across all units
 						</p>
 					</div>
-					<QuickActions role={role} />
+					<QuickActions role={role} initialRefreshedAt={initialRefreshedAt} />
 				</div>
 
 				{role !== "tenant" && <KpiCards />}

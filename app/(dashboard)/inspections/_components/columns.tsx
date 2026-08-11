@@ -2,17 +2,20 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import {
-	MoreHorizontal,
-	Edit,
-	Trash2,
-	CheckCircle2,
 	CalendarClock,
+	CheckCircle2,
+	Edit,
+	MoreHorizontal,
+	Trash2,
 } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import type { ListInspectionOutput } from "@/app/schemas/inspection.schema";
+import { DataTableColumnHeader } from "@/components/data-table-column-header";
+import { DeleteInspectionModal } from "@/components/inspection-overview-card/delete-inspection-modal";
+import { EditInspectionModal } from "@/components/inspection-overview-card/edit-inspection-modal";
+import { MarkInspectionDoneModal } from "@/components/inspection-overview-card/mark-inspection-done-modal";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -21,15 +24,9 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-import type { ListInspectionOutput } from "@/app/schemas/inspection.schema";
-import Link from "next/link";
-import { Role } from "@/types/role";
-import { DataTableColumnHeader } from "@/components/data-table-column-header";
 import { INSPECTION_STATUS_META } from "@/config/table-facet-meta";
-import { MarkInspectionDoneModal } from "@/components/inspection-overview-card/mark-inspection-done-modal";
-import { DeleteInspectionModal } from "@/components/inspection-overview-card/delete-inspection-modal";
-import { EditInspectionModal } from "@/components/inspection-overview-card/edit-inspection-modal";
+import { cn } from "@/lib/utils";
+import type { Role } from "@/types/role";
 
 export const columns = (
 	role: Role,
@@ -67,14 +64,11 @@ export const columns = (
 			const inspection = row.original;
 
 			return (
-				<Badge variant="outline" className={cn("gap-1 pl-2")}>
-					<Link
-						href={`/units/${inspection.unitId}`}
-						className="hover:underline"
-					>
+				<Link href={`/units/${inspection.unitId}`}>
+					<Badge variant="outline" className={cn("gap-1 pl-2")}>
 						Unit {inspection.unitId}
-					</Link>
-				</Badge>
+					</Badge>
+				</Link>
 			);
 		},
 	},
@@ -84,8 +78,58 @@ export const columns = (
 			<DataTableColumnHeader column={column} title="Scheduled" />
 		),
 
-		cell: ({ row }) =>
-			new Date(row.original.scheduledDate).toLocaleDateString(),
+		cell: ({ row }) => {
+			const scheduledDate = new Date(row.original.scheduledDate);
+			const showRemainingText = ["scheduled", "rescheduled"].includes(
+				row.original.status,
+			);
+
+			// Compare dates without time
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+
+			const scheduled = new Date(scheduledDate);
+			scheduled.setHours(0, 0, 0, 0);
+
+			const diffTime = scheduled.getTime() - today.getTime();
+			const remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+			let remainingText: string;
+			let remainingClassName = "text-muted-foreground";
+
+			if (remainingDays === 0) {
+				remainingText = "Today";
+				remainingClassName = "text-chart-1";
+			} else if (remainingDays > 0) {
+				remainingText = `${remainingDays} ${
+					remainingDays === 1 ? "day" : "days"
+				} remaining`;
+				remainingClassName = "text-chart-3";
+			} else {
+				const overdueDays = Math.abs(remainingDays);
+
+				remainingText = `${overdueDays} ${
+					overdueDays === 1 ? "day" : "days"
+				} overdue`;
+				remainingClassName = "text-chart-1";
+			}
+
+			return (
+				<div className="flex flex-col">
+					<span>
+						{new Date(scheduledDate).toLocaleDateString("en-GB", {
+							day: "2-digit",
+							month: "short",
+							year: "numeric",
+						})}
+					</span>
+
+					<span className={cn("text-xs", remainingClassName)}>
+						{showRemainingText && remainingText}
+					</span>
+				</div>
+			);
+		},
 	},
 	{
 		accessorKey: "completedDate",
@@ -95,9 +139,15 @@ export const columns = (
 
 		cell: ({ row }) => {
 			const completedDate = row.original.completedDate;
+			const showPending = ["scheduled", "rescheduled"].includes(
+				row.original.status,
+			);
+
 			return completedDate
 				? new Date(completedDate).toLocaleDateString()
-				: "Pending";
+				: showPending
+					? "Pending"
+					: "-";
 		},
 	},
 	{
@@ -129,7 +179,12 @@ export const columns = (
 			<DataTableColumnHeader column={column} title="Created" />
 		),
 
-		cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
+		cell: ({ row }) =>
+			new Date(row.original.createdAt).toLocaleDateString("en-GB", {
+				day: "2-digit",
+				month: "short",
+				year: "numeric",
+			}),
 	},
 
 	// Actions
@@ -143,14 +198,15 @@ export const columns = (
 
 			const canEditInspection =
 				isNotTenant &&
-				!["cancelled", "completed", "rescheduled", "skipped"].includes(inspection.status);
+				!["cancelled", "completed", "rescheduled", "skipped"].includes(
+					inspection.status,
+				);
 
 			const canCompleteInspection =
 				isNotTenant && ["scheduled", "rescheduled"].includes(inspection.status);
 
-			const canDeleteInspection = ["scheduled", "rescheduled"].includes(
-				inspection.status,
-			);
+			const canDeleteInspection =
+				isNotTenant && ["scheduled", "rescheduled"].includes(inspection.status);
 
 			return (
 				<DropdownMenu>
@@ -165,15 +221,17 @@ export const columns = (
 
 						<DropdownMenuSeparator />
 
-						<Link href={`/units/${inspection.unitId}`}>
-							<DropdownMenuItem>
-								<CalendarClock className="mr-2 size-4" />
-								View Unit
-							</DropdownMenuItem>
-						</Link>
+						{isNotTenant && (
+							<Link href={`/units/${inspection.unitId}`}>
+								<DropdownMenuItem>
+									<CalendarClock className="mr-2 size-4" />
+									View Unit
+								</DropdownMenuItem>
+							</Link>
+						)}
 
 						{canEditInspection && (
-							<EditInspectionModal inspection={inspection}>
+							<EditInspectionModal data={inspection}>
 								<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
 									<Edit className="mr-2 size-4" />
 									Edit Inspection

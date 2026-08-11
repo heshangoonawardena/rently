@@ -1,9 +1,9 @@
 import "server-only";
 
-import { headers } from "next/headers";
-import { router } from "@/app/router";
 // import { createJsonifiedRouterClient } from "@orpc/openapi";
 import { createRouterClient } from "@orpc/server";
+import { headers } from "next/headers";
+import { router } from "@/app/router";
 
 globalThis.$client = createRouterClient(router, {
 	/**

@@ -1,27 +1,31 @@
 "use client";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import {
+	CalendarDays,
+	Copy,
+	FileText,
+	IdCard,
+	Phone,
+	ShieldCheck,
+	User,
+	Wallet,
+} from "lucide-react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
-	CardHeader,
-	CardTitle,
 	CardDescription,
 	CardFooter,
+	CardHeader,
+	CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import {
-	CalendarDays,
-	User,
-	Wallet,
-	ShieldCheck,
-	FileText,
-} from "lucide-react";
-import { format } from "date-fns";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { LEASE_SETTLEMENT_EXPENSE_CATEGORY_FILTER_OPTIONS } from "@/config/table-facet-meta";
 import { orpc } from "@/lib/orpc";
-import Link from "next/link";
-import { Role } from "@/types/role";
+import type { Role } from "@/types/role";
 
 type LeaseOverviewCardProps = {
 	id: number;
@@ -69,6 +73,18 @@ export function LeaseOverviewCard({ id, role }: LeaseOverviewCardProps) {
 					0,
 				);
 
+	const getSettlementCategoryLabel = (category?: string | null) => {
+		if (!category) {
+			return "";
+		}
+
+		return (
+			LEASE_SETTLEMENT_EXPENSE_CATEGORY_FILTER_OPTIONS.find(
+				(option) => option.value === category,
+			)?.label ?? category
+		);
+	};
+
 	return (
 		<Card className="h-fit">
 			<CardHeader className="flex flex-row items-start justify-between">
@@ -104,11 +120,11 @@ export function LeaseOverviewCard({ id, role }: LeaseOverviewCardProps) {
 					<div>
 						<p className="font-medium">
 							{role !== "tenant" ? (
-								<>
-									{lease.tenant?.nickname
-										? `${lease.tenant.nickname} - (${lease.tenant.firstName} ${lease.tenant?.lastName ?? ""})`
-										: `${lease.tenant.firstName} ${lease.tenant?.lastName ?? ""}`}
-								</>
+								lease.tenant?.nickname ? (
+									`${lease.tenant.nickname} - (${lease.tenant.firstName} ${lease.tenant?.lastName ?? ""})`
+								) : (
+									`${lease.tenant.firstName} ${lease.tenant?.lastName ?? ""}`
+								)
 							) : (
 								<>
 									{lease.tenant.firstName} {lease.tenant?.lastName ?? ""}
@@ -116,11 +132,42 @@ export function LeaseOverviewCard({ id, role }: LeaseOverviewCardProps) {
 							)}
 						</p>
 
-						<p className="text-sm text-muted-foreground">{lease.tenant.nic}</p>
+						<div className="flex items-center gap-2 text-sm text-muted-foreground">
+							<IdCard className="size-3.5" />
+							<span>{lease.tenant.nic}</span>
+							<button
+								type="button"
+								onClick={() => navigator.clipboard.writeText(lease.tenant.nic)}
+								className="rounded-sm p-1 hover:bg-muted"
+								aria-label="Copy NIC"
+								title="Copy NIC"
+							>
+								<Copy className="size-3.5" />
+							</button>
+						</div>
 
-						<p className="text-sm text-muted-foreground">
-							{lease.tenant.phoneNumber}
-						</p>
+						<div className="flex items-center gap-2 max-w-fit text-sm text-muted-foreground">
+							<Phone className="size-3.5 shrink-0" />
+
+							<Link
+								href={`tel:${lease.tenant.phoneNumber}`}
+								className="flex-1 hover:underline"
+							>
+								{lease.tenant.phoneNumber}
+							</Link>
+
+							<button
+								type="button"
+								onClick={() =>
+									navigator.clipboard.writeText(lease.tenant.phoneNumber)
+								}
+								className="rounded-sm p-1 hover:bg-muted"
+								aria-label="Copy phone number"
+								title="Copy phone number"
+							>
+								<Copy className="size-3.5" />
+							</button>
+						</div>
 					</div>
 				</div>
 
@@ -156,7 +203,7 @@ export function LeaseOverviewCard({ id, role }: LeaseOverviewCardProps) {
 					<div>
 						<p className="text-sm text-muted-foreground">Monthly Rent</p>
 
-						<div className="mt-1 flex items-center gap-2 text-lg font-semibold">
+						<div className="mt-1 flex items-center gap-2 font-medium">
 							<Wallet className="size-4" />
 							{lease.currentRent
 								? `LKR ${lease.currentRent.rentAmount.toLocaleString()}`
@@ -165,7 +212,7 @@ export function LeaseOverviewCard({ id, role }: LeaseOverviewCardProps) {
 					</div>
 
 					<div>
-						<p className="text-sm text-muted-foreground">Security Deposit</p>
+						<p className="text-sm text-muted-foreground">Deposit</p>
 
 						<div className="mt-1 flex items-center gap-2 font-medium">
 							<ShieldCheck className="size-4" />
@@ -176,26 +223,103 @@ export function LeaseOverviewCard({ id, role }: LeaseOverviewCardProps) {
 					<div>
 						<p className="text-sm text-muted-foreground">Rent Effective From</p>
 
-						<p className="font-medium">
+						<div className="mt-1 flex items-center gap-2 font-medium">
 							{lease.currentRent
 								? format(
 										new Date(lease.currentRent.effectiveDate),
 										"dd MMM yyyy",
 									)
 								: "N/A"}
-						</p>
+						</div>
 					</div>
 
 					<div>
 						<p className="text-sm text-muted-foreground">Monthly Due Day</p>
 
-						<p className="font-medium">
+						<div className="mt-1 flex items-center gap-2 font-medium">
 							{lease.currentRent
 								? `On or before day ${lease.currentRent.agreedPaymentDay}`
 								: "N/A"}
-						</p>
+						</div>
 					</div>
 				</div>
+
+				{lease.settlement && (
+					<>
+						<Separator />
+						<div className="space-y-3">
+							<div className="flex items-center justify-between">
+								<p className="font-medium">Lease Settlement</p>
+								<p className="text-sm text-muted-foreground">
+									{format(
+										new Date(lease.settlement.terminationDate),
+										"dd MMM yyyy",
+									)}
+								</p>
+							</div>
+
+							<div className="grid grid-cols-2 gap-4 text-sm">
+								<div>
+									<p className="text-muted-foreground">Deposit</p>
+									<p className="font-semibold">
+										LKR {lease.settlement.depositAtTermination.toLocaleString()}
+									</p>
+								</div>
+								<div>
+									<p className="text-muted-foreground">Deductions</p>
+									<p className="font-semibold text-chart-1">
+										LKR {lease.settlement.totalDeductions.toLocaleString()}
+									</p>
+								</div>
+								<div>
+									<p className="text-muted-foreground">Refund</p>
+									<p className="font-semibold text-chart-2">
+										LKR {lease.settlement.refundAmount.toLocaleString()}
+									</p>
+								</div>
+								<div>
+									<p className="text-muted-foreground">Outstanding</p>
+									<p className="font-semibold text-chart-3">
+										LKR {lease.settlement.outstandingAmount.toLocaleString()}
+									</p>
+								</div>
+							</div>
+
+							{lease.settlement.expenses.length > 0 && (
+								<div className="space-y-2">
+									<p className="text-sm text-muted-foreground">
+										Expense breakdown
+									</p>
+									<div className="space-y-1">
+										{lease.settlement.expenses.map((expense) => (
+											<div
+												key={expense.id}
+												className="flex items-center justify-between text-sm"
+											>
+												<div>
+													{expense.label}
+													{expense.category
+														? ` (${getSettlementCategoryLabel(expense.category)})`
+														: ""}
+												</div>
+												<div className="font-medium">
+													LKR {expense.amount.toLocaleString()}
+												</div>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
+
+							{lease.settlement.notes && (
+								<div>
+									<p className="text-sm text-muted-foreground">Notes</p>
+									<p className="text-sm">{lease.settlement.notes}</p>
+								</div>
+							)}
+						</div>
+					</>
+				)}
 			</CardContent>
 			<CardFooter>
 				<div className="flex items-center justify-end w-full">

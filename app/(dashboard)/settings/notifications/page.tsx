@@ -1,94 +1,113 @@
-"use client"
+"use client";
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Bell, Mail, MessageSquare } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Bell, Mail, MessageSquare } from "lucide-react"
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 
 const notificationsFormSchema = z.object({
-  emailSecurity: z.boolean(),
-  emailUpdates: z.boolean(),
-  emailMarketing: z.boolean(),
-  pushMessages: z.boolean(),
-  pushMentions: z.boolean(),
-  pushTasks: z.boolean(),
-  emailFrequency: z.string(),
-  quietHoursStart: z.string(),
-  quietHoursEnd: z.string(),
-  channelEmail: z.boolean(),
-  channelPush: z.boolean(),
-  channelSms: z.boolean(),
-  // New notification table fields
-  orderUpdatesEmail: z.boolean(),
-  orderUpdatesBrowser: z.boolean(),
-  orderUpdatesApp: z.boolean(),
-  invoiceRemindersEmail: z.boolean(),
-  invoiceRemindersBrowser: z.boolean(),
-  invoiceRemindersApp: z.boolean(),
-  promotionalOffersEmail: z.boolean(),
-  promotionalOffersBrowser: z.boolean(),
-  promotionalOffersApp: z.boolean(),
-  systemMaintenanceEmail: z.boolean(),
-  systemMaintenanceBrowser: z.boolean(),
-  systemMaintenanceApp: z.boolean(),
-  notificationTiming: z.string(),
-})
+	emailSecurity: z.boolean(),
+	emailUpdates: z.boolean(),
+	emailMarketing: z.boolean(),
+	pushMessages: z.boolean(),
+	pushMentions: z.boolean(),
+	pushTasks: z.boolean(),
+	emailFrequency: z.string(),
+	quietHoursStart: z.string(),
+	quietHoursEnd: z.string(),
+	channelEmail: z.boolean(),
+	channelPush: z.boolean(),
+	channelSms: z.boolean(),
+	// New notification table fields
+	orderUpdatesEmail: z.boolean(),
+	orderUpdatesBrowser: z.boolean(),
+	orderUpdatesApp: z.boolean(),
+	invoiceRemindersEmail: z.boolean(),
+	invoiceRemindersBrowser: z.boolean(),
+	invoiceRemindersApp: z.boolean(),
+	promotionalOffersEmail: z.boolean(),
+	promotionalOffersBrowser: z.boolean(),
+	promotionalOffersApp: z.boolean(),
+	systemMaintenanceEmail: z.boolean(),
+	systemMaintenanceBrowser: z.boolean(),
+	systemMaintenanceApp: z.boolean(),
+	notificationTiming: z.string(),
+});
 
-type NotificationsFormValues = z.infer<typeof notificationsFormSchema>
+type NotificationsFormValues = z.infer<typeof notificationsFormSchema>;
 
 export default function NotificationSettings() {
-  const form = useForm<NotificationsFormValues>({
-    resolver: zodResolver(notificationsFormSchema),
-    defaultValues: {
-      emailSecurity: false,
-      emailUpdates: true,
-      emailMarketing: false,
-      pushMessages: true,
-      pushMentions: true,
-      pushTasks: false,
-      emailFrequency: "instant",
-      quietHoursStart: "22:00",
-      quietHoursEnd: "06:00",
-      channelEmail: true,
-      channelPush: true,
-      channelSms: false,
-      // New notification table defaults
-      orderUpdatesEmail: true,
-      orderUpdatesBrowser: true,
-      orderUpdatesApp: true,
-      invoiceRemindersEmail: true,
-      invoiceRemindersBrowser: false,
-      invoiceRemindersApp: true,
-      promotionalOffersEmail: false,
-      promotionalOffersBrowser: true,
-      promotionalOffersApp: false,
-      systemMaintenanceEmail: true,
-      systemMaintenanceBrowser: true,
-      systemMaintenanceApp: false,
-      notificationTiming: "online",
-    },
-  })
+	const form = useForm<NotificationsFormValues>({
+		resolver: zodResolver(notificationsFormSchema),
+		defaultValues: {
+			emailSecurity: false,
+			emailUpdates: true,
+			emailMarketing: false,
+			pushMessages: true,
+			pushMentions: true,
+			pushTasks: false,
+			emailFrequency: "instant",
+			quietHoursStart: "22:00",
+			quietHoursEnd: "06:00",
+			channelEmail: true,
+			channelPush: true,
+			channelSms: false,
+			// New notification table defaults
+			orderUpdatesEmail: true,
+			orderUpdatesBrowser: true,
+			orderUpdatesApp: true,
+			invoiceRemindersEmail: true,
+			invoiceRemindersBrowser: false,
+			invoiceRemindersApp: true,
+			promotionalOffersEmail: false,
+			promotionalOffersBrowser: true,
+			promotionalOffersApp: false,
+			systemMaintenanceEmail: true,
+			systemMaintenanceBrowser: true,
+			systemMaintenanceApp: false,
+			notificationTiming: "online",
+		},
+	});
 
-  function onSubmit(data: NotificationsFormValues) {
-    console.log("Notifications settings submitted:", data)
-    // Here you would typically save the settings
-  }
+	function onSubmit(data: NotificationsFormValues) {
+		console.log("Notifications settings submitted:", data);
+		// Here you would typically save the settings
+	}
 
-  return (
+	return (
 		<div className="space-y-6 px-4 lg:px-6">
 			<div>
 				<h1 className="text-3xl font-bold">Notifications</h1>
@@ -702,10 +721,8 @@ export default function NotificationSettings() {
 					</Card>
 
 					<div className="flex space-x-2">
-						<Button type="submit" className="cursor-pointer">
-							Save Preferences
-						</Button>
-						<Button variant="outline" type="reset" className="cursor-pointer">
+						<Button type="submit">Save Preferences</Button>
+						<Button variant="outline" type="reset">
 							Cancel
 						</Button>
 					</div>

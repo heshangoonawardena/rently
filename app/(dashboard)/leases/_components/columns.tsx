@@ -1,7 +1,20 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-
+import {
+	Copy,
+	Edit,
+	Handshake,
+	IdCard,
+	MoreHorizontal,
+	Phone,
+	RefreshCw,
+	Trash2,
+} from "lucide-react";
+import Link from "next/link";
+import type { ListLeaseOutput } from "@/app/schemas/lease.schema";
+import { DataTableColumnHeader } from "@/components/data-table-column-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -12,32 +25,20 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-	Edit,
-	Eye,
-	Handshake,
-	MoreHorizontal,
-	RefreshCw,
-	Trash2,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ListLeaseOutput } from "@/app/schemas/lease.schema";
-import { EndLeaseModal } from "./end-lease-modal";
-import { EditLeaseModal } from "./edit-lease-modal";
-import { RenewLeaseModal } from "./renew-lease-modal";
-import Link from "next/link";
-import { DataTableColumnHeader } from "@/components/data-table-column-header";
 import {
 	LEASE_STATUS_META,
 	UNIT_TYPE_META,
 	UTILITY_BILLING_MODE_META,
 } from "@/config/table-facet-meta";
-import { Role } from "@/types/role";
+import { cn } from "@/lib/utils";
+import type { Role } from "@/types/role";
+import { EditLeaseModal } from "./edit-lease-modal";
+import { EndLeaseModal } from "./end-lease-modal";
+import { RenewLeaseModal } from "./renew-lease-modal";
 
 export type Payment = {
 	id: string;
@@ -89,9 +90,9 @@ export const columns = (
 			const { nic } = row.original.tenant;
 
 			return (
-				<Tooltip delayDuration={400}>
+				<Tooltip delayDuration={300}>
 					<TooltipTrigger asChild>
-						<div className="flex flex-col justify-center">
+						<div className="flex flex-col">
 							<span className="font-medium">
 								{tenant.firstName} {tenant?.lastName}
 							</span>
@@ -105,11 +106,44 @@ export const columns = (
 					</TooltipTrigger>
 
 					<TooltipContent sideOffset={6}>
-						<div>
+						<div className="space-y-1 text-sm">
 							{phoneNumber && (
-								<p className="max-w-xs warp-break-words">{phoneNumber}</p>
+								<div className="flex items-center gap-2">
+									<Phone className="size-3.5 shrink-0" />
+
+									<Link
+										href={`tel:${phoneNumber}`}
+										className="flex-1 hover:underline"
+									>
+										{phoneNumber}
+									</Link>
+
+									<button
+										type="button"
+										onClick={() => navigator.clipboard.writeText(phoneNumber)}
+										className="rounded-sm p-1 hover:bg-muted"
+										aria-label="Copy phone number"
+										title="Copy phone number"
+									>
+										<Copy className="size-3.5" />
+									</button>
+								</div>
 							)}
-							{nic && <p className="max-w-xs warp-break-words">{nic}</p>}
+							{nic && (
+								<div className="flex items-center gap-2">
+									<IdCard className="size-3.5" />
+									<span>{nic}</span>
+									<button
+										type="button"
+										onClick={() => navigator.clipboard.writeText(nic)}
+										className="rounded-sm p-1 hover:bg-muted"
+										aria-label="Copy NIC"
+										title="Copy NIC"
+									>
+										<Copy className="size-3.5" />
+									</button>
+								</div>
+							)}{" "}
 						</div>
 					</TooltipContent>
 				</Tooltip>
@@ -144,6 +178,7 @@ export const columns = (
 		cell: ({ row }) => {
 			const { startDate, endDate } = row.original;
 			const start = new Date(startDate);
+			const terminated = row.original.status === "terminated";
 
 			if (!endDate) {
 				return (
@@ -193,14 +228,15 @@ export const columns = (
 							year: "numeric",
 						})}
 					</div>
-
 					<div className={cn("text-xs", color)}>
-						{days >= 0
-							? `${days} day${days !== 1 ? "s" : ""} left`
-							: `Expired ${Math.abs(days)} day${
-									Math.abs(days) !== 1 ? "s" : ""
-								} ago`}
-					</div>
+						{terminated
+							? "Terminated"
+							: days >= 0
+								? `${days} day${days !== 1 ? "s" : ""} left`
+								: `Expired ${Math.abs(days)} day${
+										Math.abs(days) !== 1 ? "s" : ""
+									} ago`}
+					</div>{" "}
 				</div>
 			);
 		},
@@ -298,7 +334,6 @@ export const columns = (
 						<DropdownMenuLabel>Actions</DropdownMenuLabel>
 
 						<DropdownMenuSeparator />
-
 						<Link href={`/leases/${lease.id}`}>
 							<DropdownMenuItem>
 								<Handshake className="mr-2 size-4" />
@@ -337,7 +372,7 @@ export const columns = (
 										className="text-destructive"
 									>
 										<Trash2 className="mr-2 size-4 text-destructive" />
-										Delete Lease
+										End Lease
 									</DropdownMenuItem>
 								</EndLeaseModal>
 							</>

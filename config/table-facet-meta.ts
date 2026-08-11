@@ -1,4 +1,3 @@
-import type { ComponentType } from "react";
 import {
 	Banknote,
 	Bed,
@@ -9,6 +8,7 @@ import {
 	CircleX,
 	Clock3,
 	CreditCard,
+	Dog,
 	Droplet,
 	Droplets,
 	FileText,
@@ -18,8 +18,9 @@ import {
 	Home,
 	Landmark,
 	LoaderCircle,
-	Map,
+	MapIcon,
 	Paintbrush,
+	RotateCcw,
 	ShieldAlert,
 	Undo2,
 	UserCog,
@@ -31,6 +32,7 @@ import {
 	XCircle,
 	Zap,
 } from "lucide-react";
+import type { ComponentType } from "react";
 
 type FacetIcon = ComponentType<{ className?: string }>;
 
@@ -58,7 +60,7 @@ export const UNIT_TYPE_META = {
 	room: { label: "Room", icon: Bed },
 	house: { label: "House", icon: Home },
 	warehouse: { label: "Warehouse", icon: Warehouse },
-	land: { label: "Land", icon: Map },
+	land: { label: "Land", icon: MapIcon },
 } as const satisfies Record<string, FacetMeta>;
 
 export const UNIT_STATUS_META = {
@@ -226,6 +228,11 @@ export const MANUAL_PAYMENT_TYPE_META = {
 		icon: Landmark,
 		color: "border-chart-3 text-chart-3",
 	},
+	deposit_deduction: {
+		label: "Deposit Deduction",
+		icon: Undo2,
+		color: "border-chart-5 text-chart-5",
+	},
 } as const satisfies Record<string, FacetMeta>;
 
 export const PAYMENT_TYPE_REPORT_META = {
@@ -236,7 +243,7 @@ export const PAYMENT_TYPE_REPORT_META = {
 		badgeClass: "bg-green-500/10 text-green-600 dark:text-green-400",
 	},
 	arrear: {
-		label: "Arrears Recovery",
+		label: "Arrears Payment",
 		icon: PAYMENT_TYPE_META.arrear.icon,
 		chartColor: "var(--chart-1)",
 		badgeClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
@@ -250,13 +257,19 @@ export const PAYMENT_TYPE_REPORT_META = {
 	deposit: {
 		label: "Deposits",
 		icon: PAYMENT_TYPE_META.deposit.icon,
-		chartColor: "var(--chart-3)",
+		chartColor: "var(--chart-1)",
 		badgeClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
 	},
 	deposit_deduction: {
 		label: PAYMENT_TYPE_META.deposit_deduction.label,
 		icon: PAYMENT_TYPE_META.deposit_deduction.icon,
-		chartColor: "var(--chart-1)",
+		chartColor: "var(--chart-2)",
+		badgeClass: "bg-red-500/10 text-red-600 dark:text-red-400",
+	},
+	refund: {
+		label: PAYMENT_TYPE_META.refund.label,
+		icon: PAYMENT_TYPE_META.refund.icon,
+		chartColor: "var(--chart-4)",
 		badgeClass: "bg-red-500/10 text-red-600 dark:text-red-400",
 	},
 } as const satisfies Record<string, ReportFacetMeta>;
@@ -296,6 +309,44 @@ export const REPAIR_TYPE_META = {
 		label: "Other",
 		icon: Paintbrush,
 		color: "",
+	},
+} as const satisfies Record<string, FacetMeta>;
+
+export const LEASE_SETTLEMENT_EXPENSE_CATEGORY_META = {
+	rent_arrears: {
+		label: "Rent Arrears",
+		icon: FileText,
+		color: "border-chart-1 text-chart-1",
+	},
+	utility_arrears: {
+		label: "Utility Arrears",
+		icon: Gauge,
+		color: "border-chart-4 text-chart-4",
+	},
+	cleaning: {
+		label: "Cleaning",
+		icon: Paintbrush,
+		color: "border-chart-2 text-chart-2",
+	},
+	damage_charge: {
+		label: "Damage Charge",
+		icon: ShieldAlert,
+		color: "border-destructive text-destructive",
+	},
+	pet_damage: {
+		label: "Pet Damage",
+		icon: Dog,
+		color: "border-chart-1 text-chart-1",
+	},
+	late_fee: {
+		label: "Late Fee",
+		icon: Clock3,
+		color: "border-chart-5 text-chart-5",
+	},
+	extra_days: {
+		label: "Extra Days",
+		icon: FileText,
+		color: "border-chart-3 text-chart-3",
 	},
 } as const satisfies Record<string, FacetMeta>;
 
@@ -361,6 +412,11 @@ export const UPDATE_REPAIR_STATUS_META = {
 		icon: CircleX,
 		color: "border-destructive text-destructive",
 	},
+	reopened: {
+		label: "Reopened",
+		icon: RotateCcw,
+		color: "border-chart-4 text-chart-4",
+	},
 } as const satisfies Record<string, FacetMeta>;
 
 export const INSPECTION_STATUS_META = {
@@ -407,10 +463,15 @@ export const MANUAL_PAYMENT_TYPE_FILTER_OPTIONS = toFilterOptions(
 export const PAYMENT_METHOD_FILTER_OPTIONS =
 	toFilterOptions(PAYMENT_METHOD_META);
 export const REPAIR_TYPE_FILTER_OPTIONS = toFilterOptions(REPAIR_TYPE_META);
+export const LEASE_SETTLEMENT_EXPENSE_CATEGORY_FILTER_OPTIONS = toFilterOptions(
+	LEASE_SETTLEMENT_EXPENSE_CATEGORY_META,
+);
 export const REPAIR_PRIORITY_FILTER_OPTIONS =
 	toFilterOptions(REPAIR_PRIORITY_META);
 export const REPAIR_STATUS_FILTER_OPTIONS = toFilterOptions(REPAIR_STATUS_META);
-export const UPDATE_REPAIR_STATUS_FILTER_OPTIONS = toFilterOptions(UPDATE_REPAIR_STATUS_META);
+export const UPDATE_REPAIR_STATUS_FILTER_OPTIONS = toFilterOptions(
+	UPDATE_REPAIR_STATUS_META,
+);
 export const INSPECTION_STATUS_FILTER_OPTIONS = toFilterOptions(
 	INSPECTION_STATUS_META,
 );

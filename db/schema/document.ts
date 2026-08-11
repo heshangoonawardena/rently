@@ -1,23 +1,23 @@
 import { relations } from "drizzle-orm";
 import {
-	pgTable,
-	text,
-	timestamp,
 	date,
 	index,
-	serial,
 	integer,
+	pgTable,
+	serial,
+	text,
+	timestamp,
 } from "drizzle-orm/pg-core";
-import { unit } from "./unit";
-import { tenant, tenantOccupant } from "./tenant";
-import { lease } from "./lease";
-import { documentStatusEnum } from "./enums";
 import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
 } from "drizzle-zod";
-import z from "zod";
+import type z from "zod";
+import { documentStatusEnum } from "./enums";
+import { lease } from "./lease";
+import { tenant, tenantOccupant } from "./tenant";
+import { unit } from "./unit";
 
 // Property-level documents: tax receipts, council permits, property photos.
 // expiryDate drives renewal reminders for time-limited documents.
@@ -122,10 +122,14 @@ export const selectTenantDocumentSchema = createSelectSchema(tenantDocument);
 export type TenantDocumentType = z.infer<typeof selectTenantDocumentSchema>;
 
 export const insertTenantDocumentSchema = createInsertSchema(tenantDocument);
-export type InsertTenantDocumentType = z.infer<typeof insertTenantDocumentSchema>;
+export type InsertTenantDocumentType = z.infer<
+	typeof insertTenantDocumentSchema
+>;
 
 export const updateTenantDocumentSchema = createUpdateSchema(tenantDocument);
-export type UpdateTenantDocumentType = z.infer<typeof updateTenantDocumentSchema>;
+export type UpdateTenantDocumentType = z.infer<
+	typeof updateTenantDocumentSchema
+>;
 
 // lease document schemas
 export const selectLeaseDocumentSchema = createSelectSchema(leaseDocument);

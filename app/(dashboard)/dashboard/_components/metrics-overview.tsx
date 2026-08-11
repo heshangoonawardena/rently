@@ -1,14 +1,14 @@
+import { ArrowDown, ArrowUp, SquareArrowOutUpRightIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
+	CardAction,
 	CardContent,
+	CardFooter,
 	CardHeader,
 	CardTitle,
-	CardAction,
-	CardFooter,
 } from "@/components/ui/card";
-import { ArrowDown, ArrowUp, SquareArrowOutUpRightIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const stats = [
@@ -51,7 +51,7 @@ const stats = [
 ];
 
 function formatNumber(n: number) {
-	if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
 	if (n >= 1_000) return n.toLocaleString();
 	return n.toString();
 }

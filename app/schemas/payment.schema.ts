@@ -1,6 +1,9 @@
 import z from "zod";
 import { paymentMethodEnum, paymentTypeEnum } from "@/db/schema/enums";
-import { endOfMonth, format, startOfMonth } from "date-fns";
+import {
+	RECEIPT_NUMBER_FORMAT_MESSAGE,
+	RECEIPT_NUMBER_REGEX,
+} from "@/lib/receipt-number";
 
 // ── Output schemas ──
 
@@ -13,11 +16,23 @@ export const paymentOutput = z.object({
 	paymentAmount: z.number(),
 	periodStart: z.iso.date().nullable(),
 	periodEnd: z.iso.date().nullable(),
+	receiptNumber: z.string().nullable(),
 	description: z
 		.string()
 		.trim()
 		.max(500, "Description must not exceed 500 characters")
 		.nullable(),
+	leaseSummary: z
+		.object({
+			leaseStatus: z.string(),
+			leaseStartDate: z.iso.date(),
+			unitName: z.string(),
+			unitAddress: z.string(),
+			tenantName: z.string(),
+			tenantPhoneNumber: z.string().nullable(),
+		})
+		.nullable()
+		.optional(),
 	createdAt: z.date(),
 	updatedAt: z.date(),
 });
@@ -41,8 +56,14 @@ export const paymentSchema = z
 			.number()
 			.positive("Amount is required")
 			.multipleOf(0.01, "Amount cannot have more than 2 decimal places"),
-		periodStart: z.iso.datetime(),
-		periodEnd: z.iso.datetime(),
+		periodStart: z.iso.date(),
+		periodEnd: z.iso.date(),
+		receiptNumber: z
+			.string()
+			.trim()
+			.regex(RECEIPT_NUMBER_REGEX, RECEIPT_NUMBER_FORMAT_MESSAGE)
+			.nullable()
+			.optional(),
 		description: z
 			.string()
 			.trim()
@@ -73,34 +94,17 @@ export const paymentSchema = z
 			});
 		}
 
-		if (data.paymentType !== "rent") {
+		if (data.paymentType !== "rent" && data.paymentType !== "rent_waiver") {
 			return;
 		}
 
-		const expectedStart = startOfMonth(periodStart);
-		const expectedEnd = endOfMonth(periodStart);
-
-		if (
-			format(periodStart, "yyyy-MM-dd") !==
-				format(expectedStart, "yyyy-MM-dd") ||
-			format(periodEnd, "yyyy-MM-dd") !== format(expectedEnd, "yyyy-MM-dd")
-		) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["periodStart"],
-				message:
-					"For rent payments, period must match the exact start and end of a calendar month",
-			});
-		}
-
-		const paymentMonth = startOfMonth(new Date(data.paymentDate));
-		if (expectedStart.getTime() > paymentMonth.getTime()) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["periodStart"],
-				message: "Rent month cannot be a future month relative to payment date",
-			});
-		}
+		// if (periodStart.getTime() > paymentDate.getTime()) {
+		// 	ctx.addIssue({
+		// 		code: "custom",
+		// 		path: ["periodStart"],
+		// 		message: "For rent payments, period start cannot be after payment date",
+		// 	});
+		// }
 	});
 
 export const createPayment = paymentSchema;
@@ -131,7 +135,6 @@ export const nextRentMonthOutput = z.object({
 	periodStart: z.iso.date(),
 	periodEnd: z.iso.date(),
 	rentAmount: z.coerce.number(),
-	isArrearsRecovery: z.boolean(),
 });
 
 export const listPaymentInput = z.object({
@@ -142,34 +145,3 @@ export const listPaymentInput = z.object({
 });
 
 export type ListPaymentOutput = z.infer<typeof listPaymentOutput>;
-
-// create form
-// export const paymentFormSchema = z.object({
-// 	// leaseId: z.number().min(1, "Please select a Lease"),
-// 	// paymentType: z.enum(paymentTypeEnum.enumValues),
-// 	// paymentMethod: z.enum(paymentMethodEnum.enumValues),
-// 	paymentDate: z.date("Payment date is required"),
-// 	// paymentAmount: z.number().positive("Payment amount must be greater than 0"),
-// 	periodStart: z.date(),
-// 	periodEnd: z.date(),
-// 	// description: z
-// 	// 	.string()
-// 	// 	.trim()
-// 	// 	.max(500, "Description must not exceed 500 characters")
-// 	// 	.nullable(),
-// });
-
-// export type PaymentFormSchema = z.infer<typeof paymentFormSchema>;
-
-// export function toCreatePaymentInput(values: PaymentFormSchema) {
-// 	return {
-// 		leaseId: values.leaseId,
-// 		paymentType: values.paymentType,
-// 		paymentMethod: values.paymentMethod,
-// 		paymentDate: format(values.paymentDate, "yyyy-MM-dd"),
-// 		paymentAmount: values.paymentAmount,
-// 		periodStart: format(values.periodStart, "yyyy-MM-dd"),
-// 		periodEnd: format(values.periodEnd, "yyyy-MM-dd"),
-// 		description: values.description?.trim() || null,
-// 	};
-// }

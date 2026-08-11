@@ -1,29 +1,29 @@
 "use client";
 
-import Link from "next/link";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
 	ArrowLeft,
+	Copy,
+	Download,
+	FileText,
+	IdCard,
+	MapPin,
 	Phone,
 	Settings,
-	FileText,
-	Download,
-	MapPin,
-	IdCard,
 } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { orpc } from "@/lib/orpc";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { EditTenantModal } from "../../_components/edit-tenant-modal";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Role } from "@/types/role";
+import { orpc } from "@/lib/orpc";
+import type { Role } from "@/types/role";
+import { EditTenantModal } from "../../_components/edit-tenant-modal";
 
 type TenantHeaderProps = {
 	id: number;
@@ -68,13 +68,29 @@ export function TenantHeader({ id, role }: TenantHeaderProps) {
 
 						<div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
 							<div className="flex items-center gap-2">
-								<Phone className="size-4" />
-								{tenant.phoneNumber}
+								<Phone className="size-4 shrink-0" />
+
+								<Link
+									href={`tel:${tenant.phoneNumber}`}
+									className="flex-1  hover:underline"
+									title={`Call ${tenant.firstName}`}
+								>
+									{tenant.phoneNumber}
+								</Link>
 							</div>
 
 							<div className="flex items-center gap-2">
 								<IdCard className="size-4" />
-								{tenant.nic}
+								<span>{tenant.nic}</span>
+								<button
+									type="button"
+									onClick={() => navigator.clipboard.writeText(tenant.nic)}
+									className="rounded-sm p-1 hover:bg-muted"
+									aria-label="Copy NIC"
+									title="Copy NIC"
+								>
+									<Copy className="size-3.5" />
+								</button>
 							</div>
 
 							{tenant.address && (
@@ -105,21 +121,21 @@ export function TenantHeader({ id, role }: TenantHeaderProps) {
 
 				<div className="flex items-center space-x-2">
 					<div>
-						<EditTenantModal data={tenant} triggerVariant="default" />
+						<EditTenantModal data={tenant} />
 					</div>
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button variant="outline" className="cursor-pointer">
+							<Button variant="outline">
 								<Settings className="size-4 mr-2" />
 								Actions
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
-							<DropdownMenuItem className="cursor-pointer">
+							<DropdownMenuItem>
 								<FileText className="size-4 mr-2" />
 								Generate Report
 							</DropdownMenuItem>
-							<DropdownMenuItem className="cursor-pointer">
+							<DropdownMenuItem>
 								<Download className="size-4 mr-2" />
 								Export Data
 							</DropdownMenuItem>

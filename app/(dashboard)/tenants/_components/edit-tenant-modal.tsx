@@ -1,11 +1,17 @@
 "use client";
 
-import * as React from "react";
-import { Edit } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Edit } from "lucide-react";
+import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
-import type { VariantProps } from "class-variance-authority";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { toast } from "sonner";
+import {
+	type ListTenantOutput,
+	type UpdateTenant,
+	updateTenant,
+} from "@/app/schemas/tenant.schema";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -15,36 +21,22 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
-import {
-	ListTenantOutput,
-	updateTenant,
-	UpdateTenant,
-} from "@/app/schemas/tenant.schema";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { orpc } from "@/lib/orpc";
-import { toast } from "sonner";
 
 type EditTenantModalProps = {
 	data: ListTenantOutput["items"][number];
-	triggerVariant?: VariantProps<typeof buttonVariants>["variant"];
 	children?: React.ReactNode;
 };
 
-export function EditTenantModal({
-	data,
-	triggerVariant = "ghost",
-	children,
-}: EditTenantModalProps) {
+export function EditTenantModal({ data, children }: EditTenantModalProps) {
 	const [open, setOpen] = React.useState(false);
 	const queryClient = useQueryClient();
 
@@ -91,10 +83,7 @@ export function EditTenantModal({
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
 				{children ?? (
-					<Button
-						className="w-full justify-start cursor-pointer"
-						variant={triggerVariant}
-					>
+					<Button className="w-full justify-start">
 						<Edit className="mr-2 size-4" />
 						Edit Tenant
 					</Button>

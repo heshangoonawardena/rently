@@ -1,9 +1,11 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+import { Eye } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 import { ExportButtons } from "@/components/export/export-buttons";
-import { exportCsv } from "@/lib/exports/csv";
-import { exportPdf } from "@/lib/exports/pdf";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -18,20 +20,42 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { orpc } from "@/lib/orpc";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { exportCsv } from "@/lib/exports/csv";
+import { exportPdf } from "@/lib/exports/pdf";
+import { orpc } from "@/lib/orpc";
 
 type MaintenanceView = "status" | "priority" | "type";
 
 export default function MaintenanceOverview() {
-	const { data: repairs } = useSuspenseQuery(
+	const repairsQuery = useQuery(
 		orpc.report.repairSummary.queryOptions({
 			input: {},
 		}),
+	);
+	const isLoading = repairsQuery.isLoading || repairsQuery.isFetching;
+	const repairsData = React.useMemo(
+		() =>
+			repairsQuery.data ?? {
+				open: 0,
+				inProgress: 0,
+				resolved: 0,
+				cancelled: 0,
+				byPriority: {
+					low: 0,
+					medium: 0,
+					high: 0,
+					urgent: 0,
+				},
+				byType: {
+					plumbing: 0,
+					electrical: 0,
+					structural: 0,
+					other: 0,
+				},
+			},
+		[repairsQuery.data],
 	);
 
 	const [view, setView] = React.useState<MaintenanceView>("status");
@@ -45,7 +69,7 @@ export default function MaintenanceOverview() {
 	const data = React.useMemo(() => {
 		switch (view) {
 			case "priority": {
-				const total = Object.values(repairs.byPriority).reduce(
+				const total = Object.values(repairsData.byPriority).reduce(
 					(a, b) => a + b,
 					0,
 				);
@@ -53,57 +77,68 @@ export default function MaintenanceOverview() {
 				return [
 					{
 						label: "Low",
-						value: repairs.byPriority.low,
-						percentage: total ? (repairs.byPriority.low / total) * 100 : 0,
+						value: repairsData.byPriority.low,
+						percentage: total ? (repairsData.byPriority.low / total) * 100 : 0,
 						color: "var(--chart-5)",
 					},
 					{
 						label: "Medium",
-						value: repairs.byPriority.medium,
-						percentage: total ? (repairs.byPriority.medium / total) * 100 : 0,
+						value: repairsData.byPriority.medium,
+						percentage: total
+							? (repairsData.byPriority.medium / total) * 100
+							: 0,
 						color: "var(--chart-4)",
 					},
 					{
 						label: "High",
-						value: repairs.byPriority.high,
-						percentage: total ? (repairs.byPriority.high / total) * 100 : 0,
+						value: repairsData.byPriority.high,
+						percentage: total ? (repairsData.byPriority.high / total) * 100 : 0,
 						color: "var(--chart-3)",
 					},
 					{
 						label: "Urgent",
-						value: repairs.byPriority.urgent,
-						percentage: total ? (repairs.byPriority.urgent / total) * 100 : 0,
+						value: repairsData.byPriority.urgent,
+						percentage: total
+							? (repairsData.byPriority.urgent / total) * 100
+							: 0,
 						color: "var(--chart-1)",
 					},
 				];
 			}
 
 			case "type": {
-				const total = Object.values(repairs.byType).reduce((a, b) => a + b, 0);
+				const total = Object.values(repairsData.byType).reduce(
+					(a, b) => a + b,
+					0,
+				);
 
 				return [
 					{
 						label: "Plumbing",
-						value: repairs.byType.plumbing,
-						percentage: total ? (repairs.byType.plumbing / total) * 100 : 0,
+						value: repairsData.byType.plumbing,
+						percentage: total ? (repairsData.byType.plumbing / total) * 100 : 0,
 						color: "var(--chart-1)",
 					},
 					{
 						label: "Electrical",
-						value: repairs.byType.electrical,
-						percentage: total ? (repairs.byType.electrical / total) * 100 : 0,
+						value: repairsData.byType.electrical,
+						percentage: total
+							? (repairsData.byType.electrical / total) * 100
+							: 0,
 						color: "var(--chart-3)",
 					},
 					{
 						label: "Structural",
-						value: repairs.byType.structural,
-						percentage: total ? (repairs.byType.structural / total) * 100 : 0,
+						value: repairsData.byType.structural,
+						percentage: total
+							? (repairsData.byType.structural / total) * 100
+							: 0,
 						color: "var(--chart-4)",
 					},
 					{
 						label: "Other",
-						value: repairs.byType.other,
-						percentage: total ? (repairs.byType.other / total) * 100 : 0,
+						value: repairsData.byType.other,
+						percentage: total ? (repairsData.byType.other / total) * 100 : 0,
 						color: "var(--chart-5)",
 					},
 				];
@@ -111,10 +146,10 @@ export default function MaintenanceOverview() {
 
 			default: {
 				const status = {
-					Open: repairs.open,
-					"In Progress": repairs.inProgress,
-					Resolved: repairs.resolved,
-					Cancelled: repairs.cancelled,
+					Open: repairsData.open,
+					"In Progress": repairsData.inProgress,
+					Resolved: repairsData.resolved,
+					Cancelled: repairsData.cancelled,
 				};
 
 				const total = Object.values(status).reduce((a, b) => a + b, 0);
@@ -122,32 +157,32 @@ export default function MaintenanceOverview() {
 				return [
 					{
 						label: "Open",
-						value: repairs.open,
-						percentage: total ? (repairs.open / total) * 100 : 0,
+						value: repairsData.open,
+						percentage: total ? (repairsData.open / total) * 100 : 0,
 						color: "var(--chart-1)",
 					},
 					{
 						label: "In Progress",
-						value: repairs.inProgress,
-						percentage: total ? (repairs.inProgress / total) * 100 : 0,
+						value: repairsData.inProgress,
+						percentage: total ? (repairsData.inProgress / total) * 100 : 0,
 						color: "var(--chart-3)",
 					},
 					{
 						label: "Resolved",
-						value: repairs.resolved,
-						percentage: total ? (repairs.resolved / total) * 100 : 0,
+						value: repairsData.resolved,
+						percentage: total ? (repairsData.resolved / total) * 100 : 0,
 						color: "var(--chart-2)",
 					},
 					{
 						label: "Cancelled",
-						value: repairs.cancelled,
-						percentage: total ? (repairs.cancelled / total) * 100 : 0,
+						value: repairsData.cancelled,
+						percentage: total ? (repairsData.cancelled / total) * 100 : 0,
 						color: "var(--chart-5)",
 					},
 				];
 			}
 		}
-	}, [view]);
+	}, [repairsData, view]);
 
 	const total = data.reduce((sum, item) => sum + item.value, 0);
 
@@ -172,7 +207,7 @@ export default function MaintenanceOverview() {
 						</CardDescription>
 					</div>
 					<Link href={`/repairs`}>
-						<Button variant="outline" size="sm" className="cursor-pointer">
+						<Button variant="outline" size="sm">
 							<Eye className="size-4 mr-2" />
 							View All
 						</Button>
@@ -199,7 +234,7 @@ export default function MaintenanceOverview() {
 					</Select>
 
 					<ExportButtons
-						disabled={total === 0}
+						disabled={isLoading || total === 0}
 						onCsv={() => exportCsv("maintenance-overview", exportRows)}
 						onPdf={() =>
 							exportPdf({
@@ -226,49 +261,83 @@ export default function MaintenanceOverview() {
 			</CardHeader>
 
 			<CardContent>
-				<div className="mb-6">
-					<div className="text-3xl font-bold">{total}</div>
-					<p className="text-sm text-muted-foreground">
-						Total maintenance requests
-					</p>
-				</div>
-
-				{/* Segmented bar */}
-				<div className="mb-6 flex h-4 overflow-hidden rounded-full bg-muted">
-					{data.map((item) => (
-						<div
-							key={item.label}
-							style={{
-								width: `${item.percentage}%`,
-								backgroundColor: item.color,
-							}}
-						/>
-					))}
-				</div>
-
-				<div className="space-y-4">
-					{data.map((item) => (
-						<div key={item.label} className="flex items-center justify-between">
-							<div className="flex items-center gap-3">
-								<span
-									className="size-3 rounded-full"
-									style={{ backgroundColor: item.color }}
-								/>
-
-								<div>
-									<p className="text-sm font-medium">{item.label}</p>
-									<p className="text-xs text-muted-foreground">
-										{item.value} job{item.value !== 1 ? "s" : ""}
-									</p>
-								</div>
-							</div>
-
-							<div className="text-sm font-medium">
-								{item.percentage.toFixed(0)}%
-							</div>
+				{isLoading ? (
+					<div className="space-y-6">
+						<div className="mb-6">
+							<Skeleton className="mb-2 h-9 w-24" />
+							<Skeleton className="h-4 w-40" />
 						</div>
-					))}
-				</div>
+
+						<Skeleton className="h-4 w-full rounded-full" />
+
+						<div className="space-y-4">
+							{Array.from({ length: 4 }).map((_, index) => (
+								<div
+									key={`maintenance-skeleton-${index}`}
+									className="flex items-center justify-between"
+								>
+									<div className="flex items-center gap-3">
+										<Skeleton className="size-3 rounded-full" />
+										<div className="space-y-2">
+											<Skeleton className="h-3 w-24" />
+											<Skeleton className="h-3 w-16" />
+										</div>
+									</div>
+									<Skeleton className="h-3 w-10" />
+								</div>
+							))}
+						</div>
+					</div>
+				) : (
+					<>
+						<div className="mb-6">
+							<div className="text-3xl font-bold">{total}</div>
+							<p className="text-sm text-muted-foreground">
+								Total maintenance requests
+							</p>
+						</div>
+
+						{/* Segmented bar */}
+						<div className="mb-6 flex h-4 overflow-hidden rounded-full bg-muted">
+							{data.map((item) => (
+								<div
+									key={item.label}
+									style={{
+										width: `${item.percentage}%`,
+										backgroundColor: item.color,
+									}}
+								/>
+							))}
+						</div>
+
+						<div className="space-y-4">
+							{data.map((item) => (
+								<div
+									key={item.label}
+									className="flex items-center justify-between"
+								>
+									<div className="flex items-center gap-3">
+										<span
+											className="size-3 rounded-full"
+											style={{ backgroundColor: item.color }}
+										/>
+
+										<div>
+											<p className="text-sm font-medium">{item.label}</p>
+											<p className="text-xs text-muted-foreground">
+												{item.value} job{item.value !== 1 ? "s" : ""}
+											</p>
+										</div>
+									</div>
+
+									<div className="text-sm font-medium">
+										{item.percentage.toFixed(0)}%
+									</div>
+								</div>
+							))}
+						</div>
+					</>
+				)}
 			</CardContent>
 		</Card>
 	);

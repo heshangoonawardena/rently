@@ -1,15 +1,12 @@
 import { implement } from "@orpc/server";
-import { contract } from "../contract";
-import { db } from "@/db/db";
-import { unit } from "@/db/schema/unit";
-import { lease, leaseRent } from "@/db/schema/lease";
-import { tenant } from "@/db/schema/tenant";
-import { payment, paymentReceipt } from "@/db/schema/payment";
-import { unitDocument, leaseDocument } from "@/db/schema/document";
-import { inspection } from "@/db/schema/inspection";
-import { utility, utilityBill } from "@/db/schema/utility";
-import { repairRequest } from "@/db/schema/repair";
-import { user } from "@/db/schema/auth";
+import {
+	addDays,
+	addMonths,
+	endOfMonth,
+	format,
+	parseISO,
+	startOfMonth,
+} from "date-fns";
 import {
 	and,
 	asc,
@@ -23,12 +20,22 @@ import {
 	or,
 	sql,
 } from "drizzle-orm";
+import { db } from "@/db/db";
+import { user } from "@/db/schema/auth";
+import { leaseDocument, unitDocument } from "@/db/schema/document";
+import { inspection } from "@/db/schema/inspection";
+import { lease, leaseRent } from "@/db/schema/lease";
+import { payment } from "@/db/schema/payment";
+import { repairRequest } from "@/db/schema/repair";
+import { tenant } from "@/db/schema/tenant";
+import { unit } from "@/db/schema/unit";
+import { utility, utilityBill } from "@/db/schema/utility";
+import { contract } from "../contract";
 import {
 	authMiddleware,
-	BaseContext,
+	type BaseContext,
 	permissionMiddleware,
 } from "./middleware";
-import { format } from "date-fns";
 
 const os = implement(contract).$context<BaseContext>();
 
@@ -60,13 +67,47 @@ function daysBetween(a: string, b: string): number {
 	);
 }
 
+function monthKey(dateValue: Date): string {
+	return format(dateValue, "yyyy-MM");
+}
+
+function cycleStartForMonth(monthStart: Date, leaseAnchorDay: number): Date {
+	const monthEndDay = endOfMonth(monthStart).getDate();
+	const dayOfMonth = Math.min(leaseAnchorDay, monthEndDay);
+
+	const cycleStart = new Date(monthStart);
+	cycleStart.setDate(dayOfMonth);
+
+	return cycleStart;
+}
+
+function resolveLeaseCyclePeriod(
+	cycleMonthStart: Date,
+	leaseAnchorDay: number,
+): { periodStart: string; periodEnd: string } {
+	const periodStartDate = cycleStartForMonth(
+		startOfMonth(cycleMonthStart),
+		leaseAnchorDay,
+	);
+	const nextCycleStartDate = cycleStartForMonth(
+		startOfMonth(addMonths(cycleMonthStart, 1)),
+		leaseAnchorDay,
+	);
+	const periodEndDate = addDays(nextCycleStartDate, -1);
+
+	return {
+		periodStart: format(periodStartDate, "yyyy-MM-dd"),
+		periodEnd: format(periodEndDate, "yyyy-MM-dd"),
+	};
+}
+
 // ── Handlers ──
 
 export const occupancySummary = os.report.occupancySummary
 	.use(authMiddleware)
 	.use(permissionMiddleware({ unit: ["read"] }))
-	.handler(async ({ context, errors }) => {
-		const { organizationId, role } = context.user;
+	.handler(async ({ context }) => {
+		const { organizationId } = context.user;
 
 		const rows = await db
 			.select({ status: unit.status, count: sql<number>`count(*)::int` })
@@ -93,8 +134,8 @@ export const occupancySummary = os.report.occupancySummary
 export const rentCollection = os.report.rentCollection
 	.use(authMiddleware)
 	.use(permissionMiddleware({ payment: ["read"] }))
-	.handler(async ({ input, errors, context }) => {
-		const { organizationId, role } = context.user;
+	.handler(async ({ input, context }) => {
+		const { organizationId } = context.user;
 
 		const period =
 			input?.from && input?.to
@@ -258,8 +299,8 @@ export const rentCollection = os.report.rentCollection
 export const paymentOverview = os.report.paymentOverview
 	.use(authMiddleware)
 	.use(permissionMiddleware({ payment: ["read"] }))
-	.handler(async ({ input, errors, context }) => {
-		const { organizationId, role } = context.user;
+	.handler(async ({ input, context }) => {
+		const { organizationId } = context.user;
 
 		const { cursor, limit, from, to, unitId, paymentType, paymentMethod } =
 			input;
@@ -292,10 +333,8 @@ export const paymentOverview = os.report.paymentOverview
 		const rows = await db
 			.select({
 				payment: payment,
-				receiptNumber: paymentReceipt.receiptNumber,
 			})
 			.from(payment)
-			.leftJoin(paymentReceipt, eq(paymentReceipt.paymentId, payment.id))
 			.where(
 				and(
 					inArray(payment.leaseId, leaseIds),
@@ -341,7 +380,7 @@ export const paymentOverview = os.report.paymentOverview
 			]),
 		);
 
-		const items = pageRows.map(({ payment: p, receiptNumber }) => {
+		const items = pageRows.map(({ payment: p }) => {
 			const meta = leaseMetaById.get(p.leaseId)!;
 			return {
 				paymentId: p.id,
@@ -354,7 +393,7 @@ export const paymentOverview = os.report.paymentOverview
 				paymentType: p.paymentType,
 				paymentMethod: p.paymentMethod,
 				paymentDate: p.paymentDate,
-				receiptNumber: receiptNumber ?? null,
+				receiptNumber: p.receiptNumber ?? null,
 				description: p.description ?? null,
 			};
 		});
@@ -368,8 +407,8 @@ export const paymentOverview = os.report.paymentOverview
 export const arrearsOverview = os.report.arrearsOverview
 	.use(authMiddleware)
 	.use(permissionMiddleware({ payment: ["read"] }))
-	.handler(async ({ errors, context }) => {
-		const { organizationId, role } = context.user;
+	.handler(async ({ context }) => {
+		const { organizationId } = context.user;
 
 		const leaseRows = await db
 			.select({
@@ -398,30 +437,54 @@ export const arrearsOverview = os.report.arrearsOverview
 
 		const leaseIds = leaseRows.map((l) => l.id);
 
-		// Current rent per lease (for estimating months overdue)
-		const todayStr = today();
+		const todayDate = new Date();
+		const endOfCurrentMonthStr = format(endOfMonth(todayDate), "yyyy-MM-dd");
+
 		const rentRows = await db
-			.select({ leaseId: leaseRent.leaseId, rentAmount: leaseRent.rentAmount })
+			.select({
+				leaseId: leaseRent.leaseId,
+				rentAmount: leaseRent.rentAmount,
+				agreedPaymentDay: leaseRent.agreedPaymentDay,
+				effectiveDate: leaseRent.effectiveDate,
+				id: leaseRent.id,
+			})
 			.from(leaseRent)
 			.where(
 				and(
 					inArray(leaseRent.leaseId, leaseIds),
 					eq(leaseRent.status, "active"),
-					lte(leaseRent.effectiveDate, todayStr),
+					lte(leaseRent.effectiveDate, endOfCurrentMonthStr),
 				),
 			)
-			.orderBy(desc(leaseRent.effectiveDate));
+			.orderBy(
+				asc(leaseRent.leaseId),
+				asc(leaseRent.effectiveDate),
+				asc(leaseRent.id),
+			);
 
-		const currentRentByLease = new Map<number, number>();
-		for (const r of rentRows) {
-			if (!currentRentByLease.has(r.leaseId)) {
-				currentRentByLease.set(r.leaseId, Number(r.rentAmount));
-			}
+		const rentScheduleByLease = new Map<
+			number,
+			Array<{
+				effectiveDate: string;
+				rentAmount: number;
+				agreedPaymentDay: number;
+			}>
+		>();
+
+		for (const row of rentRows) {
+			const list = rentScheduleByLease.get(row.leaseId) ?? [];
+			list.push({
+				effectiveDate: row.effectiveDate,
+				rentAmount: Number(row.rentAmount),
+				agreedPaymentDay: row.agreedPaymentDay,
+			});
+			rentScheduleByLease.set(row.leaseId, list);
 		}
 
 		const collectedRows = await db
 			.select({
 				leaseId: payment.leaseId,
+				periodStart: payment.periodStart,
 				paymentAmount: payment.paymentAmount,
 			})
 			.from(payment)
@@ -430,14 +493,16 @@ export const arrearsOverview = os.report.arrearsOverview
 					inArray(payment.leaseId, leaseIds),
 					inArray(payment.paymentType, ["rent", "arrear", "rent_waiver"]),
 					isNotNull(payment.periodStart),
-					lte(payment.periodStart, todayStr),
+					lte(payment.periodStart, endOfCurrentMonthStr),
 				),
 			);
 
-		const collectedByLease = new Map<number, number>();
+		const collectedByLeasePeriod = new Map<string, number>();
 		for (const row of collectedRows) {
-			const prev = collectedByLease.get(row.leaseId) ?? 0;
-			collectedByLease.set(row.leaseId, prev + Number(row.paymentAmount));
+			if (!row.periodStart) continue;
+			const key = `${row.leaseId}:${monthKey(parseISO(row.periodStart))}`;
+			const prev = collectedByLeasePeriod.get(key) ?? 0;
+			collectedByLeasePeriod.set(key, prev + Number(row.paymentAmount));
 		}
 
 		const unitRows = await db
@@ -470,26 +535,68 @@ export const arrearsOverview = os.report.arrearsOverview
 
 		const arrearsRows = [];
 		let totalArrears = 0;
+		const currentMonthStart = startOfMonth(todayDate);
 
 		for (const l of leaseRows) {
-			const rent = currentRentByLease.get(l.id) ?? 0;
-			if (rent <= 0) continue;
+			const rentSchedule = rentScheduleByLease.get(l.id) ?? [];
+			if (rentSchedule.length === 0) continue;
 
-			const start = new Date(l.startDate);
-			const now = new Date(todayStr);
-			const monthsElapsed =
-				(now.getFullYear() - start.getFullYear()) * 12 +
-				(now.getMonth() - start.getMonth()) +
-				1;
+			const leaseStart = parseISO(l.startDate);
+			const leaseAnchorDay = leaseStart.getDate();
+			let cursor = startOfMonth(leaseStart);
 
-			const billedMonths = Math.max(monthsElapsed, 0);
-			const expected = billedMonths * rent;
-			const collected = collectedByLease.get(l.id) ?? 0;
+			let expected = 0;
+			let collected = 0;
+			let monthsOverdue = 0;
+
+			while (cursor.getTime() <= currentMonthStart.getTime()) {
+				const cyclePeriod = resolveLeaseCyclePeriod(cursor, leaseAnchorDay);
+
+				let cycleRent: { rentAmount: number; agreedPaymentDay: number } | null =
+					null;
+				for (const scheduleRow of rentSchedule) {
+					if (scheduleRow.effectiveDate <= cyclePeriod.periodEnd) {
+						cycleRent = {
+							rentAmount: scheduleRow.rentAmount,
+							agreedPaymentDay: scheduleRow.agreedPaymentDay,
+						};
+					}
+				}
+
+				if (!cycleRent) {
+					cursor = startOfMonth(addMonths(cursor, 1));
+					continue;
+				}
+
+				const dueDay = Math.min(
+					cycleRent.agreedPaymentDay,
+					endOfMonth(cursor).getDate(),
+				);
+				const dueDate = new Date(cursor);
+				dueDate.setDate(dueDay);
+				dueDate.setHours(23, 59, 59, 999);
+
+				if (todayDate.getTime() <= dueDate.getTime()) {
+					cursor = startOfMonth(addMonths(cursor, 1));
+					continue;
+				}
+
+				expected += cycleRent.rentAmount;
+
+				const periodKey = `${l.id}:${monthKey(cursor)}`;
+				const cycleCollected = collectedByLeasePeriod.get(periodKey) ?? 0;
+				collected += cycleCollected;
+
+				if (cycleRent.rentAmount - cycleCollected > 0) {
+					monthsOverdue += 1;
+				}
+
+				cursor = startOfMonth(addMonths(cursor, 1));
+			}
+
 			const arrears = expected - collected;
 
 			if (arrears <= 0) continue;
-
-			const monthsOverdue = Math.floor(arrears / rent);
 			const t = tenantById.get(l.tenantId);
 
 			totalArrears += arrears;
@@ -519,8 +626,8 @@ export const arrearsOverview = os.report.arrearsOverview
 export const upcomingRentDue = os.report.upcomingRentDue
 	.use(authMiddleware)
 	.use(permissionMiddleware({ lease: ["read"] }))
-	.handler(async ({ input, errors, context }) => {
-		const { organizationId, role } = context.user;
+	.handler(async ({ input, context }) => {
+		const { organizationId } = context.user;
 
 		const { daysAhead } = input;
 		const todayStr = today();
@@ -636,8 +743,8 @@ export const upcomingRentDue = os.report.upcomingRentDue
 export const expiringDocuments = os.report.expiringDocuments
 	.use(authMiddleware)
 	.use(permissionMiddleware({ document: ["read"] }))
-	.handler(async ({ input, errors, context }) => {
-		const { organizationId, role } = context.user;
+	.handler(async ({ input, context }) => {
+		const { organizationId } = context.user;
 
 		const { daysAhead } = input;
 		const todayStr = today();
@@ -790,8 +897,8 @@ export const upcomingInspections = os.report.upcomingInspections
 export const overdueUtilityBills = os.report.overdueUtilityBills
 	.use(authMiddleware)
 	.use(permissionMiddleware({ utility: ["read"] }))
-	.handler(async ({ errors, context }) => {
-		const { organizationId, role } = context.user;
+	.handler(async ({ context }) => {
+		const { organizationId } = context.user;
 
 		const todayStr = today();
 
@@ -848,8 +955,8 @@ export const overdueUtilityBills = os.report.overdueUtilityBills
 export const repairSummary = os.report.repairSummary
 	.use(authMiddleware)
 	.use(permissionMiddleware({ repair: ["read"] }))
-	.handler(async ({ input, errors, context }) => {
-		const { organizationId, role } = context.user;
+	.handler(async ({ input, context }) => {
+		const { organizationId } = context.user;
 
 		const rows = await db
 			.select({

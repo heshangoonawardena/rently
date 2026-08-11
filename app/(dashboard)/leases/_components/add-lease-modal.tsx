@@ -1,11 +1,19 @@
 "use client";
 
-import * as React from "react";
-import { CalendarIcon, CircleHelp, Plus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+	useMutation,
+	useQueryClient,
+	useSuspenseQuery,
+} from "@tanstack/react-query";
+import { format } from "date-fns";
+import { CalendarIcon, CircleHelp, Plus } from "lucide-react";
+import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
-
+import { toast } from "sonner";
+import { type CreateLease, createLease } from "@/app/schemas/lease.schema";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	Dialog,
 	DialogContent,
@@ -15,9 +23,18 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-
+import {
+	Field,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -26,32 +43,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
-	Field,
-	FieldError,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
-import {
-	useMutation,
-	useQueryClient,
-	useSuspenseQuery,
-} from "@tanstack/react-query";
-import { orpc } from "@/lib/orpc";
-import { toast } from "sonner";
-import { createLease, CreateLease } from "@/app/schemas/lease.schema";
-import { format } from "date-fns";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { formatDateOnly } from "@/lib/utils";
-import {
 	TENANT_STATUS_META,
 	UNIT_STATUS_META,
 	UNIT_TYPE_META,
 } from "@/config/table-facet-meta";
+import { orpc } from "@/lib/orpc";
+import { formatDateOnly } from "@/lib/utils";
 
 export function AddLeaseModal() {
 	const [open, setOpen] = React.useState(false);
@@ -62,7 +59,7 @@ export function AddLeaseModal() {
 		defaultValues: {
 			unitId: 0,
 			tenantId: 0,
-			startDate: formatDateOnly(new Date()) ,
+			startDate: formatDateOnly(new Date()),
 			endDate: null,
 			depositAmount: 0,
 			rentAmount: 0,
@@ -116,7 +113,7 @@ export function AddLeaseModal() {
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button className="cursor-pointer">
+				<Button>
 					<Plus className="size-4" />
 					Add Lease
 				</Button>
@@ -161,9 +158,13 @@ export function AddLeaseModal() {
 											<SelectContent>
 												{units.map((unit) => {
 													const typeMeta =
-														UNIT_TYPE_META[unit.type as keyof typeof UNIT_TYPE_META];
+														UNIT_TYPE_META[
+															unit.type as keyof typeof UNIT_TYPE_META
+														];
 													const statusMeta =
-														UNIT_STATUS_META[unit.status as keyof typeof UNIT_STATUS_META];
+														UNIT_STATUS_META[
+															unit.status as keyof typeof UNIT_STATUS_META
+														];
 													const TypeIcon = typeMeta?.icon ?? CircleHelp;
 													const StatusIcon = statusMeta?.icon ?? CircleHelp;
 
@@ -230,7 +231,9 @@ export function AddLeaseModal() {
 															value={tenant.id.toString()}
 														>
 															<div className="flex w-full items-center justify-between gap-3">
-																<span>{tenant.nickname} - {tenant.firstName}</span>
+																<span>
+																	{tenant.nickname} - {tenant.firstName}
+																</span>
 																<span className="text-muted-foreground text-xs capitalize inline-flex items-center gap-1.5">
 																	<StatusIcon className="size-3.5" />
 																	{tenant.status.replace("_", " ")}
@@ -267,7 +270,7 @@ export function AddLeaseModal() {
 													id="date-0"
 													name=""
 												>
-													<CalendarIcon className="mr-2 h-4 w-4" />
+													<CalendarIcon className="mr-2 size-4" />
 													{field.value ? (
 														format(field.value, "d MMM yyyy")
 													) : (
@@ -310,7 +313,7 @@ export function AddLeaseModal() {
 													id="date-0"
 													name=""
 												>
-													<CalendarIcon className="mr-2 h-4 w-4" />
+													<CalendarIcon className="mr-2 size-4" />
 													{field.value ? (
 														format(field.value, "d MMM yyyy")
 													) : (

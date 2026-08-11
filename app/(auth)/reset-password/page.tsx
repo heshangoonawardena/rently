@@ -1,6 +1,6 @@
-import { ResetPasswordForm } from "./_components/reset-password-form";
 import Image from "next/image";
 import Link from "next/link";
+import { ResetPasswordForm } from "./_components/reset-password-form";
 
 export default function LoginPage() {
 	return (

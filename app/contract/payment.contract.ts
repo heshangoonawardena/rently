@@ -1,12 +1,6 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-	listPaymentReceiptInput,
-	listPaymentReceiptOutput,
-	paymentReceiptOutput,
-	receiptInput,
-} from "../schemas/payment.receipt.schema";
-import {
 	createPayment,
 	listPaymentInput,
 	listPaymentOutput,
@@ -60,7 +54,7 @@ export const createPaymentContract = base
 		successStatus: 201,
 		summary: "Record a payment",
 		description:
-			"Records a payment against a lease. Partial rent payments are not accepted and a receipt is auto-generated on success.",
+			"Records a payment against a lease. A receipt is auto-generated on success.",
 		tags: ["Payments"],
 	})
 	.input(createPayment)
@@ -83,7 +77,8 @@ export const getPaymentContract = base
 		method: "GET",
 		path: "/leases/{leaseId}/payments/{id}",
 		summary: "Get a payment",
-		description: "Retrieves a payment with its attached receipt.",
+		description:
+			"Retrieves a payment with its receipt details stored on the payment record.",
 		tags: ["Payments"],
 	})
 	.input(paymentInput)
@@ -112,39 +107,3 @@ export const nextRentMonthContract = base
 	})
 	.input(nextRentMonthInput)
 	.output(nextRentMonthOutput);
-
-// export const listAllPaymentsContract = base
-// 	.route({
-// 		method: "GET",
-// 		path: "/payments",
-// 		summary: "List all payments",
-// 		description:
-// 			"Returns a cursor-paginated list of payments across all leases. Supports filtering by lease, tenant, type, and status.",
-// 		tags: ["Payments"],
-// 	})
-// 	.input(listAllPaymentInput)
-// 	.output(listAllPaymentOutput);
-
-// ── Receipt contracts ──
-
-export const getReceiptContract = base
-	.route({
-		method: "GET",
-		path: "/receipts/{id}",
-		summary: "Get a receipt",
-		description: "Retrieves a receipt by its ID.",
-		tags: ["Payment Receipts"],
-	})
-	.input(receiptInput)
-	.output(paymentReceiptOutput);
-
-export const listReceiptsContract = base
-	.route({
-		method: "GET",
-		path: "/leases/{leaseId}/receipts",
-		summary: "List receipts for a lease",
-		description: "Returns all receipts for a lease, newest first.",
-		tags: ["Payment Receipts"],
-	})
-	.input(listPaymentReceiptInput)
-	.output(listPaymentReceiptOutput);

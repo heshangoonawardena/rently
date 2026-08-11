@@ -1,14 +1,14 @@
 "use client";
-import menu2 from "react-useanimations/lib/menu2";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
-import UseAnimations from "react-useanimations";
-import { authClient } from "@/lib/auth-client";
 import { LayoutDashboard } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import UseAnimations from "react-useanimations";
+import menu2 from "react-useanimations/lib/menu2";
 import { ModeToggle } from "@/components/mode-toggle";
+import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 
 const menuItems = [
 	{ name: "Features", href: "#features" },
@@ -62,12 +62,12 @@ export const HeroHeader = () => {
 							{/* <button
 								onClick={() => setMenuState(!menuState)}
 								aria-label={menuState == true ? "Close Menu" : "Open Menu"}
-								className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden"
+								className="relative z-20 -m-2.5 -mr-4 block  p-2.5 lg:hidden"
 							>
 								<Menu className="in-data-[state=active]:rotate-180 in-data-[state=active]:scale-0 in-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
 								<X className="in-data-[state=active]:rotate-0 in-data-[state=active]:scale-100 in-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
 							</button> */}
-							<div className="lg:hidden relative z-20 cursor-pointer -m-2.5 -mr-4 block">
+							<div className="lg:hidden relative z-20  -m-2.5 -mr-4 block">
 								<UseAnimations
 									speed={1}
 									animation={menu2}

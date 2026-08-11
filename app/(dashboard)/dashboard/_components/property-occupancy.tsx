@@ -1,15 +1,18 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+import { Eye, Filter } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { ExportButtons } from "@/components/export/export-buttons";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
 	Select,
 	SelectContent,
@@ -17,19 +20,16 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-	REPORT_TIME_RANGE_FILTER_OPTIONS,
 	UNIT_STATUS_FILTER_OPTIONS,
 	UNIT_STATUS_META,
 } from "@/config/table-facet-meta";
 import { exportCsv } from "@/lib/exports/csv";
-import { exportPdf } from "@/lib/exports/pdf";
 import { formatDisplayDate, formatExportDate } from "@/lib/exports/formatters";
+import { exportPdf } from "@/lib/exports/pdf";
 import { orpc } from "@/lib/orpc";
-import { useSuspenseQueries } from "@tanstack/react-query";
-import { CalendarRange, Eye, Filter } from "lucide-react";
-import Link from "next/link";
-import { useMemo, useState } from "react";
 
 const occupancyConfig = {
 	occupied: {
@@ -53,24 +53,29 @@ const occupancyConfig = {
 type OccupancyKey = keyof typeof occupancyConfig;
 
 export default function PropertyOccupancy() {
-	const reportQueries = [
-		orpc.report.occupancySummary.queryOptions(),
+	const occupancyQuery = useQuery(orpc.report.occupancySummary.queryOptions());
+	const expiringLeasesQuery = useQuery(
 		orpc.report.expiringLeases.queryOptions({ input: {} }),
-	] as const;
+	);
 
-	const [
-		{ data: occupancyData },
-		{
-			data: { rows: expiringLeases },
-		},
-	] = useSuspenseQueries({
-		queries: reportQueries,
-	});
+	const isLoading =
+		occupancyQuery.isLoading ||
+		occupancyQuery.isFetching ||
+		expiringLeasesQuery.isLoading ||
+		expiringLeasesQuery.isFetching;
+
+	const occupancyData = occupancyQuery.data ?? {
+		total: 0,
+		occupied: 0,
+		available: 0,
+		maintenance: 0,
+		inactive: 0,
+	};
+	const expiringLeases = expiringLeasesQuery.data?.rows ?? [];
 
 	const [occupancyFilter, setOccupancyFilter] = useState<"all" | OccupancyKey>(
 		"all",
 	);
-	const [timeRange, setTimeRange] = useState("all");
 
 	const safeTotal = occupancyData.total > 0 ? occupancyData.total : 1;
 
@@ -121,14 +126,7 @@ export default function PropertyOccupancy() {
 		return pipelineData.filter((item) => item.key === occupancyFilter);
 	}, [occupancyFilter, pipelineData]);
 
-	const filteredExpiringLeases = useMemo(() => {
-		if (timeRange === "all") {
-			return expiringLeases;
-		}
-
-		const days = Number(timeRange.replace("d", ""));
-		return expiringLeases.filter((lease) => lease.daysUntilExpiry <= days);
-	}, [expiringLeases, timeRange]);
+	const filteredExpiringLeases = expiringLeases;
 
 	const totalUnitsInScope = filteredPipelineData.reduce(
 		(total, item) => total + item.value,
@@ -149,14 +147,10 @@ export default function PropertyOccupancy() {
 		occupancyFilter === "all"
 			? "All statuses"
 			: (occupancyConfig[occupancyFilter]?.label ?? occupancyFilter)
-	} | Lease range: ${
-		REPORT_TIME_RANGE_FILTER_OPTIONS.find((option) => option.value === timeRange)
-			?.label ?? "All time"
 	}`;
 
 	const resetFilters = () => {
 		setOccupancyFilter("all");
-		setTimeRange("all");
 	};
 
 	return (
@@ -170,7 +164,7 @@ export default function PropertyOccupancy() {
 						</CardDescription>
 					</div>
 					<Link href="/units">
-						<Button variant="outline" size="sm" className="cursor-pointer">
+						<Button variant="outline" size="sm">
 							<Eye className="size-4 mr-2" />
 							View All
 						</Button>
@@ -207,29 +201,15 @@ export default function PropertyOccupancy() {
 								</SelectContent>
 							</Select>
 						</div>
-
-						<div className="flex items-center gap-2 rounded-md border bg-background px-2">
-							<CalendarRange className="size-4 text-muted-foreground" />
-
-							<Select value={timeRange} onValueChange={setTimeRange}>
-								<SelectTrigger className="h-8 w-35 border-0 bg-transparent p-0 shadow-none">
-									<SelectValue placeholder="Lease range" />
-								</SelectTrigger>
-
-								<SelectContent>
-									{REPORT_TIME_RANGE_FILTER_OPTIONS.map((option) => (
-										<SelectItem key={option.value} value={option.value}>
-											{option.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
 					</div>
 
 					<div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
 						<ExportButtons
-							disabled={occupancyData.total === 0 && filteredExpiringLeases.length === 0}
+							disabled={
+								isLoading ||
+								(occupancyData.total === 0 &&
+									filteredExpiringLeases.length === 0)
+							}
 							onCsv={() => exportCsv("property-occupancy", exportRows)}
 							onPdf={() =>
 								exportPdf({
@@ -272,7 +252,7 @@ export default function PropertyOccupancy() {
 							}
 						/>
 
-						{(occupancyFilter !== "all" || timeRange !== "all") && (
+						{occupancyFilter !== "all" && (
 							<Button variant="ghost" size="sm" onClick={resetFilters}>
 								Reset
 							</Button>
@@ -282,110 +262,163 @@ export default function PropertyOccupancy() {
 			</CardHeader>
 
 			<CardContent className="space-y-6">
-				{/* Segmented Pipeline Bar */}
-				<div className="mb-6 flex h-4 overflow-hidden rounded-full bg-muted">
-					{filteredPipelineData.map((item) => (
-						<div
-							key={item.title}
-							style={{
-								width: `${item.percentage}%`,
-								backgroundColor: item.color,
-							}}
-						/>
-					))}
-				</div>
+				{isLoading ? (
+					<div className="space-y-6">
+						<Skeleton className="mb-6 h-4 w-full rounded-full" />
 
-				{/* Pipeline Items */}
-				<div className="space-y-5">
-					{filteredPipelineData.map((item) => (
-						<div key={item.title} className="flex items-center justify-between">
-							<div className="flex items-start gap-3">
+						<div className="space-y-5">
+							{Array.from({ length: 4 }).map((_, index) => (
 								<div
-									className="mt-1.5 size-3 rounded-full"
-									style={{ backgroundColor: item.color }}
+									key={`occupancy-skeleton-${index}`}
+									className="flex items-center justify-between"
+								>
+									<div className="flex items-start gap-3">
+										<Skeleton className="mt-1.5 size-3 rounded-full" />
+										<div className="space-y-2">
+											<Skeleton className="h-3 w-24" />
+											<Skeleton className="h-3 w-16" />
+										</div>
+									</div>
+									<div className="flex items-center gap-3">
+										<Skeleton className="h-2 w-14 rounded-full" />
+										<Skeleton className="h-3 w-8" />
+									</div>
+								</div>
+							))}
+						</div>
+
+						<div className="border-t" />
+
+						<div className="space-y-3">
+							<Skeleton className="h-4 w-24" />
+							{Array.from({ length: 3 }).map((_, index) => (
+								<div
+									key={`lease-skeleton-${index}`}
+									className="flex items-center justify-between rounded-lg border p-3"
+								>
+									<div className="space-y-2">
+										<Skeleton className="h-3 w-28" />
+										<Skeleton className="h-3 w-20" />
+									</div>
+									<div className="space-y-2 text-right">
+										<Skeleton className="h-3 w-16" />
+										<Skeleton className="h-3 w-24" />
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				) : (
+					<>
+						{/* Segmented Pipeline Bar */}
+						<div className="mb-6 flex h-4 overflow-hidden rounded-full bg-muted">
+							{filteredPipelineData.map((item) => (
+								<div
+									key={item.title}
+									style={{
+										width: `${item.percentage}%`,
+										backgroundColor: item.color,
+									}}
 								/>
+							))}
+						</div>
 
-								<div>
-									<div className="text-sm font-medium text-foreground">
-										{item.title}
+						{/* Pipeline Items */}
+						<div className="space-y-5">
+							{filteredPipelineData.map((item) => (
+								<div
+									key={item.title}
+									className="flex items-center justify-between"
+								>
+									<div className="flex items-start gap-3">
+										<div
+											className="mt-1.5 size-3 rounded-full"
+											style={{ backgroundColor: item.color }}
+										/>
+
+										<div>
+											<div className="text-sm font-medium text-foreground">
+												{item.title}
+											</div>
+
+											<div className="text-xs text-muted-foreground">
+												{item.value} units
+											</div>
+										</div>
 									</div>
 
-									<div className="text-xs text-muted-foreground">
-										{item.value} units
+									<div className="flex items-center gap-3">
+										{/* Mini progress indicator */}
+										<div className="h-2 w-14 overflow-hidden rounded-full bg-muted">
+											<div
+												className="h-full rounded-full bg-black"
+												style={{
+													width: `${item.percentage}%`,
+												}}
+											/>
+										</div>
+
+										<span className="w-8 text-right text-sm text-muted-foreground">
+											{item.percentage}%
+										</span>
 									</div>
 								</div>
-							</div>
+							))}
+						</div>
 
-							<div className="flex items-center gap-3">
-								{/* Mini progress indicator */}
-								<div className="h-2 w-14 overflow-hidden rounded-full bg-muted">
-									<div
-										className="h-full rounded-full bg-black"
-										style={{
-											width: `${item.percentage}%`,
-										}}
-									/>
-								</div>
+						{/* Divider */}
+						<div className="border-t" />
 
-								<span className="w-8 text-right text-sm text-muted-foreground">
-									{item.percentage}%
+						{/* Expiring Leases Section */}
+						<div>
+							<div className="mb-3 flex items-center justify-between">
+								<h4 className="text-sm font-semibold">Expiring Leases</h4>
+								<span className="text-xs text-muted-foreground">
+									{filteredExpiringLeases.length} lease
+									{filteredExpiringLeases.length !== 1 ? "s" : ""}
 								</span>
 							</div>
-						</div>
-					))}
-				</div>
 
-				{/* Divider */}
-				<div className="border-t" />
-
-				{/* Expiring Leases Section */}
-				<div>
-					<div className="mb-3 flex items-center justify-between">
-						<h4 className="text-sm font-semibold">Expiring Leases</h4>
-						<span className="text-xs text-muted-foreground">
-							{filteredExpiringLeases.length} lease
-							{filteredExpiringLeases.length !== 1 ? "s" : ""}
-						</span>
-					</div>
-
-					<div className="space-y-3">
-						{filteredExpiringLeases.map((lease) => (
-							<div
-								key={lease.leaseId}
-								className="flex items-center justify-between rounded-lg border p-3"
-							>
-								<div>
-									<p className="text-sm font-medium">{lease.tenantName}</p>
-									<p className="text-xs text-muted-foreground">
-										{lease.unitName}
-									</p>
-								</div>
-
-								<div className="text-right">
-									<p
-										className={`text-sm font-semibold ${
-											lease.daysUntilExpiry <= 30
-												? "text-destructive"
-												: "text-amber-500"
-										}`}
+							<div className="space-y-3">
+								{filteredExpiringLeases.map((lease) => (
+									<div
+										key={lease.leaseId}
+										className="flex items-center justify-between rounded-lg border p-3"
 									>
-										{lease.daysUntilExpiry} days
-									</p>
+										<div>
+											<p className="text-sm font-medium">{lease.tenantName}</p>
+											<p className="text-xs text-muted-foreground">
+												{lease.unitName}
+											</p>
+										</div>
 
-									<p className="text-xs text-muted-foreground">
-										Ends on {formatDisplayDate(lease.endDate)}
-									</p>
-								</div>
-							</div>
-						))}
+										<div className="text-right">
+											<p
+												className={`text-sm font-semibold ${
+													lease.daysUntilExpiry <= 30
+														? "text-destructive"
+														: "text-amber-500"
+												}`}
+											>
+												{lease.daysUntilExpiry} days
+											</p>
 
-						{filteredExpiringLeases.length === 0 && (
-							<div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-								No expiring leases match the selected time range.
+											<p className="text-xs text-muted-foreground">
+												Ends on {formatDisplayDate(lease.endDate)}
+											</p>
+										</div>
+									</div>
+								))}
+
+								{filteredExpiringLeases.length === 0 && (
+									<div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+										No expiring leases match the selected time range.
+									</div>
+								)}
 							</div>
-						)}
-					</div>
-				</div>
+						</div>
+					</>
+				)}
 			</CardContent>
 		</Card>
 	);

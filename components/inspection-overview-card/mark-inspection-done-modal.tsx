@@ -1,12 +1,15 @@
 "use client";
 
-import * as React from "react";
-import { CheckCircle2 } from "lucide-react";
-import { Controller, FieldErrors, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2 } from "lucide-react";
+import * as React from "react";
+import { Controller, type FieldErrors, useForm } from "react-hook-form";
 import { toast } from "sonner";
-
+import {
+	type CompleteInspection,
+	completeInspection,
+} from "@/app/schemas/inspection.schema";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -25,10 +28,6 @@ import {
 } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { orpc } from "@/lib/orpc";
-import {
-	completeInspection,
-	CompleteInspection,
-} from "@/app/schemas/inspection.schema";
 import { formatDateOnly } from "@/lib/utils";
 
 type MarkInspectionDoneModalProps = {
@@ -85,7 +84,7 @@ export function MarkInspectionDoneModal({
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
 				{children ?? (
-					<Button variant="outline" size="sm" className="cursor-pointer">
+					<Button variant="outline" size="sm">
 						<CheckCircle2 className="mr-2 size-4" />
 						Mark as Done
 					</Button>

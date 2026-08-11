@@ -1,7 +1,8 @@
 "use client";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Home } from "lucide-react";
-
+import { Badge } from "@/components/ui/badge";
 import {
 	Card,
 	CardContent,
@@ -9,11 +10,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-
-import { LeaseCard } from "./lease-card";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { orpc } from "@/lib/orpc";
+import { LeaseCard } from "./lease-card";
 
 export function TenantLeasesCard({ id }: { id: number }) {
 	const { data: leaseItems } = useSuspenseQuery(

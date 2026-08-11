@@ -1,14 +1,19 @@
-import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
+import { getServerRole } from "@/lib/get-server";
 import { orpc } from "@/lib/orpc";
+import { getQueryClient, HydrateClient } from "@/lib/query/hydration";
 import QuickActions from "./_components/quick-actions";
 import RepairsTable from "./_components/repairs-table";
-import { getServerRole } from "@/lib/get-server";
 
 export default async function Page() {
 	const role = await getServerRole();
+	const initialRefreshedAt = new Date().toISOString();
 
 	const queryClient = getQueryClient();
-	await queryClient.prefetchQuery(orpc.repair.list.queryOptions({ input: {} }));
+	await queryClient.prefetchQuery(
+		orpc.repair.list.queryOptions({
+			input: { limit: 10, cursor: undefined },
+		}),
+	);
 	// await queryClient.prefetchQuery(orpc.report.occupancySummary.queryOptions());
 
 	return (
@@ -21,7 +26,7 @@ export default async function Page() {
 						<h1 className="text-2xl font-bold tracking-tight">Repairs</h1>
 						<p className="text-muted-foreground">Manage all repairs</p>
 					</div>
-					<QuickActions />
+					<QuickActions initialRefreshedAt={initialRefreshedAt} />
 				</div>
 
 				{/* <KpiCards /> */}

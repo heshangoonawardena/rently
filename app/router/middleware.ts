@@ -1,11 +1,11 @@
 import { implement } from "@orpc/server";
-import { contract } from "../contract";
-import { auth } from "@/lib/auth";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db/db";
 import { member } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
-import { statement } from "@/lib/auth/permissions";
+import { auth } from "@/lib/auth";
+import type { statement } from "@/lib/auth/permissions";
 import { getServerSession } from "@/lib/get-server";
+import { contract } from "../contract";
 
 export interface AuthedUser {
 	userId: string;
@@ -25,7 +25,7 @@ const os = implement(contract).$context<BaseContext>();
 
 export const authMiddleware = os
 	.$context<BaseContext>()
-	.middleware(async ({ context, next, errors }) => {
+	.middleware(async ({ next, errors }) => {
 		const session = await getServerSession();
 
 		if (!session?.user || !session?.session) {
@@ -64,9 +64,11 @@ export const authMiddleware = os
 		});
 	});
 
-export const permissionMiddleware = (permissions: {
-	[K in keyof typeof statement]?: (typeof statement)[K][number][];
-}) =>
+export const permissionMiddleware = (
+	permissions: {
+		[K in keyof typeof statement]?: (typeof statement)[K][number][];
+	},
+) =>
 	os.$context<AuthedContext>().middleware(async ({ context, next, errors }) => {
 		const result = await auth.api.hasPermission({
 			headers: context.headers,

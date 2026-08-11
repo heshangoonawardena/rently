@@ -1,4 +1,7 @@
 "use client";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { Briefcase, CreditCard, Phone, User, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import {
 	Card,
 	CardContent,
@@ -6,16 +9,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-	Briefcase,
-	CreditCard,
-	MapPin,
-	Phone,
-	User,
-	Users,
-} from "lucide-react";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { orpc } from "@/lib/orpc";
 
 interface Tenant {

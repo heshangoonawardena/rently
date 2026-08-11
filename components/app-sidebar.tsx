@@ -1,20 +1,19 @@
 "use client";
 
-import * as React from "react";
 import {
-	LayoutDashboard,
-	Settings,
-	Users,
 	Building,
-	FileSignature,
-	ReceiptText,
-	Wrench,
-	ListCheck,
-	UserCog,
 	Handshake,
+	LayoutDashboard,
+	ListCheck,
+	ReceiptText,
+	Settings,
+	UserCog,
+	Users,
+	Wrench,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-
+import type * as React from "react";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -26,7 +25,6 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import Image from "next/image";
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
 	user?: {
@@ -36,8 +34,8 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
 	role: Role;
 };
 
-import { LucideIcon } from "lucide-react";
-import { Role } from "@/types/role";
+import type { LucideIcon } from "lucide-react";
+import type { Role } from "@/types/role";
 
 export interface NavItem {
 	title: string;
@@ -123,24 +121,19 @@ export function AppSidebar({ user, role, ...props }: AppSidebarProps) {
 		{
 			label: "Other",
 			items: [
-				{
-					title: "Settings",
-					url: "#",
-					icon: Settings,
-					roles: ["tenant", "manager", "owner"],
-					items: [
-						{
-							title: "User Settings",
-							url: "/settings/user",
-							roles: ["tenant", "manager", "owner"],
-						},
-						{
-							title: "Notification Settings",
-							url: "/settings/notifications",
-							roles: ["tenant", "manager", "owner"],
-						},
-					],
-				},
+				// {
+				// 	title: "Settings",
+				// 	url: "#",
+				// 	icon: Settings,
+				// 	roles: ["tenant", "manager", "owner"],
+				// 	items: [
+				// 		{
+				// 			title: "Notification Settings",
+				// 			url: "/settings/notifications",
+				// 			roles: ["tenant", "manager", "owner"],
+				// 		},
+				// 	],
+				// },
 				{
 					title: "Users",
 					url: "/users",

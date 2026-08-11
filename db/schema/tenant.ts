@@ -1,20 +1,20 @@
 import { relations } from "drizzle-orm";
 import {
+	index,
+	integer,
 	pgTable,
+	serial,
 	text,
 	timestamp,
-	index,
-	serial,
-	integer,
 } from "drizzle-orm/pg-core";
-import { organization, user } from "./auth";
-import { occupancyStatusEnum } from "./enums";
 import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
 } from "drizzle-zod";
-import z from "zod";
+import type z from "zod";
+import { organization, user } from "./auth";
+import { occupancyStatusEnum } from "./enums";
 
 export const tenant = pgTable(
 	"tenant",
@@ -90,10 +90,14 @@ export const selectTenantOccupantSchema = createSelectSchema(tenantOccupant);
 export type TenantOccupantType = z.infer<typeof selectTenantOccupantSchema>;
 
 export const insertTenantOccupantSchema = createInsertSchema(tenantOccupant);
-export type InsertTenantOccupantType = z.infer<typeof insertTenantOccupantSchema>;
+export type InsertTenantOccupantType = z.infer<
+	typeof insertTenantOccupantSchema
+>;
 
 export const updateTenantOccupantSchema = createUpdateSchema(tenantOccupant);
-export type UpdateTenantOccupantType = z.infer<typeof updateTenantOccupantSchema>;
+export type UpdateTenantOccupantType = z.infer<
+	typeof updateTenantOccupantSchema
+>;
 
 // ============================================================
 // RELATIONS
@@ -124,5 +128,5 @@ export const tenantOccupantRelations = relations(
 	}),
 );
 
-import { lease } from "./lease";
 import { tenantDocument } from "./document";
+import { lease } from "./lease";

@@ -1,5 +1,12 @@
 "use client";
-import { cn } from "@/lib/utils";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -17,16 +24,9 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { type SignInFormSchemaType, signInformSchema } from "@/lib/zodSchemas";
 import { signIn } from "@/server/users";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { signInformSchema, SignInFormSchemaType } from "@/lib/zodSchemas";
 
 export function LoginForm({
 	className,
@@ -70,7 +70,7 @@ export function LoginForm({
 					<form
 						id="form-login"
 						onSubmit={form.handleSubmit(onSubmit)}
-						autoComplete="off"
+						// autoComplete="off"
 					>
 						<FieldGroup>
 							<Controller
@@ -117,9 +117,9 @@ export function LoginForm({
 													onClick={() => setShowPassword((prev) => !prev)}
 												>
 													{showPassword ? (
-														<EyeOff className="h-4 w-4" />
+														<EyeOff className="size-4" />
 													) : (
-														<Eye className="h-4 w-4" />
+														<Eye className="size-4" />
 													)}
 													<span className="sr-only">
 														{showPassword ? "Hide password" : "Show password"}

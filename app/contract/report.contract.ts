@@ -1,23 +1,23 @@
 import { oc } from "@orpc/contract";
 import z from "zod";
 import {
-    arrearsOverviewOutput,
-    expiringDocumentsInput,
-    expiringDocumentsOutput,
-    expiringLeasesInput,
-    expiringLeasesOutput,
-    occupancySummaryOutput,
-    overdueUtilityBillsOutput,
-    paymentOverviewInput,
-    paymentOverviewOutput,
-    rentCollectionInput,
-    rentCollectionOutput,
-    repairSummaryInput,
-    repairSummaryOutput,
-    upcomingInspectionsInput,
-    upcomingInspectionsOutput,
-    upcomingRentDueInput,
-    upcomingRentDueOutput
+	arrearsOverviewOutput,
+	expiringDocumentsInput,
+	expiringDocumentsOutput,
+	expiringLeasesInput,
+	expiringLeasesOutput,
+	occupancySummaryOutput,
+	overdueUtilityBillsOutput,
+	paymentOverviewInput,
+	paymentOverviewOutput,
+	rentCollectionInput,
+	rentCollectionOutput,
+	repairSummaryInput,
+	repairSummaryOutput,
+	upcomingInspectionsInput,
+	upcomingInspectionsOutput,
+	upcomingRentDueInput,
+	upcomingRentDueOutput,
 } from "../schemas/report.schema";
 
 export const base = oc.errors({

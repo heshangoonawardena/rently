@@ -1,12 +1,15 @@
 "use client";
 
-import * as React from "react";
-import { MessageSquarePlus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, FieldErrors, useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { MessageSquarePlus } from "lucide-react";
+import * as React from "react";
+import { Controller, type FieldErrors, useForm } from "react-hook-form";
 import { toast } from "sonner";
-
+import {
+	type CreateRepairUpdate,
+	createRepairUpdate,
+} from "@/app/schemas/repair.update.schema";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -18,6 +21,12 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+	Field,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+} from "@/components/ui/field";
+import {
 	Select,
 	SelectContent,
 	SelectItem,
@@ -25,19 +34,9 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	Field,
-	FieldError,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
-import { orpc } from "@/lib/orpc";
-import {
-	createRepairUpdate,
-	CreateRepairUpdate,
-} from "@/app/schemas/repair.update.schema";
-import { repairStatusEnum } from "@/db/schema/enums";
 import { UPDATE_REPAIR_STATUS_FILTER_OPTIONS } from "@/config/table-facet-meta";
+import type { repairStatusEnum } from "@/db/schema/enums";
+import { orpc } from "@/lib/orpc";
 
 type AddRepairUpdateModalProps = {
 	repairRequestId: number;
@@ -114,7 +113,7 @@ export default function AddRepairUpdateModal({
 		>
 			<DialogTrigger asChild>
 				{children ?? (
-					<Button className="w-full justify-start cursor-pointer">
+					<Button className="w-full justify-start ">
 						<MessageSquarePlus className="mr-2 size-4" />
 						Add Update
 					</Button>

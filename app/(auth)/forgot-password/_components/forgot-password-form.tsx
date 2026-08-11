@@ -1,5 +1,11 @@
 "use client";
-import { cn } from "@/lib/utils";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useTransition } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -17,18 +23,12 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { useTransition } from "react";
-import { Loader2 } from "lucide-react";
-import Link from "next/link";
-import { requestPasswordReset } from "@/server/users";
+import { cn } from "@/lib/utils";
 import {
+	type ForgotPasswordSchemaType,
 	forgotPasswordSchema,
-	ForgotPasswordSchemaType,
 } from "@/lib/zodSchemas";
+import { requestPasswordReset } from "@/server/users";
 
 export function ForgotPasswordForm({
 	className,
@@ -62,8 +62,8 @@ export function ForgotPasswordForm({
 				<CardHeader className="text-center">
 					<CardTitle className="text-xl">Forgot password</CardTitle>
 					<CardDescription>
-						Enter your email address and we'll send you a link to reset your
-						password.
+						Enter your email address and we&apos;ll send you a link to reset
+						your password.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>

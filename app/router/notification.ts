@@ -1,12 +1,12 @@
 import { implement } from "@orpc/server";
-import { contract } from "../contract";
+import { and, desc, eq, gt, inArray } from "drizzle-orm";
 import { db } from "@/db/db";
-import { notificationPreference, notificationLog } from "@/db/schema/notification";
-import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 import {
-	authMiddleware,
-	BaseContext,
-} from "./middleware";
+	notificationLog,
+	notificationPreference,
+} from "@/db/schema/notification";
+import { contract } from "../contract";
+import { authMiddleware, type BaseContext } from "./middleware";
 
 const os = implement(contract).$context<BaseContext>();
 
@@ -120,7 +120,10 @@ export const deleteNotificationPreference = os.notification.deletePreference
 		const { userId } = context.user;
 
 		const [existing] = await db
-			.select({ id: notificationPreference.id, userId: notificationPreference.userId })
+			.select({
+				id: notificationPreference.id,
+				userId: notificationPreference.userId,
+			})
 			.from(notificationPreference)
 			.where(eq(notificationPreference.id, input.id))
 			.limit(1);

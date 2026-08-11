@@ -49,7 +49,7 @@ export const utilitySchema = z.object({
 	address: z
 		.string()
 		.trim()
-		.min(5, "Address must be at least 5 characters")
+		.min(5, "Address is required")
 		.max(100, "Address must not exceed 100 characters")
 		.regex(/^[\p{L}\p{N}\s.,/#'()-]+$/u, "Address contains invalid characters"),
 	accountNumber: z

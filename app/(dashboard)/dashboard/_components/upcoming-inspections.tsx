@@ -1,15 +1,25 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { CalendarIcon, Eye, Filter } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { ExportButtons } from "@/components/export/export-buttons";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	Card,
 	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -17,15 +27,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { REPORT_TIME_RANGE_FILTER_OPTIONS } from "@/config/table-facet-meta";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { exportCsv } from "@/lib/exports/csv";
-import { exportPdf } from "@/lib/exports/pdf";
 import { formatDisplayDate, formatExportDate } from "@/lib/exports/formatters";
+import { exportPdf } from "@/lib/exports/pdf";
 import { orpc } from "@/lib/orpc";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { CalendarRange, Eye, Filter } from "lucide-react";
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { formatDateOnly } from "@/lib/utils";
 
 function getUrgency(days: number) {
 	if (days <= 7) return "urgent";
@@ -50,16 +58,17 @@ const urgencyLabelMap = {
 } as const;
 
 export default function UpcomingInspections() {
-	const {
-		data: { rows: inspections },
-	} = useSuspenseQuery(
+	const inspectionsQuery = useQuery(
 		orpc.report.upcomingInspections.queryOptions({ input: { daysAhead: 90 } }),
 	);
+	const isLoading = inspectionsQuery.isLoading || inspectionsQuery.isFetching;
+	const inspections = inspectionsQuery.data?.rows ?? [];
 
 	const [urgencyFilter, setUrgencyFilter] = useState<
 		"all" | "urgent" | "soon" | "normal"
 	>("all");
-	const [timeRange, setTimeRange] = useState("all");
+	const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
+	const [toDate, setToDate] = useState<Date | undefined>(undefined);
 
 	const filteredInspections = useMemo(() => {
 		let result = inspections;
@@ -70,13 +79,22 @@ export default function UpcomingInspections() {
 			);
 		}
 
-		if (timeRange !== "all") {
-			const days = Number(timeRange.replace("d", ""));
-			result = result.filter((item) => item.daysUntilInspection <= days);
-		}
+		result = result.filter((item) => {
+			const scheduledDate = new Date(item.scheduledDate);
+
+			if (fromDate && scheduledDate < fromDate) {
+				return false;
+			}
+
+			if (toDate && scheduledDate > toDate) {
+				return false;
+			}
+
+			return true;
+		});
 
 		return result;
-	}, [inspections, timeRange, urgencyFilter]);
+	}, [fromDate, inspections, toDate, urgencyFilter]);
 
 	const summary = filteredInspections.reduce(
 		(acc, item) => {
@@ -106,15 +124,14 @@ export default function UpcomingInspections() {
 
 	const filterText = `Urgency: ${
 		urgencyFilter === "all" ? "All" : urgencyLabelMap[urgencyFilter]
-	} | Range: ${
-		REPORT_TIME_RANGE_FILTER_OPTIONS.find(
-			(option) => option.value === timeRange,
-		)?.label ?? "All time"
+	} | From: ${fromDate ? formatDateOnly(fromDate) : "Any"} | To: ${
+		toDate ? formatDateOnly(toDate) : "Any"
 	}`;
 
 	const resetFilters = () => {
 		setUrgencyFilter("all");
-		setTimeRange("all");
+		setFromDate(undefined);
+		setToDate(undefined);
 	};
 
 	return (
@@ -140,7 +157,7 @@ export default function UpcomingInspections() {
 
 				{/* Report Generation */}
 				<div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-					<div className="flex flex-wrap items-center gap-2">
+					<div className="flex flex-col flex-wrap items-start gap-2">
 						<div className="flex items-center gap-2 rounded-md border bg-background px-2">
 							<Filter className="size-4 text-muted-foreground" />
 
@@ -165,28 +182,77 @@ export default function UpcomingInspections() {
 							</Select>
 						</div>
 
-						<div className="flex items-center gap-2 rounded-md border bg-background px-2">
-							<CalendarRange className="size-4 text-muted-foreground" />
+						<div className="flex justify-between gap-2">
+							<div className="flex items-center gap-2 rounded-md border bg-background px-2">
+								<Popover>
+									<PopoverTrigger asChild>
+										<Button
+											variant="ghost"
+											className="h-8 px-0 font-normal hover:bg-transparent"
+										>
+											<CalendarIcon className="mr-2 size-4 text-muted-foreground" />
+											{fromDate ? format(fromDate, "d MMM yyyy") : "From"}
+										</Button>
+									</PopoverTrigger>
 
-							<Select value={timeRange} onValueChange={setTimeRange}>
-								<SelectTrigger className="h-8 w-35 border-0 bg-transparent p-0 shadow-none">
-									<SelectValue placeholder="Time range" />
-								</SelectTrigger>
+									<PopoverContent className="w-auto p-0" align="start">
+										<Calendar
+											mode="single"
+											selected={fromDate}
+											onSelect={(date) => {
+												if (!date) {
+													setFromDate(undefined);
+													return;
+												}
 
-								<SelectContent>
-									{REPORT_TIME_RANGE_FILTER_OPTIONS.map((option) => (
-										<SelectItem key={option.value} value={option.value}>
-											{option.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+												setFromDate(date);
+												if (toDate && date > toDate) {
+													setToDate(date);
+												}
+											}}
+										/>
+									</PopoverContent>
+								</Popover>
+							</div>
+
+							<div className="flex items-center gap-2 rounded-md border bg-background px-2">
+								<Popover>
+									<PopoverTrigger asChild>
+										<Button
+											variant="ghost"
+											className="h-8 px-0 font-normal hover:bg-transparent"
+										>
+											<CalendarIcon className="mr-2 size-4 text-muted-foreground" />
+											{toDate ? format(toDate, "d MMM yyyy") : "To"}
+										</Button>
+									</PopoverTrigger>
+
+									<PopoverContent className="w-auto p-0" align="start">
+										<Calendar
+											mode="single"
+											selected={toDate}
+											disabled={fromDate ? { before: fromDate } : undefined}
+											onSelect={(date) => {
+												if (!date) {
+													setToDate(undefined);
+													return;
+												}
+
+												setToDate(date);
+												if (fromDate && date < fromDate) {
+													setFromDate(date);
+												}
+											}}
+										/>
+									</PopoverContent>
+								</Popover>
+							</div>
 						</div>
 					</div>
 
 					<div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
 						<ExportButtons
-							disabled={filteredInspections.length === 0}
+							disabled={isLoading || filteredInspections.length === 0}
 							onCsv={() => exportCsv("upcoming-inspections", exportRows)}
 							onPdf={() =>
 								exportPdf({
@@ -231,7 +297,7 @@ export default function UpcomingInspections() {
 							}
 						/>
 
-						{(urgencyFilter !== "all" || timeRange !== "all") && (
+						{(urgencyFilter !== "all" || fromDate || toDate) && (
 							<Button variant="ghost" size="sm" onClick={resetFilters}>
 								Reset
 							</Button>
@@ -241,83 +307,116 @@ export default function UpcomingInspections() {
 			</CardHeader>
 
 			<CardContent className="space-y-5">
-				{/* Pipeline */}
-				<div className="flex h-3 overflow-hidden rounded-full bg-muted">
-					<div
-						style={{
-							width: `${(summary.urgent / safeTotal) * 100}%`,
-							backgroundColor: getUrgencyStyle("urgent"),
-						}}
-					/>
-					<div
-						style={{
-							width: `${(summary.soon / safeTotal) * 100}%`,
-							backgroundColor: getUrgencyStyle("soon"),
-						}}
-					/>
-					<div
-						style={{
-							width: `${(summary.normal / safeTotal) * 100}%`,
-							backgroundColor: getUrgencyStyle("normal"),
-						}}
-					/>
-				</div>
-
-				{/* Summary pills */}
-				<div className="flex flex-wrap gap-2">
-					{(["urgent", "soon", "normal"] as const).map((type) => (
-						<div
-							key={type}
-							className="rounded-full px-3 py-1 text-xs"
-							style={{
-								backgroundColor: `${getUrgencyStyle(type)}20`,
-								color: getUrgencyStyle(type),
-							}}
-						>
-							{summary[type]} {type}
+				{isLoading ? (
+					<div className="space-y-5">
+						<Skeleton className="h-3 w-full rounded-full" />
+						<div className="flex flex-wrap gap-2">
+							{Array.from({ length: 3 }).map((_, index) => (
+								<Skeleton
+									key={`inspection-pill-${index}`}
+									className="h-7 w-20 rounded-full"
+								/>
+							))}
 						</div>
-					))}
-				</div>
-
-				{/* List */}
-				<div className="space-y-3">
-					{filteredInspections.map((item) => {
-						const urgency = getUrgency(item.daysUntilInspection);
-
-						return (
+						<div className="space-y-3">
+							{Array.from({ length: 3 }).map((_, index) => (
+								<div
+									key={`inspection-card-${index}`}
+									className="flex items-center justify-between rounded-lg border p-3"
+								>
+									<div className="space-y-2">
+										<Skeleton className="h-3 w-32" />
+										<Skeleton className="h-3 w-24" />
+									</div>
+									<div className="space-y-2 text-right">
+										<Skeleton className="h-3 w-16" />
+										<Skeleton className="h-3 w-24" />
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				) : (
+					<>
+						{/* Pipeline */}
+						<div className="flex h-3 overflow-hidden rounded-full bg-muted">
 							<div
-								key={item.id}
-								className="flex items-center justify-between rounded-lg border p-3"
-							>
-								<div>
-									<p className="text-sm font-medium">{item.title}</p>
-									<p className="text-xs text-muted-foreground">
-										{item.unitName} • {item.assignedUserName}
-									</p>
-								</div>
-
-								<div className="text-right">
-									<p
-										className="text-sm font-semibold"
-										style={{ color: getUrgencyStyle(urgency) }}
-									>
-										{item.daysUntilInspection} days
-									</p>
-
-									<p className="text-xs text-muted-foreground">
-										{formatDisplayDate(item.scheduledDate)}
-									</p>
-								</div>
-							</div>
-						);
-					})}
-
-					{filteredInspections.length === 0 && (
-						<div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-							No inspections match the current filters.
+								style={{
+									width: `${(summary.urgent / safeTotal) * 100}%`,
+									backgroundColor: getUrgencyStyle("urgent"),
+								}}
+							/>
+							<div
+								style={{
+									width: `${(summary.soon / safeTotal) * 100}%`,
+									backgroundColor: getUrgencyStyle("soon"),
+								}}
+							/>
+							<div
+								style={{
+									width: `${(summary.normal / safeTotal) * 100}%`,
+									backgroundColor: getUrgencyStyle("normal"),
+								}}
+							/>
 						</div>
-					)}
-				</div>
+
+						{/* Summary pills */}
+						<div className="flex flex-wrap gap-2">
+							{(["urgent", "soon", "normal"] as const).map((type) => (
+								<div
+									key={type}
+									className="rounded-full px-3 py-1 text-xs"
+									style={{
+										backgroundColor: `${getUrgencyStyle(type)}20`,
+										color: getUrgencyStyle(type),
+									}}
+								>
+									{summary[type]} {type}
+								</div>
+							))}
+						</div>
+
+						{/* List */}
+						<div className="space-y-3">
+							{filteredInspections.map((item) => {
+								const urgency = getUrgency(item.daysUntilInspection);
+
+								return (
+									<div
+										key={item.id}
+										className="flex items-center justify-between rounded-lg border p-3"
+									>
+										<div>
+											<p className="text-sm font-medium">{item.title}</p>
+											<p className="text-xs text-muted-foreground">
+												{item.unitName} • {item.assignedUserName}
+											</p>
+										</div>
+
+										<div className="text-right">
+											<p
+												className="text-sm font-semibold"
+												style={{ color: getUrgencyStyle(urgency) }}
+											>
+												{item.daysUntilInspection} days
+											</p>
+
+											<p className="text-xs text-muted-foreground">
+												{formatDisplayDate(item.scheduledDate)}
+											</p>
+										</div>
+									</div>
+								);
+							})}
+
+							{filteredInspections.length === 0 && (
+								<div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+									No inspections match the current filters.
+								</div>
+							)}
+						</div>
+					</>
+				)}
 			</CardContent>
 		</Card>
 	);

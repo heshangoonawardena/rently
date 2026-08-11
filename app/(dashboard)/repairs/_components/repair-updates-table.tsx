@@ -1,31 +1,19 @@
 "use client";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { orpc } from "@/lib/orpc";
+import { Edit, MoreHorizontal, Wrench } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { repairStatusEnum } from "@/db/schema/enums";
-import AddRepairUpdateModal from "./add-repair-update-modal";
-import {
-	Edit,
-	MoreHorizontal,
-	MoreVertical,
-	RefreshCw,
-	Trash2,
-	Wrench,
-} from "lucide-react";
-import { Role } from "@/types/role";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { EditLeaseModal } from "../../leases/_components/edit-lease-modal";
-import { RenewLeaseModal } from "../../leases/_components/renew-lease-modal";
-import { EndLeaseModal } from "../../leases/_components/end-lease-modal";
+import type { repairStatusEnum } from "@/db/schema/enums";
+import { orpc } from "@/lib/orpc";
+import type { Role } from "@/types/role";
+import AddRepairUpdateModal from "./add-repair-update-modal";
 
 export type RepairUpdatesTableProps = {
 	repairRequestId: number;
@@ -107,7 +95,7 @@ export default function RepairUpdatesTable({
 								<div className="flex items-center gap-3">
 									<div className="text-xs text-muted-foreground">
 										{update.oldStatus
-											? update.oldStatus.replaceAll("_", " ") + " → "
+											? `${update.oldStatus.replaceAll("_", " ")} → `
 											: ""}
 										{update.newStatus
 											? update.newStatus.replaceAll("_", " ")

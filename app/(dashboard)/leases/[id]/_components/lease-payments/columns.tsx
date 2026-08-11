@@ -2,19 +2,20 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
-
-import { Badge } from "@/components/ui/badge";
-import {
-	CalendarDays,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-
-import { ListPaymentOutput } from "@/app/schemas/payment.schema";
+import { CalendarDays } from "lucide-react";
+import type { ListPaymentOutput } from "@/app/schemas/payment.schema";
 import { DataTableColumnHeader } from "@/components/data-table-column-header";
+import { Badge } from "@/components/ui/badge";
 import {
 	PAYMENT_METHOD_META,
 	PAYMENT_TYPE_META,
 } from "@/config/table-facet-meta";
+import { cn } from "@/lib/utils";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const columns: ColumnDef<ListPaymentOutput["items"][number]>[] = [
 	// Payment
@@ -33,12 +34,17 @@ export const columns: ColumnDef<ListPaymentOutput["items"][number]>[] = [
 			return (
 				<div className="space-y-1">
 					<div className="flex items-center gap-2">
-						<Badge variant="outline" className={cn("gap-1 pl-2", typeConfig?.color)}>
+						<Badge
+							variant="outline"
+							className={cn("gap-1 pl-2", typeConfig?.color)}
+						>
 							{TypeIcon && <TypeIcon className="size-4" />}
 							{typeConfig?.label ?? type.replaceAll("_", " ")}
 						</Badge>
 					</div>
-					<p className="text-xs text-muted-foreground">Payment #{row.original.id}</p>
+					<p className="text-xs text-muted-foreground">
+						{row.original.receiptNumber}
+					</p>
 				</div>
 			);
 		},
@@ -88,7 +94,8 @@ export const columns: ColumnDef<ListPaymentOutput["items"][number]>[] = [
 					<div className="leading-tight">
 						<p>{format(new Date(start), "MMM yyyy")}</p>
 						<p className="text-xs text-muted-foreground">
-							{format(new Date(start), "dd MMM")} - {format(new Date(end), "dd MMM")}
+							{format(new Date(start), "dd MMM")} -{" "}
+							{format(new Date(end), "dd MMM")}
 						</p>
 					</div>
 				</div>
@@ -144,10 +151,19 @@ export const columns: ColumnDef<ListPaymentOutput["items"][number]>[] = [
 			<DataTableColumnHeader column={column} title="Notes" />
 		),
 		cell: ({ row }) => (
-			<span className="text-muted-foreground line-clamp-2 max-w-80 inline-block">
-				{row.original.description ?? "-"}
-			</span>
+			<Tooltip delayDuration={400}>
+				<TooltipTrigger asChild>
+					<span className="text-foreground truncate max-w-50 inline-block cursor-default">
+						{row.original.description}
+					</span>
+				</TooltipTrigger>
+
+				<TooltipContent sideOffset={6}>
+					<p className="max-w-xs warp-break-words">
+						{row.original.description}
+					</p>
+				</TooltipContent>
+			</Tooltip>
 		),
 	},
-
 ];

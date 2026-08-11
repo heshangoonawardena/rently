@@ -1,13 +1,13 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, index, serial } from "drizzle-orm/pg-core";
-import { organization } from "./auth";
-import { unitTypeEnum, unitStatusEnum, utilityBillingModeEnum } from "./enums";
+import { index, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
 } from "drizzle-zod";
-import z from "zod";
+import type z from "zod";
+import { organization } from "./auth";
+import { unitStatusEnum, unitTypeEnum, utilityBillingModeEnum } from "./enums";
 
 export const unit = pgTable(
 	"unit",
@@ -61,9 +61,9 @@ export const unitRelations = relations(unit, ({ one, many }) => ({
 	documents: many(unitDocument),
 }));
 
+import { unitDocument } from "./document";
+import { inspection } from "./inspection";
 // Lazy imports to avoid circular dependency — resolved at runtime by Drizzle.
 import { lease } from "./lease";
-import { utility } from "./utility";
 import { repairRequest } from "./repair";
-import { inspection } from "./inspection";
-import { unitDocument } from "./document";
+import { utility } from "./utility";

@@ -1,24 +1,31 @@
 "use client";
 
-import { ArrowLeft, Settings, FileText, Download, MapPin } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useSuspenseQueries } from "@tanstack/react-query";
+import { format } from "date-fns";
+import {
+	ArrowLeft,
+	Bed,
+	Download,
+	FileText,
+	Home,
+	Map,
+	MapPin,
+	Settings,
+	Warehouse,
+} from "lucide-react";
+import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { orpc } from "@/lib/orpc";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-import { Card, CardContent } from "@/components/ui/card";
-import { useSuspenseQueries } from "@tanstack/react-query";
-import { format } from "date-fns";
-import Link from "next/link";
+import { orpc } from "@/lib/orpc";
 import { EditUnitModal } from "../../_components/edit-unit-modal";
-import { Home, Warehouse, Bed, Map } from "lucide-react";
 
 export default function UnitHeader({ id }: { id: number }) {
 	const [{ data: unitItems }, { data: repairs }, { data: inspectionItems }] =
@@ -59,7 +66,7 @@ export default function UnitHeader({ id }: { id: number }) {
 		);
 	}
 
-	const initials = `${unit.name[0] ?? ""}`;
+	const _initials = `${unit.name[0] ?? ""}`;
 
 	const unitTypeIcons = {
 		house: Home,
@@ -125,21 +132,21 @@ export default function UnitHeader({ id }: { id: number }) {
 
 				<div className="flex items-center space-x-2">
 					<div>
-						<EditUnitModal data={unit} triggerVariant="default" />
+						<EditUnitModal data={unit} />
 					</div>
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button variant="outline" className="cursor-pointer">
+							<Button variant="outline">
 								<Settings className="size-4 mr-2" />
 								Actions
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
-							<DropdownMenuItem className="cursor-pointer">
+							<DropdownMenuItem>
 								<FileText className="size-4 mr-2" />
 								Generate Report
 							</DropdownMenuItem>
-							<DropdownMenuItem className="cursor-pointer">
+							<DropdownMenuItem>
 								<Download className="size-4 mr-2" />
 								Export Data
 							</DropdownMenuItem>
